@@ -538,3 +538,74 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Core Component Responsibility Contracts
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## VideoPlayer Contract
+
+VideoPlayer：
+
+* Is controlled by playback state.
+* Emits time / frame updates.
+* Does not calculate metrics.
+* Does not own global playback state.
+* Does not directly call API.
+
+## Timeline Contract
+
+Timeline：
+
+* Receives controlled currentFrame.
+* Emits seek / frame change.
+* Renders annotation markers.
+* Does not own annotation editing.
+* Does not calculate metrics.
+
+## PlaybackControls Contract
+
+PlaybackControls：
+
+* Emits play / pause / previous frame / next frame / speed change.
+* Does not own video element.
+* Does not directly manipulate Canvas.
+
+## SkeletonCanvas Contract
+
+SkeletonCanvas：
+
+* Owns canvas element.
+* Calls Visualization Engine.
+* Does not draw skeleton outside Visualization Engine.
+* Does not own playback state.
+* Does not directly load API data.
+
+## AnnotationDrawer Contract
+
+AnnotationDrawer：
+
+* Owns annotation list / create / edit / delete UI.
+* Does not modify Timeline position directly.
+* Does not change immutable frame / joint binding.
+
+## MetricPanel Contract
+
+MetricPanel：
+
+* Displays provided metric values.
+* May display metric difference in Compare.
+* Does not calculate metrics.
+
+## ComparePanel Contract
+
+ComparePanel：
+
+* Controls record selection and sync offset UI.
+* Does not render video.
+* Does not calculate metrics.
+* Does not invoke Visualization Engine directly.
+

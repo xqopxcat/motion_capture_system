@@ -482,3 +482,45 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Terminology and Boundary Alignment
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節補齊跨文件的最小命名與責任邊界，避免 Implementation 時產生 SSOT ambiguity。
+
+## Canonical Domain Terms
+
+| Concept | Canonical Term | Notes |
+| --- | --- | --- |
+| Persisted capture session | Record | `Motion Record` 可作為說明用語，但正式 Domain Object 使用 `Record`。 |
+| Raw pose artifact | Pose Dataset | 不使用 `Pose Model` 作為 artifact 名稱。 |
+| Pose file | pose.v1.json | Storage file naming。 |
+| Per-frame metrics | Metric Series | 存於 GCS。 |
+| Aggregated metrics | Metric Summary | 存於 PostgreSQL。 |
+
+## Runtime State vs Persisted Status
+
+Frontend runtime state 不等於 persisted Record status。
+
+```text
+Frontend Runtime State:
+Idle / Recording / Analyzing / Uploading / Completed / Failed
+
+Persisted Record Status:
+Uploading / Processing / Ready / Failed / Archived(Future)
+```
+
+`Recording` 不作為 Database persisted status。
+
+## Visualization Boundary
+
+Capture、Viewer、Compare 共用 Visualization Engine。
+
+Visualization Engine 負責 render overlay / skeleton / metric labels / annotation anchors。
+
+Playback、video element、frame ownership、compare sync orchestration 屬於 Application / Feature layer，不屬於 Visualization Engine。
+

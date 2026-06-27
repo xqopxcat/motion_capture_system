@@ -365,3 +365,118 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Implementation-Ready Domain Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節定義 MVP implementation-ready data contract。若本文前面章節存在較舊或不完整描述，以本節為準。
+
+## Record Aggregate
+
+Record 是 persisted aggregate root。
+
+Record 在 artifact upload 前建立，初始 persisted status 為：
+
+```text
+Uploading
+```
+
+Record owns artifact metadata，但不保存大型檔案內容。
+
+## Canonical Record Status
+
+```text
+Uploading
+Processing
+Ready
+Failed
+Archived(Future)
+```
+
+`Recording` 為 Frontend runtime state，不是 persisted Record status。
+
+`Saving` 若出現，僅可作為 runtime/internal step，不作為 persisted status。
+
+## Required MVP Artifacts
+
+每筆 Ready Record 必須具備：
+
+* Video
+* Pose Dataset
+* Metric Series
+* Metric Summary
+* Thumbnail
+
+## Artifact Metadata Minimum Fields
+
+### Video
+
+* storagePath
+* contentType
+* fileSize
+* duration
+* fps
+* frameCount
+* format
+* resolution（Optional）
+
+### Pose Dataset
+
+* storagePath
+* version
+* poseEngine
+* poseEngineVersion
+* frameCount
+* fps
+* duration
+* generatedAt
+
+### Metric Series
+
+* storagePath
+* version
+* generatedAt
+
+### Metric Summary
+
+Metric Summary 存於 PostgreSQL。
+
+最小欄位：
+
+* metricId
+* min
+* max
+* average
+* rangeOfMotion
+
+### Thumbnail
+
+* storagePath
+* contentType
+* fileSize
+* generatedFromFrameIndex
+
+## Metric Storage Contract
+
+```text
+Metric Series → Google Cloud Storage
+Metric Summary → PostgreSQL
+```
+
+`metric-summary.v1.json` 不屬於 MVP storage contract。若未來需要輸出 summary file，應作為 Future extension 另行定義。
+
+## Failure Metadata
+
+Failed Record 應保存：
+
+* failureStage
+* failureCode
+* failureMessage
+* failedAt
+* retryCount
+* retryable
+

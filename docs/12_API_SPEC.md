@@ -634,3 +634,212 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Upload / Finalization / Error Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節定義 MVP implementation-ready API contract。若前文有較舊或不完整 upload flow，以本節為準。
+
+## Canonical Record Creation Flow
+
+```text
+POST /api/records
+↓
+Create Record with status = Uploading
+↓
+Request signed upload URLs
+↓
+Upload artifacts to GCS
+↓
+Complete artifact uploads
+↓
+POST /api/records/{recordId}/complete
+↓
+Ready or Failed
+```
+
+## Create Record
+
+```http
+POST /api/records
+```
+
+Response：
+
+```json
+{
+  "recordId": "record_123",
+  "status": "Uploading"
+}
+```
+
+## Thumbnail Upload API
+
+### Request Thumbnail Upload URL
+
+```http
+POST /api/uploads/thumbnail
+```
+
+Request：
+
+```json
+{
+  "recordId": "record_123",
+  "contentType": "image/jpeg",
+  "fileSize": 123456
+}
+```
+
+Response：
+
+```json
+{
+  "uploadUrl": "https://signed-upload-url",
+  "storagePath": "thumbnails/record_123/thumbnail.jpg",
+  "expiresAt": "2026-06-26T10:10:00Z"
+}
+```
+
+### Complete Thumbnail Upload
+
+```http
+POST /api/uploads/thumbnail/complete
+```
+
+Request：
+
+```json
+{
+  "recordId": "record_123",
+  "storagePath": "thumbnails/record_123/thumbnail.jpg",
+  "generatedFromFrameIndex": 0
+}
+```
+
+## Metrics Complete with Summary
+
+```http
+POST /api/uploads/metrics/complete
+```
+
+Request：
+
+```json
+{
+  "recordId": "record_123",
+  "storagePath": "metrics/record_123/metric-series.v1.json",
+  "version": "1.0",
+  "summary": [
+    {
+      "metricId": "knee_flexion",
+      "min": 30,
+      "max": 120,
+      "average": 75,
+      "rangeOfMotion": 90
+    }
+  ]
+}
+```
+
+Metric Series storage path points to GCS. Metric Summary is persisted in PostgreSQL.
+
+## Record Finalization API
+
+```http
+POST /api/records/{recordId}/complete
+```
+
+Purpose：
+
+* Validate all required artifacts are completed.
+* Validate Metric Summary exists.
+* Move Record to `Ready` if complete.
+* Move Record to `Failed` if finalization fails.
+
+Response：
+
+```json
+{
+  "recordId": "record_123",
+  "status": "Ready"
+}
+```
+
+## Required Artifacts for Finalization
+
+* Video
+* Pose Dataset
+* Metric Series
+* Metric Summary
+* Thumbnail
+
+## Canonical Record Status
+
+```text
+Uploading
+Processing
+Ready
+Failed
+Archived(Future)
+```
+
+## Video Storage Path
+
+Video storage path supports extension：
+
+```text
+videos/{recordId}/video.{ext}
+```
+
+MVP default Browser output may be：
+
+```text
+videos/{recordId}/video.webm
+```
+
+## Error Codes
+
+MVP API error codes：
+
+* UNAUTHORIZED
+* FORBIDDEN
+* VALIDATION_ERROR
+* RECORD_NOT_FOUND
+* UPLOAD_URL_FAILED
+* UPLOAD_NOT_COMPLETED
+* INVALID_STORAGE_PATH
+* ARTIFACT_MISSING
+* RECORD_FINALIZATION_FAILED
+
+Error response format remains：
+
+```json
+{
+  "error": {
+    "code": "RECORD_NOT_FOUND",
+    "message": "Record not found."
+  }
+}
+```
+
+## Compare Route Mapping
+
+Frontend route：
+
+```text
+/compare?left=:recordId&right=:recordId
+```
+
+API route：
+
+```text
+/api/compare?recordA=:recordId&recordB=:recordId
+```
+
+Frontend maps `left/right` to API `recordA/recordB`.
+

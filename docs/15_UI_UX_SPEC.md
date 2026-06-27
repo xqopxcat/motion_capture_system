@@ -826,3 +826,55 @@ Related
 | 1.4     | 2026-06-26 | Define Compare as standalone route and page                                |
 | 1.5     | 2026-06-26 | Update routing structure (Viewer under /records)                           |
 | 1.6     | 2026-06-26 | Add Compare as standalone sidebar entry with in-page record selection flow |
+
+---
+
+# Patch 1 Addendum — Upload / Analysis / Compare UX State Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Capture Completion UX States
+
+Capture completion should expose these user-visible or system-visible states：
+
+```text
+Analyzing in browser
+Creating record
+Uploading video
+Uploading pose
+Uploading metrics
+Uploading thumbnail
+Finalizing record
+Ready
+Failed with retry
+```
+
+## Upload Failure UX
+
+Upload or finalization failure should show：
+
+* Current failed stage
+* User-friendly message
+* Retry action if retryable
+* Return to Records or Capture option
+
+## Compare MVP Sync UX
+
+Compare MVP supports：
+
+* Suggested sync point
+* Manual offset adjustment
+* Shared playback
+* Side-by-side comparison
+
+MVP does not require perfect automatic alignment.
+
+## Annotation MVP Boundary
+
+Annotation remains Viewer-only.
+
+Annotation frame and joint are immutable after creation. To change frame or joint, user must delete and recreate annotation.
+
+Compare does not support Annotation in MVP.
+

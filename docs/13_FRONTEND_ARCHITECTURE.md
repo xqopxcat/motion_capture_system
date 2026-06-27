@@ -584,3 +584,85 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Runtime State / Hook / Dependency Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## MVP State Ownership Matrix
+
+| State / Data | Owner | Storage |
+| --- | --- | --- |
+| Server state | RTK Query | RTK Query cache |
+| Current user | RTK Query / auth feature | RTK Query cache + minimal auth state |
+| Record metadata | RTK Query | RTK Query cache |
+| Pose Dataset | loader / engine runtime | Memory cache, not Redux |
+| Metric Series | loader / engine runtime | Memory cache, not Redux |
+| Playback state | feature-level playback controller / Redux slice | Redux or feature state |
+| Current frame | playback/frame controller | Redux or feature state |
+| Compare sync offset | compare sync controller | Redux or feature state |
+| Canvas context | Visualization Engine / SkeletonCanvas | Runtime only |
+
+## Core Hooks / Controllers
+
+MVP frontend should define these boundaries before feature implementation：
+
+```text
+usePlaybackController
+useFrameController
+useCapturePipeline
+useRecordUploadPipeline
+usePoseLoader
+useMetricSeriesLoader
+useCompareSyncController
+```
+
+## Playback Contract
+
+```text
+VideoPlayer is controlled.
+Timeline is controlled.
+PlaybackControls emits user intent.
+Playback Controller owns playback state.
+Visualization Engine receives frameIndex only.
+```
+
+## Services Naming Clarification
+
+```text
+frontend/src/services/*Api.ts = RTK Query API clients
+backend/app/services/*.py = backend business services
+```
+
+These two `services` folders are intentionally different layers and must not be treated as equivalent.
+
+## Dependency Rules
+
+```text
+pages → features → engines
+features → services
+features → store
+components → props / callbacks
+engines → types / utils only
+```
+
+Forbidden：
+
+* Engine imports React / Redux / RTK Query
+* Component directly calls fetch
+* Page implements domain logic
+* Pose Dataset / Metric Series stored in Redux
+
+## Compare Route Initialization
+
+Frontend Compare route：
+
+```text
+/compare?left=:recordId&right=:recordId
+```
+
+Compare page may initialize with empty selection or preselected left/right records.
+

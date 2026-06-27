@@ -399,3 +399,39 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Sprint 0 Baseline Reference
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節僅補充 Sprint 0 的技術基準，不更換既有技術棧。
+
+## Sprint 0 Technical Baseline
+
+Sprint 0 需建立：
+
+* Monorepo baseline
+* Frontend React app shell
+* Backend FastAPI app shell
+* Docker Compose baseline
+* PostgreSQL local service
+* Frontend route shell
+* Backend health check endpoint
+* RTK Query base API setup
+* Basic environment configuration
+
+## Technology Constraints
+
+Sprint 0 不得引入：
+
+* Next.js
+* TanStack Query
+* Tailwind CSS
+* styled-components
+* SCSS migration
+* Backend analysis queue
+* Non-approved third-party framework
+

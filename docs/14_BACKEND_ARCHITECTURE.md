@@ -571,3 +571,103 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Record / Upload / Artifact Backend Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Record Service Responsibilities
+
+Record Service owns：
+
+* Create Uploading Record
+* Validate user ownership
+* Manage Record status transitions
+* Finalize Record
+* Persist failure metadata
+* Ensure required artifacts exist before Ready
+
+Canonical status：
+
+```text
+Uploading
+Processing
+Ready
+Failed
+Archived(Future)
+```
+
+## Upload Service Responsibilities
+
+Upload Service owns：
+
+* Request Video Upload URL
+* Complete Video Upload
+* Request Pose Upload URL
+* Complete Pose Upload
+* Request Metrics Upload URL
+* Complete Metrics Upload
+* Request Thumbnail Upload URL
+* Complete Thumbnail Upload
+* Validate content type
+* Persist artifact metadata
+
+## Storage Layer Responsibilities
+
+Storage Layer owns：
+
+* Build canonical storage path
+* Generate signed upload URL
+* Generate signed download URL
+* Validate storage path belongs to recordId
+* Delete object
+
+Frontend must not invent official storage paths.
+
+## Required Artifact Finalization
+
+Record may become `Ready` only after：
+
+* Video artifact complete
+* Pose Dataset artifact complete
+* Metric Series artifact complete
+* Metric Summary persisted
+* Thumbnail artifact complete
+
+## Metric Summary Persistence
+
+Metric Summary is structured data in PostgreSQL.
+
+Metric Series is stored as GCS object.
+
+## Failure Metadata
+
+Failed Record should include：
+
+* failureStage
+* failureCode
+* failureMessage
+* failedAt
+* retryCount
+* retryable
+
+## Auth / Ownership Rule
+
+All upload and complete operations must validate：
+
+```text
+current_user owns recordId
+```
+
+## Backend Boundary Reminder
+
+Backend MVP still does not execute：
+
+* Pose Detection
+* Motion Model Generation
+* Metrics Calculation
+* Visualization Rendering
+

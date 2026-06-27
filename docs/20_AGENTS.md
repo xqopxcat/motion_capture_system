@@ -430,3 +430,72 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — AI Agent Sprint Task Packet Template
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Implementation Readiness Rule
+
+AI Agent may only implement tasks with：
+
+* Explicit scope
+* Explicit affected folders / files
+* Explicit allowed changes
+* Explicit forbidden changes
+* Explicit acceptance criteria
+
+## Sprint Task Packet Template
+
+Every implementation prompt should include：
+
+```text
+Context:
+Relevant product / architecture / spec background.
+
+Goal:
+The single task to complete.
+
+Scope:
+What is included in this task.
+
+Out of Scope:
+What must not be changed.
+
+Affected Docs:
+Design docs that govern this task.
+
+Affected Folders:
+Allowed source folders.
+
+Allowed Changes:
+Files or modules the agent may create or modify.
+
+Forbidden Changes:
+Architecture / API / data model / dependency changes that are not allowed.
+
+Implementation Steps:
+Expected high-level steps.
+
+Acceptance Criteria:
+How the task is verified.
+
+Self Review Checklist:
+What the AI agent must check before returning.
+```
+
+## Sprint 0 Agent Boundary
+
+Sprint 0 agents may create project foundation only.
+
+Sprint 0 agents must not implement：
+
+* Capture feature logic
+* Viewer playback logic
+* Compare sync logic
+* Metrics calculation
+* Production OAuth flow beyond placeholder / contract-ready structure
+

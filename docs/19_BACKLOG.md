@@ -392,3 +392,94 @@ Related
 | 1.2     | 2026-06-26 | Replace Technical Debt with Technical Considerations |
 | 1.1     | 2026-06-26 | Update Dashboard priority to P1 (MVP)                |
 | 1.0     | 2026-06-26 | Initial Draft                                        |
+
+---
+
+# Patch 1 Addendum — Sprint 0 Scope and MVP Acceptance Criteria
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Sprint 0 — Foundation Bootstrap
+
+Sprint 0 does not implement product features.
+
+Sprint 0 includes：
+
+* Monorepo setup
+* Frontend app bootstrap
+* Backend app bootstrap
+* Docker Compose baseline
+* Folder structure
+* Health check API
+* Frontend route shell
+* RTK Query base setup
+* Auth placeholder / contract-ready structure
+* README
+
+## Sprint 0 Definition of Done
+
+Sprint 0 is done when：
+
+* Repository structure matches Coding Guidelines.
+* Frontend app starts locally.
+* Backend app starts locally.
+* Docker Compose starts required services.
+* Health check API responds successfully.
+* Route shell exists for MVP routes.
+* RTK Query base API client exists.
+* No Capture / Viewer / Compare product feature is implemented beyond shell.
+
+## MVP Feature-Level Acceptance Criteria
+
+### Authentication
+
+* User can start Google OAuth flow.
+* Backend has current user contract.
+* Protected routes have route guard structure.
+
+### Capture
+
+* User can record video.
+* Browser can produce required artifacts.
+* System can create Uploading Record.
+* Required artifacts can be uploaded.
+* Record can become Ready or Failed.
+
+### Records
+
+* User can list own Records.
+* User can open one Record.
+* User can delete own Record.
+
+### Viewer
+
+* User can load video, Pose Dataset, Metric Series, and annotations.
+* User can play / pause / seek by frame.
+* Visualization Engine renders skeleton / metrics overlay.
+
+### Annotation
+
+* User can create Viewer annotation at frame + optional joint.
+* User can edit title / description.
+* User can delete annotation.
+* User can jump to annotation frame.
+
+### Compare
+
+* User can select two Records.
+* User can open side-by-side Compare.
+* User can adjust sync offset.
+* Shared playback works.
+* Basic metric difference can be displayed.
+
+### Dashboard
+
+* User can see recent Records.
+* User can see basic Metric Summary-based information.
+* Dashboard does not re-analyze video.
+
+## AI Sprint Boundary Rule
+
+Codex / Claude / Gemini must not start Capture / Viewer / Compare feature implementation before Sprint 0 DoD passes.
+

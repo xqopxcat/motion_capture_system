@@ -480,3 +480,58 @@ Related
 | ------- | ---------- | ----------------------------- |
 | 1.0     | 2026-06-26 | Initial Draft                 |
 | 1.1     | 2026-06-26 | Add Metric Definition Library |
+
+---
+
+# Patch 1 Addendum — Metric Series / Metric Summary Persistence Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Metric Series
+
+Metric Series 是逐 frame metrics。
+
+用途：
+
+* Viewer
+* Compare
+* Timeline-based metric display
+
+Storage：
+
+```text
+Google Cloud Storage
+metrics/{recordId}/metric-series.v1.json
+```
+
+## Metric Summary
+
+Metric Summary 是整段 motion 的 aggregate metrics。
+
+用途：
+
+* Dashboard
+* Record summary
+* Trend chart
+
+Storage：
+
+```text
+PostgreSQL
+```
+
+Metric Summary 於 metrics complete 或 record finalization 流程提交給 Backend。
+
+## Minimum Metric Summary Fields
+
+* metricId
+* min
+* max
+* average
+* rangeOfMotion
+
+## Design Decision
+
+Dashboard 不讀取 Metric Series。Dashboard 僅依賴 Metric Summary 與 Record Metadata。
+

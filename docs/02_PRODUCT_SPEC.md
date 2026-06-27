@@ -525,3 +525,84 @@ Related
 | ------- | ---------- | ------------------------------------- |
 | 1.1     | 2026-06-26 | Add Compare Annotation as Future Work |
 | 1.0     | 2026-06-26 | Initial Draft                         |
+
+---
+
+# Patch 1 Addendum — MVP Completion Contracts
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節補齊 MVP 層級的完成條件，避免 Product Scope 與 Implementation Contract 之間產生落差。
+
+## Capture Completion Contract
+
+MVP 中一次 Capture 成功完成，定義如下：
+
+```text
+User records video
+↓
+Browser generates required analysis artifacts
+↓
+System creates a Record
+↓
+Required artifacts are uploaded
+↓
+Record becomes Ready or Failed
+```
+
+Capture 成功不代表只完成錄影，而是必須產生一筆可在 Records / Viewer / Compare / Dashboard 使用的 Record。
+
+MVP required artifacts：
+
+* Video
+* Pose Dataset
+* Metric Series
+* Metric Summary
+* Thumbnail
+
+## Compare MVP Boundary
+
+Compare MVP 僅包含：
+
+* Side-by-side playback
+* Shared playback controls
+* Manual or semi-auto sync point
+* Sync offset adjustment
+* Basic metric difference display
+
+Compare MVP 不包含：
+
+* Overlay Compare
+* Compare Annotation
+* Multi-video Compare
+* Fully automatic alignment
+* AI-generated comparison insight
+
+## Dashboard MVP Boundary
+
+Dashboard MVP 僅依賴 Metric Summary 與 Record Metadata。
+
+Dashboard MVP 包含：
+
+* Recent Records
+* Basic Summary Cards
+* Metric Summary-based Trend
+
+Dashboard MVP 不包含：
+
+* Re-analysis
+* Metric Series loading
+* Advanced insight
+* AI Coach recommendation
+
+## MVP Acceptance Criteria Baseline
+
+MVP feature 完成條件必須至少包含：
+
+* 使用者可完成主要流程
+* 必要資料可被保存
+* Ready / Failed 狀態可被辨識
+* Viewer / Compare / Dashboard 可取得所需資料
+* 不需要依賴 Future Scope 功能
+

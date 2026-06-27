@@ -137,7 +137,7 @@ Google Cloud Storage
 所有 Object 採固定命名。
 
 ```text
-videos/{recordId}/video.mp4
+videos/{recordId}/video.{ext}
 
 poses/{recordId}/pose.v1.json
 
@@ -366,7 +366,7 @@ Related
 
 * 08_POSE_SCHEMA_SPEC.md
 * 09_MOTION_MODEL_SPEC.md
-* 11_API_SPEC.md
+* 12_API_SPEC.md
 * 14_BACKEND_ARCHITECTURE.md
 
 ---
@@ -376,3 +376,73 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Canonical Storage Path and Upload Completion Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節補齊 MVP storage contract。若本文前面章節存在固定 `video.mp4` 等較舊描述，以本節為準。
+
+## Canonical Object Naming
+
+```text
+videos/{recordId}/video.{ext}
+poses/{recordId}/pose.v1.json
+metrics/{recordId}/metric-series.v1.json
+thumbnails/{recordId}/thumbnail.jpg
+```
+
+MVP Browser MediaRecorder 預設可產生：
+
+```text
+videos/{recordId}/video.webm
+```
+
+若未來轉檔為 MP4，應新增新 artifact 或版本策略，不應覆蓋原始檔案。
+
+## Storage Path Ownership
+
+Storage path 必須由 Backend Storage Layer 產生。
+
+Frontend 不得自行組合正式 storage path。
+
+## Upload Completion Contract
+
+每個大型 artifact upload flow：
+
+```text
+Request Signed Upload URL
+↓
+Upload to GCS
+↓
+Complete Upload API
+↓
+Backend validates path + ownership
+↓
+Backend persists artifact metadata
+```
+
+## Metric Summary Storage
+
+Metric Summary 不存於 GCS。
+
+```text
+Metric Summary → PostgreSQL
+Metric Series → GCS
+```
+
+## Thumbnail Upload
+
+MVP Thumbnail 由 Frontend 產生，並透過 Signed URL 上傳到：
+
+```text
+thumbnails/{recordId}/thumbnail.jpg
+```
+
+## Record Ready Requirement
+
+Record 只有在 required artifacts upload complete 且 Metric Summary 已保存後，才可進入 `Ready`。
+

@@ -141,7 +141,7 @@ Live Video Stream。
 
 此階段所有資料皆存在 Browser Memory。
 
-尚未建立 Motion Record。
+尚未建立 persisted Record；Record 會在 Recording Finished 後、artifact upload 前建立。
 
 ---
 
@@ -185,7 +185,7 @@ video_path
 
 Pipeline 中止。
 
-Record 不建立。
+Record 進入 Failed，並保存 failure metadata。
 
 ---
 
@@ -294,7 +294,7 @@ Tags
 
 Annotation（空集合）
 
-Record 建立完成後才寫入 Database。
+Record Record 會先以 Uploading status 建立；artifact metadata 與 Metric Summary 完成後再 finalization 為 Ready。
 
 ---
 
@@ -596,3 +596,151 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Canonical Record / Upload / Artifact Lifecycle
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本節為 Analysis Pipeline 在 MVP 的 canonical flow。若本文前面章節存在較舊的描述，以本節為準。
+
+## Canonical MVP Pipeline
+
+```text
+Camera
+↓
+Recording
+↓
+Recording Finished
+↓
+Browser Analysis
+↓
+Create Uploading Record
+↓
+Request Signed Upload URLs
+↓
+Upload Required Artifacts
+↓
+Complete Artifact Uploads
+↓
+Persist Artifact Metadata + Metric Summary
+↓
+Finalize Record
+↓
+Ready or Failed
+```
+
+## Record Creation Timing
+
+Record 必須在 artifact upload 前建立。
+
+```text
+Recording Finished
+↓
+POST /api/records
+↓
+Backend creates Record with status = Uploading
+↓
+Frontend receives recordId
+↓
+Frontend requests signed upload URLs using recordId
+```
+
+因此，Upload 失敗時不再定義為「Record 不建立」。Upload 失敗時，Record 應進入 `Failed`，並保存 failure metadata。
+
+## Required MVP Artifacts
+
+MVP Record Ready 前必須具備：
+
+* Video
+* Pose Dataset
+* Metric Series
+* Metric Summary
+* Thumbnail
+
+## Persisted Record Status
+
+```text
+Uploading
+↓
+Processing
+↓
+Ready
+```
+
+Failure path：
+
+```text
+Failed
+```
+
+Future：
+
+```text
+Archived
+```
+
+`Recording` 屬於 Frontend runtime state，不是 persisted Record status。
+
+## Frontend Runtime State
+
+```text
+Idle
+↓
+Recording
+↓
+Analyzing
+↓
+CreatingRecord
+↓
+Uploading
+↓
+Finalizing
+↓
+Completed
+```
+
+Failure path：
+
+```text
+Failed
+```
+
+## Metric Summary Persistence
+
+Metric Series 存於 GCS：
+
+```text
+metrics/{recordId}/metric-series.v1.json
+```
+
+Metric Summary 存於 PostgreSQL，供 Dashboard 使用。
+
+## Thumbnail Generation
+
+MVP 中 Thumbnail 由 Frontend 從影片指定 frame 產生並透過 Signed URL 上傳。
+
+## Failure Metadata
+
+Pipeline failure 必須保存最小資訊：
+
+* failureStage
+* failureCode
+* failureMessage
+* failedAt
+* retryable
+* retryCount
+
+## Finalization Rule
+
+Record 只有在以下條件都完成後才可成為 `Ready`：
+
+* Video upload complete
+* Pose Dataset upload complete
+* Metric Series upload complete
+* Thumbnail upload complete
+* Metric Summary persisted
+* Backend artifact metadata validated
+

@@ -522,3 +522,31 @@ Pose Dataset 必須符合以下規則：
 * visibility 範圍 0~1
 * x、y、z 必須為 Number
 * Landmark 順序固定依照 Joint Index
+
+---
+
+# Patch 1 Addendum — Pose Dataset Naming Rule
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+本文件中 canonical artifact 名稱為：
+
+```text
+Pose Dataset
+```
+
+Canonical file name：
+
+```text
+pose.v1.json
+```
+
+不得以以下名稱指稱 persisted pose artifact：
+
+* Pose Model
+* Landmark Dataset
+* Landmarks JSON
+
+`landmarks2D` / `landmarks3D` 可作為 Pose Dataset 內部欄位名稱保留，但不作為 domain artifact 名稱。
+

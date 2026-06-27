@@ -418,3 +418,79 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
+
+---
+
+# Patch 1 Addendum — Visualization / Playback / UI Boundary Contract
+
+Status: Patch 1 Applied  
+Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+
+## Boundary Decision
+
+Visualization Engine 是 render-only。
+
+Visualization Engine 不負責：
+
+* Video playback
+* Playback state ownership
+* Timeline state ownership
+* Compare sync ownership
+* Metrics calculation
+* API loading
+* React state management
+
+## Video Layer Clarification
+
+若 Visualization Engine 內出現 Video Layer，該 Layer 僅代表 visual composition order，不代表 video playback ownership。
+
+Video playback 由 VideoPlayer 管理，並受 feature-level Playback Controller 控制。
+
+## Visualization Modes
+
+MVP 定義以下 mode presets：
+
+```text
+CaptureVisualizationMode
+ViewerVisualizationMode
+CompareVisualizationMode
+DebugVisualizationMode
+```
+
+用途：
+
+* Capture：即時 skeleton / angle overlay
+* Viewer：video overlay / metrics / annotation anchor
+* Compare：side-by-side render context
+* Debug：joint name / diagnostic layer
+
+## Minimum RenderContext Contract
+
+```typescript
+interface RenderContext {
+  mode: VisualizationMode;
+  frameIndex: number;
+  poseFrame: PoseFrame;
+  metrics?: MetricSeries[];
+  annotations?: Annotation[];
+  selectedJointId?: number;
+  canvasSize: CanvasSize;
+  viewerState?: ViewerRenderState;
+  compareState?: CompareRenderState;
+}
+```
+
+## Annotation Responsibility Split
+
+```text
+Timeline → annotation markers
+Visualization Engine → canvas annotation anchors / joint highlights
+AnnotationDrawer → annotation list / create / edit / delete UI
+```
+
+## Compare Rendering
+
+Compare 建立兩份 RenderContext。
+
+Playback sync 與 sync offset 屬於 Compare feature controller，不屬於 Visualization Engine。
+
