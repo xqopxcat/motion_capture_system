@@ -525,10 +525,7 @@ Pose Dataset 必須符合以下規則：
 
 ---
 
-# Patch 1 Addendum — Pose Dataset Naming Rule
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Pose Dataset Naming Rule
 
 本文件中 canonical artifact 名稱為：
 
@@ -542,11 +539,7 @@ Canonical file name：
 pose.v1.json
 ```
 
-不得以以下名稱指稱 persisted pose artifact：
-
-* Pose Model
-* Landmark Dataset
-* Landmarks JSON
+不得以 landmark-centric 或 model-centric 名稱指稱 persisted pose artifact。
 
 `landmarks2D` / `landmarks3D` 可作為 Pose Dataset 內部欄位名稱保留，但不作為 domain artifact 名稱。
 

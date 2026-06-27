@@ -155,14 +155,17 @@ FrameIndicator
 
 負責：
 
-* Video Playback
-* Current Frame
-* Playback State
+* 顯示 video element
+* 根據外部 playback state 播放 / 暫停 / seek
+* 回報 time / frame change event
+
+VideoPlayer 是 controlled component。
 
 不負責：
 
+* 擁有全域 Playback State
 * Skeleton Rendering
-* Metrics
+* Metrics Calculation
 
 ---
 
@@ -170,13 +173,16 @@ FrameIndicator
 
 負責：
 
+* 顯示 current frame
 * Frame Navigation
 * Drag
 * Jump
 * Annotation Marker
 * Current Frame Indicator
 
-Timeline 為 Viewer 核心元件。
+Timeline 是 controlled component。
+
+Timeline 為 Viewer 核心元件，但不擁有 annotation editing state，也不直接修改 persisted Annotation。
 
 ---
 
@@ -189,6 +195,8 @@ Timeline 為 Viewer 核心元件。
 * Previous Frame
 * Next Frame
 * Speed Control
+
+PlaybackControls 只發出 user intent，不直接控制 video element，也不擁有全域 playback state。
 
 Viewer 與 Compare 共用。
 
@@ -214,9 +222,11 @@ Viewer 與 Compare 共用。
 * Create
 * Edit
 * Delete
-* Jump Frame
+* Jump Frame intent
 
-Drawer 不直接修改 Timeline。
+AnnotationDrawer 負責 editing UI；Timeline 負責 marker；Visualization Engine 負責 canvas anchor / joint highlight。
+
+Drawer 不直接修改 Timeline，也不自行擁有 current frame source of truth。
 
 ---
 
@@ -260,9 +270,12 @@ SelectionOverlay
 負責：
 
 * 建立 Canvas
+* 接收 Render Context
 * 呼叫 Visualization Engine
 
-不自行畫 Skeleton。
+SkeletonCanvas 是 UI 與 Visualization Engine 的 bridge。
+
+不自行畫 Skeleton、不計算 Metrics、不擁有 playback state。
 
 ---
 
@@ -541,10 +554,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Core Component Responsibility Contracts
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Core Component Responsibility Contracts
 
 ## VideoPlayer Contract
 

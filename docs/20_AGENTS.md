@@ -326,6 +326,41 @@ Acceptance Criteria:
 
 ---
 
+
+## AI Agent Task Packet Template
+
+AI Agent 只能執行具備明確 acceptance criteria 與 allowed file scope 的任務。每個任務應包含：
+
+```text
+Context
+Goal
+Scope
+Affected Docs
+Affected Folders
+Allowed Changes
+Forbidden Changes
+Implementation Steps
+Acceptance Criteria
+Self Review Checklist
+```
+
+若任務缺少 Scope、Forbidden Changes 或 Acceptance Criteria，AI Agent 應先要求補齊，不應直接 implementation。
+
+## Sprint 0 Agent Boundary
+
+Sprint 0 agents may create project foundation only.
+
+Sprint 0 agents must not implement：
+
+* Capture feature logic
+* Viewer feature logic
+* Compare feature logic
+* Motion analysis algorithms
+* Production auth flow beyond placeholder / contract-ready structure
+* New architecture beyond approved docs
+
+---
+
 # 12. Sprint Workflow
 
 每個 Sprint：
@@ -433,10 +468,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — AI Agent Sprint Task Packet Template
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# AI Agent Sprint Task Packet Template
 
 ## Implementation Readiness Rule
 

@@ -255,7 +255,7 @@ Viewer 與 Compare 皆使用 Metric Series。
 
 Storage：
 
-metric-series.v1.json
+Google Cloud Storage：`metric-series.v1.json`
 
 ---
 
@@ -276,6 +276,8 @@ Dashboard 使用 Metric Summary。
 Storage：
 
 PostgreSQL。
+
+Metric Summary 不屬於 MVP GCS artifact，不產生 `metric-summary.v1.json`。
 
 ---
 
@@ -483,10 +485,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Metric Series / Metric Summary Persistence Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Metric Series / Metric Summary Persistence Contract
 
 ## Metric Series
 

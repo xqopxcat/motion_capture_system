@@ -574,10 +574,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Record / Upload / Artifact Backend Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Record / Upload / Artifact Backend Contract
 
 ## Record Service Responsibilities
 

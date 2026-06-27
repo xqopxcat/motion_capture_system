@@ -255,7 +255,27 @@ DELETE /api/records/{recordId}
 
 # 8. Upload API
 
-Upload API 用於產生 Signed URL。
+Upload API 用於產生 Signed URL，並在 artifact 上傳完成後保存 artifact metadata。
+
+Canonical Upload Flow：
+
+```text
+POST /api/records
+↓
+Create Uploading Record
+↓
+Request Signed Upload URLs
+↓
+Upload Artifacts to GCS
+↓
+Complete Upload Endpoints
+↓
+POST /api/records/{recordId}/complete
+↓
+Ready or Failed
+```
+
+Record 必須在 artifact upload 前建立。Storage path 由 Backend 產生與驗證，Frontend 不自行拼接 authoritative storage path。
 
 ## Request Video Upload URL
 
@@ -385,9 +405,92 @@ Request：
 {
   "recordId": "record_123",
   "storagePath": "metrics/record_123/metric-series.v1.json",
-  "version": "1.0"
+  "version": "1.0",
+  "summary": [
+    {
+      "metricId": "knee_flexion",
+      "min": 30,
+      "max": 120,
+      "average": 75,
+      "rangeOfMotion": 90
+    }
+  ]
 }
 ```
+
+
+## Request Thumbnail Upload URL
+
+```http
+POST /api/uploads/thumbnail
+```
+
+Request：
+
+```json
+{
+  "recordId": "record_123",
+  "contentType": "image/jpeg",
+  "fileSize": 123456,
+  "generatedFromFrameIndex": 0
+}
+```
+
+Response：
+
+```json
+{
+  "uploadUrl": "https://signed-upload-url",
+  "storagePath": "thumbnails/record_123/thumbnail.jpg"
+}
+```
+
+---
+
+## Complete Thumbnail Upload
+
+```http
+POST /api/uploads/thumbnail/complete
+```
+
+Request：
+
+```json
+{
+  "recordId": "record_123",
+  "storagePath": "thumbnails/record_123/thumbnail.jpg",
+  "generatedFromFrameIndex": 0
+}
+```
+
+---
+
+## Finalize Record
+
+```http
+POST /api/records/{recordId}/complete
+```
+
+用途：通知 Backend 檢查 required artifacts、Metric Summary 與 metadata 是否完整，並將 Record finalization 為 `Ready` 或 `Failed`。
+
+Request：
+
+```json
+{
+  "recordId": "record_123"
+}
+```
+
+Response：
+
+```json
+{
+  "recordId": "record_123",
+  "status": "Ready"
+}
+```
+
+Record 只有在 Video、Pose Dataset、Metric Series、Thumbnail、Metric Summary 與 artifact metadata 都完成後才可成為 `Ready`。
 
 ---
 
@@ -637,12 +740,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Upload / Finalization / Error Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節定義 MVP implementation-ready API contract。若前文有較舊或不完整 upload flow，以本節為準。
+# Upload / Finalization / Error Contract
 
 ## Canonical Record Creation Flow
 
@@ -809,6 +907,10 @@ MVP API error codes：
 * UNAUTHORIZED
 * FORBIDDEN
 * VALIDATION_ERROR
+* UPLOAD_URL_FAILED
+* UPLOAD_NOT_COMPLETED
+* ARTIFACT_MISSING
+* RECORD_FINALIZATION_FAILED
 * RECORD_NOT_FOUND
 * UPLOAD_URL_FAILED
 * UPLOAD_NOT_COMPLETED

@@ -57,51 +57,33 @@ Analysis Pipeline 應符合以下原則：
 
 ```text
 Camera
-
 ↓
-
 Recording
-
 ↓
-
-Video Buffer
-
-↓
-
 Recording Finished
-
 ↓
-
-Video Upload
-
+Browser Analysis
 ↓
-
-Pose Analysis
-
+Create Uploading Record
 ↓
-
-Motion Model Generation
-
+Request Signed Upload URLs
 ↓
-
-Metrics Calculation
-
+Upload Required Artifacts
 ↓
-
-Record Assembly
-
+Complete Artifact Uploads
 ↓
-
-Storage
-
+Persist Artifact Metadata + Metric Summary
 ↓
-
+Finalize Record
+↓
+Ready or Failed
+↓
 Viewer / Compare / Dashboard
 ```
 
 Pipeline 採線性設計，每個 Stage 有明確輸入與輸出。
 
----
+MVP 中，Record 會在 artifact upload 前建立；Upload 失敗不代表 Record 不存在，而是該 Record 進入 `Failed` 並保存 failure metadata。
 
 # 4. Pipeline Stages
 
@@ -111,9 +93,7 @@ Pipeline 採線性設計，每個 Stage 有明確輸入與輸出。
 
 ## Stage 1 — Camera Initialization
 
-目的：
-
-初始化 Camera。
+目的：初始化 Camera。
 
 包含：
 
@@ -122,9 +102,7 @@ Pipeline 採線性設計，每個 Stage 有明確輸入與輸出。
 * FPS
 * Device Selection
 
-輸出：
-
-Live Video Stream。
+輸出：Live Video Stream。
 
 ---
 
@@ -141,238 +119,174 @@ Live Video Stream。
 
 此階段所有資料皆存在 Browser Memory。
 
-尚未建立 persisted Record；Record 會在 Recording Finished 後、artifact upload 前建立。
+此階段尚未建立 persisted Record。`Recording` 是 Frontend Runtime State，不是 Database / API 的 Record Status。
 
 ---
 
-## Stage 3 — Recording Finished
+## Stage 3 — Recording Finished / Browser Analysis
 
-使用者停止錄影。
-
-產生：
+使用者停止錄影後，Browser 產生 MVP 所需資料：
 
 * Video Blob
-* Pose Frames
+* Pose Dataset
+* Motion Model（Runtime only）
+* Metric Series
+* Metric Summary
+* Thumbnail
 * Recording Metadata
 
-Pipeline 正式開始。
+Motion Model 僅存在 Runtime，MVP 不持久化保存。
 
 ---
 
-## Stage 4 — Video Upload
+## Stage 4 — Create Uploading Record
 
-Video 上傳流程：
+Browser 在 artifact upload 前呼叫：
 
-Browser
-
-↓
-
-Request Signed URL
-
-↓
-
-Upload Video
-
-↓
-
-Receive Storage Path
-
-輸出：
-
-video_path
-
-若 Upload 失敗：
-
-Pipeline 中止。
-
-Record 進入 Failed，並保存 failure metadata。
-
----
-
-## Stage 5 — Pose Processing
-
-Pose Engine 產生：
-
-```text
-pose.v1.json
+```http
+POST /api/records
 ```
 
-內容包含：
+Backend 建立 persisted Record，初始 status 為：
 
-每一 Frame：
+```text
+Uploading
+```
 
-* Timestamp
-* 2D Pose
-* 3D Pose
-* Visibility
-
-輸出：
-
-Pose Dataset。
+Frontend 取得 `recordId` 後，才能用該 `recordId` request signed upload URLs。
 
 ---
 
-## Stage 6 — Motion Model Generation
+## Stage 5 — Artifact Upload
 
-Pose Dataset
+Required MVP Artifacts：
 
+* Video
+* Pose Dataset
+* Metric Series
+* Thumbnail
+
+上傳流程：
+
+```text
+Browser
 ↓
+Request Signed Upload URL
+↓
+Upload Artifact to GCS
+↓
+Complete Upload Endpoint
+↓
+Backend Save Artifact Metadata
+```
 
-Motion Model
+Storage path 由 Backend 產生與驗證，Frontend 不自行拼接 authoritative storage path。
 
-建立：
-
-* Joint
-* Segment
-* Body Center
-* Body Axis
-* Coordinate System
-
-Motion Model 不修改 Raw Pose。
-
-僅建立抽象模型。
+若任一 required artifact upload 失敗，Record 進入 `Failed` 並保存 failure metadata。
 
 ---
 
-## Stage 7 — Metrics Calculation
+## Stage 6 — Metric Summary Persistence
 
-Motion Model
+Metric Summary 是 structured data，存於 PostgreSQL，供 Dashboard 使用。
 
-↓
-
-Metrics Engine
-
-計算：
-
-* Joint Angles
-* Segment Angles
-* Range of Motion
-* Angular Velocity
-* Symmetry
-* Center of Mass（Future）
-* Balance（Future）
-
-輸出：
-
-metric-series.v1.json
-
-以及：
-
-metric-summary。
+Metric Summary 不作為 MVP GCS artifact，不產生 `metric-summary.v1.json`。
 
 ---
 
-## Stage 8 — Record Assembly
+## Stage 7 — Record Finalization
 
-系統建立完整 Motion Record。
+Backend 在以下條件都完成後，才可將 Record finalization 為 `Ready`：
 
-Record 包含：
+* Video upload complete
+* Pose Dataset upload complete
+* Metric Series upload complete
+* Thumbnail upload complete
+* Metric Summary persisted
+* Artifact metadata validated
 
-Metadata
-
-*
-
-Video
-
-*
-
-Pose
-
-*
-
-Metrics
-
-*
-
-Thumbnail
-
-*
-
-Tags
-
-*
-
-Annotation（空集合）
-
-Record Record 會先以 Uploading status 建立；artifact metadata 與 Metric Summary 完成後再 finalization 為 Ready。
+若 finalization 失敗，Record 進入 `Failed`。
 
 ---
 
-## Stage 9 — Persistence
+## Stage 8 — Ready Record Assembly
 
-建立：
+Ready Record 包含：
 
-Record Metadata。
-
-並保存：
-
-PostgreSQL
-
-↓
-
-Record
-
-Google Cloud Storage
-
-↓
-
-Video
-
-↓
-
-Pose JSON
-
-↓
-
-Metric Series
-
-↓
-
-Thumbnail
-
-成功後：
-
-Record Status
-
-↓
-
-Ready。
+* Metadata
+* Video metadata + signed download URL
+* Pose Dataset metadata + signed download URL
+* Metric Series metadata + signed download URL
+* Metric Summary
+* Thumbnail metadata + signed download URL
+* Tags
+* Annotation（初始為空集合）
 
 ---
+
+## Stage 9 — Viewer / Compare / Dashboard Consumption
+
+Ready Record 可供：
+
+* Viewer：讀取 Video / Pose Dataset / Metric Series / Annotation
+* Compare：讀取兩筆 Record 的 Video / Pose Dataset / Metric Series
+* Dashboard：讀取 Record Metadata / Metric Summary，不重新分析影片
 
 # 5. Runtime States
 
-Record 在 Pipeline 中共有以下狀態：
+Pipeline 需明確區分 Frontend Runtime State 與 Persisted Record Status。
+
+## Frontend Runtime State
+
+Frontend runtime state 僅存在於 UI / browser pipeline，用於顯示流程與控制互動。
 
 ```text
+Idle
+↓
 Recording
-
 ↓
-
+Analyzing
+↓
+CreatingRecord
+↓
 Uploading
-
 ↓
-
-Processing
-
+Finalizing
 ↓
-
-Saving
-
-↓
-
-Ready
+Completed
 ```
 
-若失敗：
+Failure path：
 
 ```text
 Failed
 ```
 
-可提供 Retry。
+## Persisted Record Status
 
----
+Persisted Record Status 是 Database / API contract。
+
+```text
+Uploading
+↓
+Processing
+↓
+Ready
+```
+
+Failure path：
+
+```text
+Failed
+```
+
+Future：
+
+```text
+Archived
+```
+
+`Recording` 不得作為 persisted Record status。`Saving` 若在 implementation 中出現，只能作為 frontend/internal transient step，不得進入 API / DB status enum。
 
 # 6. Synchronous vs Asynchronous
 
@@ -481,21 +395,30 @@ Google Cloud Storage。
 
 若任一 Stage 發生錯誤：
 
-應停止 Pipeline。
+* 不建立 Ready Record。
+* 若 persisted Record 已建立，Record status 應更新為 `Failed`。
+* 錯誤資訊需保存於 failure metadata，供 Retry、Debug 與 UI 顯示。
 
-不建立：
+Failure metadata 最小欄位：
 
-Ready Record。
+* failureStage
+* failureCode
+* failureMessage
+* failedAt
+* retryable
+* retryCount
 
-錯誤需保存：
+常見 failureStage：
 
-* Stage
-* Error Code
-* Timestamp
+* RECORD_CREATE
+* VIDEO_UPLOAD
+* POSE_UPLOAD
+* METRIC_SERIES_UPLOAD
+* THUMBNAIL_UPLOAD
+* METRIC_SUMMARY_PERSISTENCE
+* RECORD_FINALIZATION
 
-便於 Retry 與 Debug。
-
----
+Retry 是否允許由 `retryable` 決定。
 
 # 9. Pipeline Extensibility
 
@@ -596,151 +519,4 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
-
----
-
-# Patch 1 Addendum — Canonical Record / Upload / Artifact Lifecycle
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節為 Analysis Pipeline 在 MVP 的 canonical flow。若本文前面章節存在較舊的描述，以本節為準。
-
-## Canonical MVP Pipeline
-
-```text
-Camera
-↓
-Recording
-↓
-Recording Finished
-↓
-Browser Analysis
-↓
-Create Uploading Record
-↓
-Request Signed Upload URLs
-↓
-Upload Required Artifacts
-↓
-Complete Artifact Uploads
-↓
-Persist Artifact Metadata + Metric Summary
-↓
-Finalize Record
-↓
-Ready or Failed
-```
-
-## Record Creation Timing
-
-Record 必須在 artifact upload 前建立。
-
-```text
-Recording Finished
-↓
-POST /api/records
-↓
-Backend creates Record with status = Uploading
-↓
-Frontend receives recordId
-↓
-Frontend requests signed upload URLs using recordId
-```
-
-因此，Upload 失敗時不再定義為「Record 不建立」。Upload 失敗時，Record 應進入 `Failed`，並保存 failure metadata。
-
-## Required MVP Artifacts
-
-MVP Record Ready 前必須具備：
-
-* Video
-* Pose Dataset
-* Metric Series
-* Metric Summary
-* Thumbnail
-
-## Persisted Record Status
-
-```text
-Uploading
-↓
-Processing
-↓
-Ready
-```
-
-Failure path：
-
-```text
-Failed
-```
-
-Future：
-
-```text
-Archived
-```
-
-`Recording` 屬於 Frontend runtime state，不是 persisted Record status。
-
-## Frontend Runtime State
-
-```text
-Idle
-↓
-Recording
-↓
-Analyzing
-↓
-CreatingRecord
-↓
-Uploading
-↓
-Finalizing
-↓
-Completed
-```
-
-Failure path：
-
-```text
-Failed
-```
-
-## Metric Summary Persistence
-
-Metric Series 存於 GCS：
-
-```text
-metrics/{recordId}/metric-series.v1.json
-```
-
-Metric Summary 存於 PostgreSQL，供 Dashboard 使用。
-
-## Thumbnail Generation
-
-MVP 中 Thumbnail 由 Frontend 從影片指定 frame 產生並透過 Signed URL 上傳。
-
-## Failure Metadata
-
-Pipeline failure 必須保存最小資訊：
-
-* failureStage
-* failureCode
-* failureMessage
-* failedAt
-* retryable
-* retryCount
-
-## Finalization Rule
-
-Record 只有在以下條件都完成後才可成為 `Ready`：
-
-* Video upload complete
-* Pose Dataset upload complete
-* Metric Series upload complete
-* Thumbnail upload complete
-* Metric Summary persisted
-* Backend artifact metadata validated
 

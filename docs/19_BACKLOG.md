@@ -62,6 +62,36 @@ Backlog 依照：
 
 # 4. MVP Roadmap
 
+## Sprint 0 — Foundation Bootstrap
+
+Sprint 0 不實作產品功能，只建立可開發基礎。
+
+Scope：
+
+* Monorepo setup
+* Frontend app bootstrap
+* Backend app bootstrap
+* Docker Compose baseline
+* Folder structure
+* Health check API
+* Route shell
+* RTK Query base setup
+* Auth placeholder / contract-ready structure
+* README
+
+Definition of Done：
+
+* Repository structure matches Coding Guidelines.
+* Frontend app can start locally.
+* Backend app can start locally.
+* Health check API works.
+* Basic routes exist as shell pages only.
+* No Capture / Viewer / Compare product feature implementation is included.
+* No out-of-scope package or architecture change is introduced.
+
+---
+
+
 ## Epic 1 — Foundation
 
 | Feature             | Priority | Status |
@@ -395,10 +425,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Sprint 0 Scope and MVP Acceptance Criteria
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Sprint 0 Scope and MVP Acceptance Criteria
 
 ## Sprint 0 — Foundation Bootstrap
 

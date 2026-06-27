@@ -829,10 +829,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Upload / Analysis / Compare UX State Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Upload / Analysis / Compare UX State Contract
 
 ## Capture Completion UX States
 

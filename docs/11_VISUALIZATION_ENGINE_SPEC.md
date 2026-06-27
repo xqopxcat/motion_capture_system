@@ -21,7 +21,7 @@
 
 Visualization Engine 負責將 Motion Analysis 結果轉換為可視化內容，供 Capture、Viewer、Compare 與 Dashboard 使用。
 
-Visualization Engine 僅負責 Rendering，不負責任何 Motion Analysis 或 Metrics Calculation。
+Visualization Engine 僅負責 Rendering，不負責任何 Motion Analysis、Metrics Calculation 或 Video Playback 控制。
 
 ---
 
@@ -59,7 +59,7 @@ Visualization Engine
 Canvas
 ```
 
-Visualization Engine 為 Render Layer。
+Visualization Engine 為 Render Layer。Video playback 由 VideoPlayer / Playback Controller 管理，Visualization Engine 只根據 Render Context 繪製 overlay / skeleton / metric / annotation visual elements。
 
 ---
 
@@ -81,7 +81,8 @@ Visualization Framework 包含：
 
 內容包含：
 
-* Current Frame
+* mode
+* frameIndex
 * Pose Frame
 * Motion Model
 * Metric Series
@@ -100,7 +101,7 @@ Visualization 採 Layer 架構。
 ```text
 Canvas
 
-├── Video Layer
+├── Video Composition Layer（不擁有 playback）
 ├── Skeleton Layer
 ├── Joint Layer
 ├── Metric Layer
@@ -421,10 +422,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Visualization / Playback / UI Boundary Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Visualization / Playback / UI Boundary Contract
 
 ## Boundary Decision
 

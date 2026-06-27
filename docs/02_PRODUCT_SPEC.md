@@ -528,12 +528,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — MVP Completion Contracts
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節補齊 MVP 層級的完成條件，避免 Product Scope 與 Implementation Contract 之間產生落差。
+# MVP Completion Contracts
 
 ## Capture Completion Contract
 

@@ -323,30 +323,47 @@ Server State 由 RTK Query 管理。
 
 ## Client State
 
-由 Redux Slice 或 Component State 管理。
+由 Redux Slice、feature-level controller hook 或 component state 管理。
 
 例如：
 
-* Current Frame
-* Playback State
-* Selected Joint
-* Compare Sync Offset
-* Capture Recording State
+* currentFrame
+* currentTime
+* isPlaying
+* playbackSpeed
+* selectedJoint
+* compareSyncOffset
+* Capture recording state
+
+Playback / frame state 的 source of truth 不屬於 VideoPlayer、Timeline 或 Visualization Engine。這些 UI / rendering 模組皆應以 controlled input 接收狀態並發出事件。
 
 ---
 
 ## Runtime Data
 
-由 Engine / Hook 管理。
+由 Engine / Hook 管理，不放入 Redux。
 
 例如：
 
 * Video Stream
+* Pose Dataset
 * Pose Frames
-* Canvas Context
+* Motion Model
 * Metric Series Cache
+* Canvas Context
 
 ---
+
+## MVP State Ownership Matrix
+
+| State / Data | Owner | Notes |
+| --- | --- | --- |
+| Server records | RTK Query | 由 `services/*Api.ts` 管理。 |
+| Pose Dataset | Loader / Engine memory | 不放 Redux。 |
+| Metric Series | Loader / Engine memory | 不放 Redux。 |
+| Playback state | Feature controller / Redux slice | Viewer / Compare 共用模式。 |
+| Compare sync offset | Compare sync controller | 不由 VideoPlayer 擁有。 |
+| Visualization render context | Visualization feature bridge | 傳入 Visualization Engine。 |
 
 # 13. RTK Query API Modules
 
@@ -587,10 +604,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Runtime State / Hook / Dependency Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Runtime State / Hook / Dependency Contract
 
 ## MVP State Ownership Matrix
 

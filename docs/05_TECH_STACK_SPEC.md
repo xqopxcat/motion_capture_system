@@ -402,10 +402,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Sprint 0 Baseline Reference
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Sprint 0 Baseline Reference
 
 本節僅補充 Sprint 0 的技術基準，不更換既有技術棧。
 

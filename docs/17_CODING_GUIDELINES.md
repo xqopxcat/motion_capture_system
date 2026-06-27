@@ -654,10 +654,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Implementation Guardrails for Critical Contracts
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
+# Implementation Guardrails for Critical Contracts
 
 ## Upload / Storage Guardrails
 

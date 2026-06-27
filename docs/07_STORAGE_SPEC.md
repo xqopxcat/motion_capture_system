@@ -268,34 +268,40 @@ Browser 關閉後不保存。
 
 # 10. Storage Lifecycle
 
-Record 建立後：
+Record 建立後，persisted Record status 使用：
 
 ```text
-Recording
-
-↓
-
 Uploading
-
 ↓
-
 Processing
-
 ↓
-
 Ready
 ```
+
+Failure path：
+
+```text
+Failed
+```
+
+Ready 前 required artifacts：
+
+* Video
+* Pose Dataset
+* Metric Series
+* Thumbnail
+
+Metric Summary 屬於 PostgreSQL structured data，不屬於 Object Storage artifact。
 
 Ready 後：
 
 * Video 永久保存
 * Pose 永久保存
-* Metrics 永久保存
+* Metric Series 永久保存
+* Metric Summary 永久保存於 PostgreSQL
 * Thumbnail 永久保存
 
 除非使用者主動刪除。
-
----
 
 # 11. Delete Policy
 
@@ -379,12 +385,7 @@ Related
 
 ---
 
-# Patch 1 Addendum — Canonical Storage Path and Upload Completion Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節補齊 MVP storage contract。若本文前面章節存在固定 `video.mp4` 等較舊描述，以本節為準。
+# Canonical Storage Path and Upload Completion Contract
 
 ## Canonical Object Naming
 

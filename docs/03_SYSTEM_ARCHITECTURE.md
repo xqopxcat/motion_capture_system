@@ -80,7 +80,7 @@ Motion Capture Platform 採用 **Layered Architecture**。
                     │
                     ▼
 ┌──────────────────────────────────────────┐
-│               Pose Model                 │
+│              Pose Dataset                │
 └──────────────────────────────────────────┘
                     │
                     ▼
@@ -240,7 +240,7 @@ Input：
 
 Output：
 
-* Pose
+* Pose Dataset
 
 可替換。
 
@@ -250,7 +250,7 @@ Output：
 
 Input：
 
-* Pose
+* Pose Dataset
 
 Output：
 
@@ -278,7 +278,7 @@ Output：
 
 Input：
 
-* Pose
+* Pose Dataset
 * Metrics
 * Viewer State
 
@@ -317,7 +317,7 @@ Video
 Pose Engine
     │
     ▼
-pose.v1.json
+Pose Dataset
     │
     ▼
 Motion Model
@@ -435,7 +435,7 @@ Motion Model 不修改 Pose。
 
 每一層都有唯一輸出：
 
-* Pose → pose.v1.json
+* Pose Dataset → pose.v1.json
 * Metrics → metric-series.v1.json
 * Metadata → PostgreSQL
 
@@ -485,19 +485,14 @@ Related
 
 ---
 
-# Patch 1 Addendum — Terminology and Boundary Alignment
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節補齊跨文件的最小命名與責任邊界，避免 Implementation 時產生 SSOT ambiguity。
+# Terminology and Boundary Alignment
 
 ## Canonical Domain Terms
 
 | Concept | Canonical Term | Notes |
 | --- | --- | --- |
 | Persisted capture session | Record | `Motion Record` 可作為說明用語，但正式 Domain Object 使用 `Record`。 |
-| Raw pose artifact | Pose Dataset | 不使用 `Pose Model` 作為 artifact 名稱。 |
+| Raw pose artifact | Pose Dataset | 不使用其他 pose artifact 名稱。 |
 | Pose file | pose.v1.json | Storage file naming。 |
 | Per-frame metrics | Metric Series | 存於 GCS。 |
 | Aggregated metrics | Metric Summary | 存於 PostgreSQL。 |

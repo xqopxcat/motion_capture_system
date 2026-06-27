@@ -103,6 +103,8 @@ Record 為平台最重要的 Domain Entity。
 
 Record 不保存 Runtime State。
 
+Record 是 persisted aggregate root，會在 artifact upload 前建立。Upload、artifact metadata、Metric Summary 與 finalization 都以 Record 為歸屬邊界。
+
 ---
 
 ## Record Metadata
@@ -198,6 +200,10 @@ Viewer 與 Compare 使用。
 
 Dashboard 使用。
 
+Storage：PostgreSQL。
+
+Metric Summary 不屬於 MVP GCS artifact，不產生 `metric-summary.v1.json`。
+
 ---
 
 # 9. Annotation
@@ -276,46 +282,60 @@ Record
 
 # 13. Record Lifecycle
 
+Record Lifecycle 指 persisted Record status，不包含 Frontend runtime state。
+
+Canonical persisted Record status：
+
 ```text
-Recording
-
-↓
-
 Uploading
-
 ↓
-
 Processing
-
 ↓
-
 Ready
-
-↓
-
-Archived（Future）
 ```
 
-若 Pipeline 失敗：
+Failure path：
 
 ```text
-Failed
+Uploading / Processing → Failed
 ```
 
----
+Future：
+
+```text
+Archived
+```
+
+`Recording` 屬於 Frontend runtime state，不是 persisted Record status。
+
+`Saving` 若在 implementation 中出現，僅可作為 frontend/internal transient step，不可作為 API / Database status enum。
+
+Record 建立時機：
+
+```text
+Recording Finished
+↓
+POST /api/records
+↓
+Create Record with status = Uploading
+↓
+Artifact Upload
+↓
+Finalization
+↓
+Ready or Failed
+```
 
 # 14. Versioning Strategy
 
-大型資料皆採 Version。
+大型 GCS artifact 皆採 Version。
 
-例如：
+MVP versioned artifacts：
 
 ```text
 pose.v1.json
 
 metric-series.v1.json
-
-metric-summary.v1.json
 ```
 
 未來若格式變更：
@@ -324,11 +344,21 @@ metric-summary.v1.json
 
 ```text
 pose.v2.json
+
+metric-series.v2.json
 ```
 
 而非覆蓋舊格式。
 
----
+Metric Summary 在 MVP 中是 PostgreSQL structured data，不是 GCS artifact。
+
+MVP 不產生：
+
+```text
+metric-summary.v1.json
+```
+
+Future 可評估將 Metric Summary 匯出或封存為 `metric-summary.v1.json`，但這不屬於 MVP storage contract，也不屬於 Sprint 0 / Sprint 1 必要範圍。
 
 # 15. Design Decisions
 
@@ -337,6 +367,7 @@ pose.v2.json
 * Metrics 為可重建資料。
 * Annotation 屬於 Record。
 * Dashboard 僅使用 Metric Summary。
+* Metric Summary 在 MVP 中保存於 PostgreSQL。
 * Tag 不限制類型。
 * Thumbnail 為獨立 Artifact。
 
@@ -365,118 +396,4 @@ Related
 | Version | Date       | Description   |
 | ------- | ---------- | ------------- |
 | 1.0     | 2026-06-26 | Initial Draft |
-
----
-
-# Patch 1 Addendum — Implementation-Ready Domain Contract
-
-Status: Patch 1 Applied  
-Source: SPEC_PATCH_PLAN_01_CRITICAL_ITEMS.md
-
-本節定義 MVP implementation-ready data contract。若本文前面章節存在較舊或不完整描述，以本節為準。
-
-## Record Aggregate
-
-Record 是 persisted aggregate root。
-
-Record 在 artifact upload 前建立，初始 persisted status 為：
-
-```text
-Uploading
-```
-
-Record owns artifact metadata，但不保存大型檔案內容。
-
-## Canonical Record Status
-
-```text
-Uploading
-Processing
-Ready
-Failed
-Archived(Future)
-```
-
-`Recording` 為 Frontend runtime state，不是 persisted Record status。
-
-`Saving` 若出現，僅可作為 runtime/internal step，不作為 persisted status。
-
-## Required MVP Artifacts
-
-每筆 Ready Record 必須具備：
-
-* Video
-* Pose Dataset
-* Metric Series
-* Metric Summary
-* Thumbnail
-
-## Artifact Metadata Minimum Fields
-
-### Video
-
-* storagePath
-* contentType
-* fileSize
-* duration
-* fps
-* frameCount
-* format
-* resolution（Optional）
-
-### Pose Dataset
-
-* storagePath
-* version
-* poseEngine
-* poseEngineVersion
-* frameCount
-* fps
-* duration
-* generatedAt
-
-### Metric Series
-
-* storagePath
-* version
-* generatedAt
-
-### Metric Summary
-
-Metric Summary 存於 PostgreSQL。
-
-最小欄位：
-
-* metricId
-* min
-* max
-* average
-* rangeOfMotion
-
-### Thumbnail
-
-* storagePath
-* contentType
-* fileSize
-* generatedFromFrameIndex
-
-## Metric Storage Contract
-
-```text
-Metric Series → Google Cloud Storage
-Metric Summary → PostgreSQL
-```
-
-`metric-summary.v1.json` 不屬於 MVP storage contract。若未來需要輸出 summary file，應作為 Future extension 另行定義。
-
-## Failure Metadata
-
-Failed Record 應保存：
-
-* failureStage
-* failureCode
-* failureMessage
-* failedAt
-* retryCount
-* retryable
 
