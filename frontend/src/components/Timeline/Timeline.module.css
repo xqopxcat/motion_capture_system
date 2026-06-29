@@ -1,0 +1,29 @@
+﻿.timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.summary {
+  color: #20242a;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.slider {
+  width: 100%;
+}
+
+.markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.marker {
+  border: 1px solid #d8dde5;
+  border-radius: 4px;
+  color: #5b6572;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+}

@@ -1,0 +1,26 @@
+﻿.panel {
+  border: 1px solid #d8dde5;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.empty {
+  color: #5b6572;
+  margin: 0;
+}
+
+.metricList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.metricItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metricItem dd {
+  margin: 0;
+}

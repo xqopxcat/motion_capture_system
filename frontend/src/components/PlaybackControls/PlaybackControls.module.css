@@ -1,0 +1,22 @@
+﻿.controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.controls button,
+.speedControl select {
+  border: 1px solid #c9d1dc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.speedControl {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
