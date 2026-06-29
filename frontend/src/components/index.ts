@@ -1,5 +1,7 @@
-﻿export { AnnotationDrawer } from "./AnnotationDrawer";
+export { AnnotationDrawer } from "./AnnotationDrawer";
 export type { AnnotationDrawerProps } from "./AnnotationDrawer";
+export { CameraPreview } from "./CameraPreview";
+export type { CameraPreviewProps } from "./CameraPreview";
 export { ComparePanel } from "./ComparePanel";
 export type { ComparePanelProps } from "./ComparePanel";
 export { MetricPanel } from "./MetricPanel";
