@@ -1,4 +1,4 @@
-# Motion Capture Platform
+﻿# Motion Capture Platform
 
 Sprint 0 建立 Motion Capture Platform 的儲存庫與應用程式基礎。
 
@@ -30,9 +30,9 @@ npm run dev
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 後端會執行在 `http://localhost:8000`。
@@ -70,3 +70,4 @@ docker compose up --build
 - Engines 不得依賴 React、Redux 或 RTK Query。
 - Backend routers 必須呼叫 services；repositories 不得依賴 routers。
 - API 或架構變更必須先經過設計文件核准，才能實作。
+
