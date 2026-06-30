@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { CaptureRuntimeState } from "../types";
 import { useCameraStream } from "./useCameraStream";
+import { useMediaRecorder } from "./useMediaRecorder";
 
 const initialCaptureRuntimeState: CaptureRuntimeState = {
   status: "idle",
@@ -9,9 +10,24 @@ const initialCaptureRuntimeState: CaptureRuntimeState = {
 export function useCapturePipeline() {
   const [captureState] = useState<CaptureRuntimeState>(initialCaptureRuntimeState);
   const cameraPreview = useCameraStream();
+  const localRecording = useMediaRecorder(cameraPreview.stream);
+
+  const stopCameraPreview = useCallback(() => {
+    localRecording.stopRecording();
+    cameraPreview.stopCamera();
+  }, [cameraPreview, localRecording]);
+
+  const canRecord = cameraPreview.status === "ready" && localRecording.status !== "recording";
 
   return {
     captureState,
-    cameraPreview,
+    cameraPreview: {
+      ...cameraPreview,
+      stopCamera: stopCameraPreview,
+    },
+    localRecording: {
+      ...localRecording,
+      canRecord,
+    },
   };
 }

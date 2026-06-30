@@ -3,6 +3,8 @@ export type { CameraStreamStatus } from "./useCameraStream";
 export { useCapturePipeline } from "./useCapturePipeline";
 export { useCompareSyncController } from "./useCompareSyncController";
 export { useFrameController } from "./useFrameController";
+export { useMediaRecorder } from "./useMediaRecorder";
+export type { RecordingStatus } from "./useMediaRecorder";
 export { useMetricSeriesLoader } from "./useMetricSeriesLoader";
 export { usePlaybackController } from "./usePlaybackController";
 export { usePoseLoader } from "./usePoseLoader";
