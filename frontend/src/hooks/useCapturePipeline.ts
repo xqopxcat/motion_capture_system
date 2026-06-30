@@ -1,5 +1,6 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import type { CaptureRuntimeState } from "../types";
+import { useCameraStream } from "./useCameraStream";
 
 const initialCaptureRuntimeState: CaptureRuntimeState = {
   status: "idle",
@@ -7,9 +8,10 @@ const initialCaptureRuntimeState: CaptureRuntimeState = {
 
 export function useCapturePipeline() {
   const [captureState] = useState<CaptureRuntimeState>(initialCaptureRuntimeState);
+  const cameraPreview = useCameraStream();
 
-  // TODO: Sprint 1+ owns camera permission, MediaRecorder, and pose pipeline orchestration here.
   return {
     captureState,
+    cameraPreview,
   };
 }

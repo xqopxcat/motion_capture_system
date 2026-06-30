@@ -1,9 +1,9 @@
 import { CameraPreview } from "../../components";
-import { useCameraStream } from "../../hooks";
+import { useCapturePipeline } from "../../hooks";
 import styles from "./CapturePage.module.css";
 
 export function CapturePage() {
-  const { stream, status, errorMessage, startCamera, stopCamera } = useCameraStream();
+  const { cameraPreview } = useCapturePipeline();
 
   return (
     <main className={styles.capturePage}>
@@ -18,11 +18,11 @@ export function CapturePage() {
         </header>
 
         <CameraPreview
-          stream={stream}
-          status={status}
-          errorMessage={errorMessage}
-          onStart={startCamera}
-          onStop={stopCamera}
+          stream={cameraPreview.stream}
+          status={cameraPreview.status}
+          errorMessage={cameraPreview.errorMessage}
+          onStart={cameraPreview.startCamera}
+          onStop={cameraPreview.stopCamera}
         />
       </section>
     </main>
