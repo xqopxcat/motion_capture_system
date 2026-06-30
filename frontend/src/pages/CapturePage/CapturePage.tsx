@@ -12,9 +12,7 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
-  const { cameraPreview, localRecording } = useCapturePipeline();
-  const isRecording = localRecording.status === "recording";
-  const isStopping = localRecording.status === "stopping";
+  const { cameraPreview, captureViewState, localRecording } = useCapturePipeline();
 
   return (
     <main className={styles.capturePage}>
@@ -40,13 +38,7 @@ export function CapturePage() {
           <div className={styles.recordingStatus}>
             <p className={styles.panelLabel}>Local recording</p>
             <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
-            <p className={styles.statusText}>
-              {isRecording
-                ? "Recording in browser"
-                : localRecording.status === "recorded"
-                  ? "Recording ready for review"
-                  : "Ready after camera preview starts"}
-            </p>
+            <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
           </div>
 
           {localRecording.errorMessage && (
@@ -60,7 +52,7 @@ export function CapturePage() {
               className={styles.recordAction}
               type="button"
               onClick={localRecording.startRecording}
-              disabled={!localRecording.canRecord || isStopping}
+              disabled={!captureViewState.canStartRecording}
             >
               Start Recording
             </button>
@@ -68,14 +60,14 @@ export function CapturePage() {
               className={styles.stopAction}
               type="button"
               onClick={localRecording.stopRecording}
-              disabled={!isRecording && !isStopping}
+              disabled={!captureViewState.canStopRecording}
             >
               Stop Recording
             </button>
           </div>
         </section>
 
-        {localRecording.recordedVideoUrl && (
+        {captureViewState.hasRecordedPreview && localRecording.recordedVideoUrl && (
           <section className={styles.recordedPreview} aria-label="Recorded video preview">
             <div className={styles.recordedPreviewHeader}>
               <div>
