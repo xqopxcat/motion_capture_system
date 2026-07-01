@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { createPoseEngine } from "../../engines/pose";
-import type { PoseEngine, PoseEngineStatus } from "../../engines/pose";
+import { createPoseEngine } from "../../engines/pose/createPoseEngine";
+import type { PoseEngine } from "../../engines/pose/PoseEngine";
+import type { PoseEngineStatus } from "../../engines/pose/types";
 
 export type CapturePosePipelineState = {
   status: PoseEngineStatus;
