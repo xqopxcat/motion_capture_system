@@ -7,6 +7,11 @@ export {
   MEDIAPIPE_POSE_LANDMARK_COUNT,
   MEDIAPIPE_POSE_LANDMARK_NAMES,
 } from "./mediaPipePoseLandmarks";
+export {
+  createMediaPipePoseEngineFromConfig,
+  LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG,
+} from "./mediaPipeRuntimeConfig";
+export type { MediaPipeRuntimeAssetConfig } from "./mediaPipeRuntimeConfig";
 export { normalizeMediaPipePoseResult } from "./normalizeMediaPipePoseResult";
 export { createNoopPoseEngine } from "./noopPoseEngine";
 export type { PoseEngine } from "./PoseEngine";

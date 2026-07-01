@@ -6,6 +6,10 @@ import {
 } from "./mediaPipePoseLandmarks";
 import { createNoopPoseEngine } from "./noopPoseEngine";
 import { normalizeMediaPipePoseResult } from "./normalizeMediaPipePoseResult";
+import {
+  createMediaPipePoseEngineFromConfig,
+  LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG,
+} from "./mediaPipeRuntimeConfig";
 import type { PoseEngine } from "./PoseEngine";
 import type { PoseDetectionInput, PoseDetectionResult } from "./types";
 
@@ -126,6 +130,22 @@ describe("MediaPipe pose engine adapter contract", () => {
     await expect(engine.detect(createSyntheticInput())).rejects.toThrow(
       "MediaPipe pose engine must be initialized before detection.",
     );
+  });
+});
+
+describe("MediaPipe runtime asset config", () => {
+  it("centralizes explicit Vite public asset paths", () => {
+    expect(LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG).toEqual({
+      modelAssetPath: "/models/pose_landmarker.task",
+      wasmBasePath: "/mediapipe/wasm",
+    });
+  });
+
+  it("creates a MediaPipe pose engine from explicit config without loading assets", () => {
+    const engine = createMediaPipePoseEngineFromConfig(LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG);
+
+    expect(engine.metadata.name).toBe("mediapipe-pose-landmarker");
+    expect(() => engine.dispose()).not.toThrow();
   });
 });
 
