@@ -10,7 +10,7 @@ const noopPoseEngineMetadata: PoseEngineMetadata = {
     supportsRealtime: false,
     supportsVideoFrame: true,
     supportsVisibility: false,
-    jointCount: 0,
+    jointCount: 33,
     outputSchema: "pose.v1",
   },
 };
