@@ -13,7 +13,7 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
-  const { cameraPreview, captureViewState, currentPoseResult, localRecording } =
+  const { cameraPreview, captureViewState, currentPoseResult, localRecording, posePipeline } =
     useCapturePipeline();
 
   return (
@@ -35,9 +35,16 @@ export function CapturePage() {
             errorMessage={cameraPreview.errorMessage}
             onStart={cameraPreview.startCamera}
             onStop={cameraPreview.stopCamera}
+            onVideoElementChange={cameraPreview.onVideoElementChange}
           />
           <CaptureSkeletonOverlay poseResult={currentPoseResult} />
         </div>
+
+        {posePipeline.poseState.errorMessage && (
+          <p className={styles.poseError} role="status">
+            Pose detection unavailable: {posePipeline.poseState.errorMessage}
+          </p>
+        )}
 
         <section className={styles.recordingPanel} aria-label="Local recording controls">
           <div className={styles.recordingStatus}>

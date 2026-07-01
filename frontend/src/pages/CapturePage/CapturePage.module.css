@@ -91,6 +91,17 @@
   padding: 12px 14px;
 }
 
+.poseError {
+  background: #fff8e5;
+  border: 1px solid #e7c978;
+  border-radius: 6px;
+  color: #624600;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px 14px;
+}
+
 .recordingActions,
 .recordedPreviewHeader {
   align-items: center;

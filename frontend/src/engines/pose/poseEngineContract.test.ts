@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createPoseEngine } from "./createPoseEngine";
 import { createMediaPipePoseEngine } from "./MediaPipePoseEngine";
 import {
   MEDIAPIPE_POSE_LANDMARK_COUNT,
@@ -143,6 +144,13 @@ describe("MediaPipe runtime asset config", () => {
 
   it("creates a MediaPipe pose engine from explicit config without loading assets", () => {
     const engine = createMediaPipePoseEngineFromConfig(LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG);
+
+    expect(engine.metadata.name).toBe("mediapipe-pose-landmarker");
+    expect(() => engine.dispose()).not.toThrow();
+  });
+
+  it("uses the centralized configured adapter for the default pose engine", () => {
+    const engine = createPoseEngine();
 
     expect(engine.metadata.name).toBe("mediapipe-pose-landmarker");
     expect(() => engine.dispose()).not.toThrow();

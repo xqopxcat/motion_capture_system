@@ -45,10 +45,12 @@ function getPrimaryStatusText(
 
 export function useCapturePipeline() {
   const [captureState] = useState<CaptureRuntimeState>(initialCaptureRuntimeState);
+  const [previewVideoElement, setPreviewVideoElement] = useState<HTMLVideoElement | null>(null);
   const cameraPreview = useCameraStream();
   const localRecording = useMediaRecorder(cameraPreview.stream);
   const posePipeline = usePosePipeline();
-  const { disposePosePipeline, initializePosePipeline } = posePipeline;
+  const { disposePosePipeline, initializePosePipeline, startPoseDetection, stopPoseDetection } =
+    posePipeline;
 
   const isRecording = localRecording.status === "recording";
   const isStoppingRecording = localRecording.status === "stopping";
@@ -57,9 +59,10 @@ export function useCapturePipeline() {
 
   const stopCameraPreview = useCallback(() => {
     localRecording.stopRecording();
+    stopPoseDetection();
     disposePosePipeline();
     cameraPreview.stopCamera();
-  }, [cameraPreview, disposePosePipeline, localRecording]);
+  }, [cameraPreview, disposePosePipeline, localRecording, stopPoseDetection]);
 
   useEffect(() => {
     if (cameraPreview.status === "ready") {
@@ -71,6 +74,27 @@ export function useCapturePipeline() {
       disposePosePipeline();
     }
   }, [cameraPreview.status, cameraPreview.stream, disposePosePipeline, initializePosePipeline]);
+
+  useEffect(() => {
+    if (
+      cameraPreview.status === "ready" &&
+      posePipeline.poseState.status === "ready" &&
+      previewVideoElement
+    ) {
+      startPoseDetection(previewVideoElement);
+      return;
+    }
+
+    if (cameraPreview.status !== "ready" || !previewVideoElement) {
+      stopPoseDetection();
+    }
+  }, [
+    cameraPreview.status,
+    posePipeline.poseState.status,
+    previewVideoElement,
+    startPoseDetection,
+    stopPoseDetection,
+  ]);
 
   const canStartRecording = isCameraReady && !isRecording && !isStoppingRecording;
   const canStopRecording = isRecording || isStoppingRecording;
@@ -86,16 +110,16 @@ export function useCapturePipeline() {
     isStoppingRecording,
     primaryStatusText: getPrimaryStatusText(cameraPreview.status, localRecording.status),
   };
-  const currentPoseResult = null;
 
   return {
     captureState,
     captureViewState,
     cameraPreview: {
       ...cameraPreview,
+      onVideoElementChange: setPreviewVideoElement,
       stopCamera: stopCameraPreview,
     },
-    currentPoseResult,
+    currentPoseResult: posePipeline.currentPoseResult,
     localRecording,
     posePipeline,
   };

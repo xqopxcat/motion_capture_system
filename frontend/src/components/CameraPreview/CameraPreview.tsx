@@ -8,6 +8,7 @@ export type CameraPreviewProps = {
   errorMessage?: string | null;
   onStart: () => void;
   onStop: () => void;
+  onVideoElementChange?: (videoElement: HTMLVideoElement | null) => void;
 };
 
 export function CameraPreview({
@@ -16,6 +17,7 @@ export function CameraPreview({
   errorMessage,
   onStart,
   onStop,
+  onVideoElementChange,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isReady = status === "ready";
@@ -27,6 +29,14 @@ export function CameraPreview({
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  useEffect(() => {
+    onVideoElementChange?.(videoRef.current);
+
+    return () => {
+      onVideoElementChange?.(null);
+    };
+  }, [onVideoElementChange]);
 
   return (
     <section className={styles.cameraPreview} aria-label="Camera preview">
