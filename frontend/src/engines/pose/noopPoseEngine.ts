@@ -26,7 +26,9 @@ export function createNoopPoseEngine(): PoseEngine {
         engineName: noopPoseEngineMetadata.name,
         engineVersion: noopPoseEngineMetadata.version,
         timestampMs: input.timestampMs,
-        landmarks: [],
+        frameIndex: input.frameIndex,
+        landmarks2D: [],
+        landmarks3D: [],
       };
     },
     dispose() {

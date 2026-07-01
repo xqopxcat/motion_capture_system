@@ -1,19 +1,13 @@
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
-import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { PoseEngine } from "./PoseEngine";
-import type {
-  PoseDetectionInput,
-  PoseDetectionResult,
-  PoseEngineMetadata,
-  PoseLandmark,
-} from "./types";
+import { MEDIAPIPE_POSE_LANDMARK_COUNT } from "./mediaPipePoseLandmarks";
+import { normalizeMediaPipePoseResult } from "./normalizeMediaPipePoseResult";
+import type { PoseDetectionInput, PoseDetectionResult, PoseEngineMetadata } from "./types";
 
 export type MediaPipePoseEngineOptions = {
   modelAssetPath: string;
   wasmBasePath?: string;
 };
-
-const MEDIAPIPE_POSE_LANDMARK_COUNT = 33;
 
 const mediaPipePoseEngineMetadata: PoseEngineMetadata = {
   name: "mediapipe-pose-landmarker",
@@ -28,16 +22,6 @@ const mediaPipePoseEngineMetadata: PoseEngineMetadata = {
     outputSchema: "pose.v1",
   },
 };
-
-function mapMediaPipeLandmark(landmark: NormalizedLandmark, index: number): PoseLandmark {
-  return {
-    jointId: `mediapipe.pose.${index}`,
-    x: landmark.x,
-    y: landmark.y,
-    z: landmark.z,
-    visibility: landmark.visibility,
-  };
-}
 
 export function createMediaPipePoseEngine({
   modelAssetPath,
@@ -64,13 +48,14 @@ export function createMediaPipePoseEngine({
       }
 
       const result = poseLandmarker.detectForVideo(input.source, input.timestampMs);
-      const landmarks = result.landmarks[0]?.map(mapMediaPipeLandmark) ?? [];
+      const normalizedResult = normalizeMediaPipePoseResult(result);
 
       return {
         engineName: mediaPipePoseEngineMetadata.name,
         engineVersion: mediaPipePoseEngineMetadata.version,
         timestampMs: input.timestampMs,
-        landmarks,
+        frameIndex: input.frameIndex,
+        ...normalizedResult,
       };
     },
     dispose() {

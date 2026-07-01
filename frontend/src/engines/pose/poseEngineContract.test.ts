@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createMediaPipePoseEngine } from "./MediaPipePoseEngine";
+import {
+  MEDIAPIPE_POSE_LANDMARK_COUNT,
+  MEDIAPIPE_POSE_LANDMARK_NAMES,
+} from "./mediaPipePoseLandmarks";
 import { createNoopPoseEngine } from "./noopPoseEngine";
+import { normalizeMediaPipePoseResult } from "./normalizeMediaPipePoseResult";
 import type { PoseEngine } from "./PoseEngine";
 import type { PoseDetectionInput, PoseDetectionResult } from "./types";
 
@@ -19,15 +24,18 @@ function expectValidCapabilities(engine: PoseEngine) {
   expect(engine.metadata.capabilities.jointCount).toBeGreaterThan(0);
 }
 
-function expectPlatformPoseResult(result: PoseDetectionResult, timestampMs: number) {
+function expectPlatformPoseResult(result: PoseDetectionResult, input: PoseDetectionInput) {
   expect(result).toEqual(
     expect.objectContaining({
       engineName: expect.any(String),
       engineVersion: expect.any(String),
-      timestampMs,
-      landmarks: expect.any(Array),
+      timestampMs: input.timestampMs,
+      landmarks2D: expect.any(Array),
+      landmarks3D: expect.any(Array),
     }),
   );
+  expect(result.frameIndex).toBe(input.frameIndex);
+  expect(result).not.toHaveProperty("landmarks");
   expect(result).not.toHaveProperty("rawResult");
   expect(result).not.toHaveProperty("mediaPipeResult");
 }
@@ -36,6 +44,7 @@ function createSyntheticInput(timestampMs = 123): PoseDetectionInput {
   return {
     source: {} as HTMLVideoElement,
     timestampMs,
+    frameIndex: 7,
   };
 }
 
@@ -71,7 +80,7 @@ function describePoseEngineContract(
         await expect(engine.initialize()).resolves.toBeUndefined();
         const result = await engine.detect(input);
 
-        expectPlatformPoseResult(result, input.timestampMs);
+        expectPlatformPoseResult(result, input);
         expect(() => engine.dispose()).not.toThrow();
       });
 
@@ -83,7 +92,7 @@ function describePoseEngineContract(
         engine.dispose();
 
         const result = await engine.detect(input);
-        expectPlatformPoseResult(result, input.timestampMs);
+        expectPlatformPoseResult(result, input);
       });
     }
   });
@@ -117,5 +126,65 @@ describe("MediaPipe pose engine adapter contract", () => {
     await expect(engine.detect(createSyntheticInput())).rejects.toThrow(
       "MediaPipe pose engine must be initialized before detection.",
     );
+  });
+});
+
+describe("MediaPipe pose result normalization", () => {
+  it("maps MediaPipe landmarks into platform-owned 2D and 3D landmark shapes", () => {
+    const result = normalizeMediaPipePoseResult({
+      landmarks: [
+        MEDIAPIPE_POSE_LANDMARK_NAMES.map((_, index) => ({
+          x: index / 100,
+          y: index / 200,
+          z: index / 300,
+          visibility: 0.9,
+        })),
+      ],
+      worldLandmarks: [
+        MEDIAPIPE_POSE_LANDMARK_NAMES.map((_, index) => ({
+          x: index,
+          y: index + 1,
+          z: index + 2,
+          visibility: 0.8,
+        })),
+      ],
+    });
+
+    expect(result.landmarks2D).toHaveLength(MEDIAPIPE_POSE_LANDMARK_COUNT);
+    expect(result.landmarks3D).toHaveLength(MEDIAPIPE_POSE_LANDMARK_COUNT);
+    expect(result.landmarks2D[0]).toEqual({
+      id: 0,
+      name: "nose",
+      x: 0,
+      y: 0,
+      visibility: 0.9,
+    });
+    expect(result.landmarks3D[32]).toEqual({
+      id: 32,
+      name: "right_foot_index",
+      x: 32,
+      y: 33,
+      z: 34,
+      visibility: 0.8,
+    });
+    expect(result).not.toHaveProperty("landmarks");
+    expect(result).not.toHaveProperty("worldLandmarks");
+  });
+
+  it("returns an empty 3D landmark array when MediaPipe world landmarks are missing", () => {
+    const result = normalizeMediaPipePoseResult({
+      landmarks: [[{ x: 0.1, y: 0.2, z: 0.3, visibility: 0.4 }]],
+    });
+
+    expect(result.landmarks2D).toEqual([
+      {
+        id: 0,
+        name: "nose",
+        x: 0.1,
+        y: 0.2,
+        visibility: 0.4,
+      },
+    ]);
+    expect(result.landmarks3D).toEqual([]);
   });
 });

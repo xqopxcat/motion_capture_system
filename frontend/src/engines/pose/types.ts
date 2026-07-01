@@ -5,21 +5,28 @@ export type PoseDetectionSource = HTMLCanvasElement | HTMLImageElement | HTMLVid
 export type PoseDetectionInput = {
   source: PoseDetectionSource;
   timestampMs: number;
+  frameIndex?: number;
 };
 
-export type PoseLandmark = {
-  jointId: string;
+export type PoseLandmark2D = {
+  id: number;
+  name: string;
   x: number;
   y: number;
-  z?: number;
   visibility?: number;
+};
+
+export type PoseLandmark3D = PoseLandmark2D & {
+  z: number;
 };
 
 export type PoseDetectionResult = {
   engineName: string;
   engineVersion: string;
   timestampMs: number;
-  landmarks: PoseLandmark[];
+  frameIndex?: number;
+  landmarks2D: PoseLandmark2D[];
+  landmarks3D: PoseLandmark3D[];
 };
 
 export type PoseOutputSchema = "pose.v1";
