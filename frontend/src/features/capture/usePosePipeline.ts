@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPoseEngine } from "../../engines/pose/createPoseEngine";
 import type { PoseEngine } from "../../engines/pose/PoseEngine";
 import type { PoseEngineStatus } from "../../engines/pose/types";
@@ -21,21 +21,43 @@ export function usePosePipeline() {
     ...initialPosePipelineState,
     engineName: poseEngine.metadata.name,
   });
+  const isMountedRef = useRef(true);
+  const statusRef = useRef<PoseEngineStatus>("idle");
 
   const initializePosePipeline = useCallback(async () => {
-    setPoseState((currentState) => ({
-      ...currentState,
-      status: "initializing",
-      errorMessage: null,
-    }));
+    if (statusRef.current === "initializing" || statusRef.current === "ready") {
+      return;
+    }
+
+    statusRef.current = "initializing";
+    setPoseState((currentState) => {
+      return {
+        ...currentState,
+        status: "initializing",
+        errorMessage: null,
+      };
+    });
 
     try {
       await poseEngine.initialize();
+
+      if (!isMountedRef.current) {
+        poseEngine.dispose();
+        return;
+      }
+
+      statusRef.current = "ready";
       setPoseState((currentState) => ({
         ...currentState,
         status: "ready",
+        errorMessage: null,
       }));
     } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      statusRef.current = "error";
       setPoseState((currentState) => ({
         ...currentState,
         status: "error",
@@ -46,11 +68,28 @@ export function usePosePipeline() {
   }, [poseEngine]);
 
   const disposePosePipeline = useCallback(() => {
+    if (statusRef.current === "idle" || statusRef.current === "disposed") {
+      return;
+    }
+
     poseEngine.dispose();
-    setPoseState((currentState) => ({
-      ...currentState,
-      status: "disposed",
-    }));
+    statusRef.current = "disposed";
+    setPoseState((currentState) => {
+      return {
+        ...currentState,
+        status: "disposed",
+      };
+    });
+  }, [poseEngine]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      poseEngine.dispose();
+      statusRef.current = "disposed";
+    };
   }, [poseEngine]);
 
   return {
