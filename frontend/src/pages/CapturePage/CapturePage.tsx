@@ -18,6 +18,7 @@ export function CapturePage() {
     captureViewState,
     currentPoseResult,
     localRecording,
+    poseFrameCollection,
     posePipeline,
     previewVideoElement,
   } = useCapturePipeline();
@@ -57,6 +58,9 @@ export function CapturePage() {
             <p className={styles.panelLabel}>Local recording</p>
             <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
             <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
+            <p className={styles.statusText}>
+              Pose frames collected: {poseFrameCollection.collectedPoseFrameCount}
+            </p>
           </div>
 
           {localRecording.errorMessage && (

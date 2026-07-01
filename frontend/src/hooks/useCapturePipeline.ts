@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { usePosePipeline } from "../features/capture";
+import { usePoseFrameCollection, usePosePipeline } from "../features/capture";
 import type { CaptureRuntimeState } from "../types";
 import { useCameraStream } from "./useCameraStream";
 import { useMediaRecorder } from "./useMediaRecorder";
@@ -49,8 +49,11 @@ export function useCapturePipeline() {
   const cameraPreview = useCameraStream();
   const localRecording = useMediaRecorder(cameraPreview.stream);
   const posePipeline = usePosePipeline();
+  const poseFrameCollection = usePoseFrameCollection();
   const { disposePosePipeline, initializePosePipeline, startPoseDetection, stopPoseDetection } =
     posePipeline;
+  const { collectPoseFrame, startPoseFrameCollection, stopPoseFrameCollection } =
+    poseFrameCollection;
 
   const isRecording = localRecording.status === "recording";
   const isStoppingRecording = localRecording.status === "stopping";
@@ -96,6 +99,23 @@ export function useCapturePipeline() {
     stopPoseDetection,
   ]);
 
+  useEffect(() => {
+    if (isRecording) {
+      startPoseFrameCollection();
+      return;
+    }
+
+    stopPoseFrameCollection();
+  }, [isRecording, startPoseFrameCollection, stopPoseFrameCollection]);
+
+  useEffect(() => {
+    if (!isRecording) {
+      return;
+    }
+
+    collectPoseFrame(posePipeline.currentPoseResult);
+  }, [collectPoseFrame, isRecording, posePipeline.currentPoseResult]);
+
   const canStartRecording = isCameraReady && !isRecording && !isStoppingRecording;
   const canStopRecording = isRecording || isStoppingRecording;
 
@@ -121,6 +141,7 @@ export function useCapturePipeline() {
     },
     currentPoseResult: posePipeline.currentPoseResult,
     localRecording,
+    poseFrameCollection,
     previewVideoElement,
     posePipeline,
   };
