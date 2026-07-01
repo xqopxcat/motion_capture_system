@@ -1,0 +1,74 @@
+.recordedPosePreview {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.previewSurface {
+  aspect-ratio: 16 / 9;
+  background: #101820;
+  border-radius: 6px;
+  display: grid;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.video {
+  display: block;
+  grid-area: 1 / 1;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+  z-index: 1;
+}
+
+.overlayCanvas {
+  display: block;
+  grid-area: 1 / 1;
+  height: 100%;
+  pointer-events: none;
+  width: 100%;
+  z-index: 2;
+}
+
+.controls {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto 1fr auto;
+}
+
+.playButton {
+  background: #ffffff;
+  border: 1px solid #cfd6df;
+  border-radius: 6px;
+  color: #20242a;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 40px;
+  min-width: 72px;
+  padding: 8px 14px;
+}
+
+.timeline {
+  width: 100%;
+}
+
+.timeText {
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .controls {
+    grid-template-columns: auto 1fr;
+  }
+
+  .timeText {
+    grid-column: 1 / -1;
+  }
+}

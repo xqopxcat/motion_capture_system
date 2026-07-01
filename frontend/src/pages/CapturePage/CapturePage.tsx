@@ -1,5 +1,5 @@
 import { CameraPreview } from "../../components";
-import { CaptureSkeletonOverlay } from "../../features/capture";
+import { CaptureSkeletonOverlay, RecordedPosePreview } from "../../features/capture";
 import { useCapturePipeline } from "../../hooks";
 import styles from "./CapturePage.module.css";
 
@@ -111,7 +111,10 @@ export function CapturePage() {
                 Clear Preview
               </button>
             </div>
-            <video className={styles.recordedVideo} src={localRecording.recordedVideoUrl} controls />
+            <RecordedPosePreview
+              poseDatasetDraft={poseDatasetDraft}
+              videoUrl={localRecording.recordedVideoUrl}
+            />
           </section>
         )}
       </section>

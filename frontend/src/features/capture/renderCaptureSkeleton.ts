@@ -1,7 +1,11 @@
-import type { PoseDetectionResult, PoseLandmark2D } from "../../engines/pose";
+import type { PoseLandmark2D } from "../../engines/pose";
 import { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";
 
 const MIN_VISIBLE_CONFIDENCE = 0.35;
+
+export type RenderablePoseSkeleton = {
+  landmarks2D: PoseLandmark2D[];
+};
 
 export type CaptureSkeletonViewport = {
   sourceWidth: number;
@@ -43,7 +47,7 @@ export function clearCaptureSkeleton(canvas: HTMLCanvasElement, context: CanvasR
 export function renderCaptureSkeleton(
   canvas: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
-  poseResult: PoseDetectionResult | null,
+  poseResult: RenderablePoseSkeleton | null,
   viewport?: CaptureSkeletonViewport,
 ) {
   clearCaptureSkeleton(canvas, context);
