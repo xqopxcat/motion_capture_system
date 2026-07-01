@@ -18,6 +18,7 @@ export function CapturePage() {
     captureViewState,
     currentPoseResult,
     localRecording,
+    poseDatasetDraft,
     poseFrameCollection,
     posePipeline,
     previewVideoElement,
@@ -61,6 +62,12 @@ export function CapturePage() {
             <p className={styles.statusText}>
               Pose frames collected: {poseFrameCollection.collectedPoseFrameCount}
             </p>
+            {poseDatasetDraft && (
+              <p className={styles.statusText}>
+                Pose dataset draft: {poseDatasetDraft.metadata.frameCount} frames,{" "}
+                {Math.round(poseDatasetDraft.metadata.durationMs)}ms
+              </p>
+            )}
           </div>
 
           {localRecording.errorMessage && (

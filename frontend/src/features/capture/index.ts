@@ -1,3 +1,9 @@
+export { buildPoseDatasetDraft } from "./buildPoseDatasetDraft";
+export type {
+  CapturePoseDatasetDraft,
+  CapturePoseDatasetDraftFrame,
+  CapturePoseDatasetSummary,
+} from "./buildPoseDatasetDraft";
 export { CaptureSkeletonOverlay } from "./CaptureSkeletonOverlay";
 export type { CaptureSkeletonOverlayProps } from "./CaptureSkeletonOverlay";
 export { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";

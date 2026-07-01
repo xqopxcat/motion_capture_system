@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { usePoseFrameCollection, usePosePipeline } from "../features/capture";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  buildPoseDatasetDraft,
+  usePoseFrameCollection,
+  usePosePipeline,
+} from "../features/capture";
+import type { CapturePoseDatasetDraft } from "../features/capture";
 import type { CaptureRuntimeState } from "../types";
 import { useCameraStream } from "./useCameraStream";
 import { useMediaRecorder } from "./useMediaRecorder";
@@ -46,13 +51,15 @@ function getPrimaryStatusText(
 export function useCapturePipeline() {
   const [captureState] = useState<CaptureRuntimeState>(initialCaptureRuntimeState);
   const [previewVideoElement, setPreviewVideoElement] = useState<HTMLVideoElement | null>(null);
+  const [poseDatasetDraft, setPoseDatasetDraft] = useState<CapturePoseDatasetDraft | null>(null);
+  const wasRecordingRef = useRef(false);
   const cameraPreview = useCameraStream();
   const localRecording = useMediaRecorder(cameraPreview.stream);
   const posePipeline = usePosePipeline();
   const poseFrameCollection = usePoseFrameCollection();
   const { disposePosePipeline, initializePosePipeline, startPoseDetection, stopPoseDetection } =
     posePipeline;
-  const { collectPoseFrame, startPoseFrameCollection, stopPoseFrameCollection } =
+  const { collectPoseFrame, getCollectedPoseFrames, startPoseFrameCollection, stopPoseFrameCollection } =
     poseFrameCollection;
 
   const isRecording = localRecording.status === "recording";
@@ -101,12 +108,19 @@ export function useCapturePipeline() {
 
   useEffect(() => {
     if (isRecording) {
+      setPoseDatasetDraft(null);
       startPoseFrameCollection();
+      wasRecordingRef.current = true;
       return;
     }
 
     stopPoseFrameCollection();
-  }, [isRecording, startPoseFrameCollection, stopPoseFrameCollection]);
+
+    if (wasRecordingRef.current) {
+      setPoseDatasetDraft(buildPoseDatasetDraft(getCollectedPoseFrames()));
+      wasRecordingRef.current = false;
+    }
+  }, [getCollectedPoseFrames, isRecording, startPoseFrameCollection, stopPoseFrameCollection]);
 
   useEffect(() => {
     if (!isRecording) {
@@ -141,6 +155,7 @@ export function useCapturePipeline() {
     },
     currentPoseResult: posePipeline.currentPoseResult,
     localRecording,
+    poseDatasetDraft,
     poseFrameCollection,
     previewVideoElement,
     posePipeline,

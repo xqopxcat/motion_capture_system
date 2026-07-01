@@ -70,10 +70,15 @@ export function usePoseFrameCollection() {
     setCollectedPoseFrameCount(framesRef.current.length);
   }, []);
 
+  const getCollectedPoseFrames = useCallback(() => {
+    return framesRef.current;
+  }, []);
+
   return {
     collectedPoseFrameCount,
     collectedPoseFrames: framesRef.current,
     collectPoseFrame,
+    getCollectedPoseFrames,
     startPoseFrameCollection,
     stopPoseFrameCollection,
   };
