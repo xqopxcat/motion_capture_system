@@ -1,8 +1,6 @@
 export type SkeletonConnection = readonly [number, number];
 
 export const CAPTURE_SKELETON_CONNECTIONS: readonly SkeletonConnection[] = [
-  [0, 11],
-  [0, 12],
   [11, 12],
   [11, 23],
   [12, 24],

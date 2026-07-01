@@ -13,8 +13,13 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
-  const { cameraPreview, captureViewState, currentPoseResult, localRecording, posePipeline } =
-    useCapturePipeline();
+  const {
+    cameraPreview,
+    captureViewState,
+    currentPoseResult,
+    localRecording,
+    posePipeline,
+  } = useCapturePipeline();
 
   return (
     <main className={styles.capturePage}>

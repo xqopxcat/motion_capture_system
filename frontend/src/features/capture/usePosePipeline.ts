@@ -25,10 +25,10 @@ function isVideoFrameReady(videoElement: HTMLVideoElement) {
 
 function getDetectionTimestampMs(videoElement: HTMLVideoElement) {
   if (Number.isFinite(videoElement.currentTime) && videoElement.currentTime > 0) {
-    return videoElement.currentTime * 1000;
+    return Math.floor(videoElement.currentTime * 1000);
   }
 
-  return performance.now();
+  return Math.floor(performance.now());
 }
 
 export function usePosePipeline() {
@@ -45,6 +45,7 @@ export function usePosePipeline() {
   const isDetectionLoopRunningRef = useRef(false);
   const isDetectingFrameRef = useRef(false);
   const lastDetectStartedAtRef = useRef(0);
+  const lastDetectionTimestampMsRef = useRef(0);
 
   const stopPoseDetection = useCallback(() => {
     isDetectionLoopRunningRef.current = false;
@@ -55,6 +56,7 @@ export function usePosePipeline() {
     }
 
     isDetectingFrameRef.current = false;
+    lastDetectionTimestampMsRef.current = 0;
     if (statusRef.current === "detecting") {
       statusRef.current = "ready";
     }
@@ -150,11 +152,14 @@ export function usePosePipeline() {
           isDetectingFrameRef.current = true;
           lastDetectStartedAtRef.current = now;
           frameIndexRef.current += 1;
+          const sourceTimestampMs = getDetectionTimestampMs(videoElement);
+          const timestampMs = Math.max(sourceTimestampMs, lastDetectionTimestampMsRef.current + 1);
+          lastDetectionTimestampMsRef.current = timestampMs;
 
           void poseEngine
             .detect({
               source: videoElement,
-              timestampMs: getDetectionTimestampMs(videoElement),
+              timestampMs,
               frameIndex: frameIndexRef.current,
             })
             .then((result) => {

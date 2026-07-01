@@ -135,10 +135,11 @@ describe("MediaPipe pose engine adapter contract", () => {
 });
 
 describe("MediaPipe runtime asset config", () => {
-  it("centralizes explicit Vite public asset paths", () => {
+  it("centralizes explicit runtime asset paths", () => {
     expect(LOCAL_MEDIAPIPE_RUNTIME_ASSET_CONFIG).toEqual({
-      modelAssetPath: "/models/pose_landmarker.task",
-      wasmBasePath: "/mediapipe/wasm",
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
+      wasmBasePath: "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
     });
   });
 
