@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PoseDetectionResult } from "../../engines/pose";
+import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import styles from "./CaptureSkeletonOverlay.module.css";
 
 export type CaptureSkeletonOverlayProps = {
@@ -17,7 +18,7 @@ export function CaptureSkeletonOverlay({ poseResult }: CaptureSkeletonOverlayPro
       return;
     }
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    renderCaptureSkeleton(canvas, context, poseResult);
   }, [poseResult]);
 
   return (
