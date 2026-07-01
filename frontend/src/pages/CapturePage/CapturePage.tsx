@@ -1,4 +1,5 @@
 import { CameraPreview } from "../../components";
+import { CaptureSkeletonOverlay } from "../../features/capture";
 import { useCapturePipeline } from "../../hooks";
 import styles from "./CapturePage.module.css";
 
@@ -12,7 +13,8 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
-  const { cameraPreview, captureViewState, localRecording } = useCapturePipeline();
+  const { cameraPreview, captureViewState, currentPoseResult, localRecording } =
+    useCapturePipeline();
 
   return (
     <main className={styles.capturePage}>
@@ -26,13 +28,16 @@ export function CapturePage() {
           </p>
         </header>
 
-        <CameraPreview
-          stream={cameraPreview.stream}
-          status={cameraPreview.status}
-          errorMessage={cameraPreview.errorMessage}
-          onStart={cameraPreview.startCamera}
-          onStop={cameraPreview.stopCamera}
-        />
+        <div className={styles.previewContainer}>
+          <CameraPreview
+            stream={cameraPreview.stream}
+            status={cameraPreview.status}
+            errorMessage={cameraPreview.errorMessage}
+            onStart={cameraPreview.startCamera}
+            onStop={cameraPreview.stopCamera}
+          />
+          <CaptureSkeletonOverlay poseResult={currentPoseResult} />
+        </div>
 
         <section className={styles.recordingPanel} aria-label="Local recording controls">
           <div className={styles.recordingStatus}>

@@ -86,6 +86,7 @@ export function useCapturePipeline() {
     isStoppingRecording,
     primaryStatusText: getPrimaryStatusText(cameraPreview.status, localRecording.status),
   };
+  const currentPoseResult = null;
 
   return {
     captureState,
@@ -94,6 +95,7 @@ export function useCapturePipeline() {
       ...cameraPreview,
       stopCamera: stopCameraPreview,
     },
+    currentPoseResult,
     localRecording,
     posePipeline,
   };
