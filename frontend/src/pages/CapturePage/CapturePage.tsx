@@ -19,6 +19,7 @@ export function CapturePage() {
     currentPoseResult,
     localRecording,
     posePipeline,
+    previewVideoElement,
   } = useCapturePipeline();
 
   return (
@@ -42,7 +43,7 @@ export function CapturePage() {
             onStop={cameraPreview.stopCamera}
             onVideoElementChange={cameraPreview.onVideoElementChange}
           />
-          <CaptureSkeletonOverlay poseResult={currentPoseResult} />
+          <CaptureSkeletonOverlay poseResult={currentPoseResult} videoElement={previewVideoElement} />
         </div>
 
         {posePipeline.poseState.errorMessage && (

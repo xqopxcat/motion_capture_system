@@ -121,6 +121,7 @@ export function useCapturePipeline() {
     },
     currentPoseResult: posePipeline.currentPoseResult,
     localRecording,
+    previewVideoElement,
     posePipeline,
   };
 }

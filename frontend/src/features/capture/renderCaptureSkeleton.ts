@@ -3,6 +3,11 @@ import { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";
 
 const MIN_VISIBLE_CONFIDENCE = 0.35;
 
+export type CaptureSkeletonViewport = {
+  sourceWidth: number;
+  sourceHeight: number;
+};
+
 function isRenderableLandmark(landmark: PoseLandmark2D | undefined) {
   if (!landmark) {
     return false;
@@ -11,7 +16,20 @@ function isRenderableLandmark(landmark: PoseLandmark2D | undefined) {
   return landmark.visibility === undefined || landmark.visibility >= MIN_VISIBLE_CONFIDENCE;
 }
 
-function getCanvasPoint(canvas: HTMLCanvasElement, landmark: PoseLandmark2D) {
+function getCanvasPoint(
+  canvas: HTMLCanvasElement,
+  landmark: PoseLandmark2D,
+  viewport?: CaptureSkeletonViewport,
+) {
+  if (viewport && viewport.sourceWidth > 0 && viewport.sourceHeight > 0) {
+    const scale = Math.max(canvas.width / viewport.sourceWidth, canvas.height / viewport.sourceHeight);
+
+    return {
+      x: landmark.x * viewport.sourceWidth * scale,
+      y: landmark.y * viewport.sourceHeight * scale,
+    };
+  }
+
   return {
     x: landmark.x * canvas.width,
     y: landmark.y * canvas.height,
@@ -26,6 +44,7 @@ export function renderCaptureSkeleton(
   canvas: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
   poseResult: PoseDetectionResult | null,
+  viewport?: CaptureSkeletonViewport,
 ) {
   clearCaptureSkeleton(canvas, context);
 
@@ -50,8 +69,8 @@ export function renderCaptureSkeleton(
       return;
     }
 
-    const startPoint = getCanvasPoint(canvas, start);
-    const endPoint = getCanvasPoint(canvas, end);
+    const startPoint = getCanvasPoint(canvas, start, viewport);
+    const endPoint = getCanvasPoint(canvas, end, viewport);
 
     context.beginPath();
     context.moveTo(startPoint.x, startPoint.y);
@@ -64,7 +83,7 @@ export function renderCaptureSkeleton(
       return;
     }
 
-    const point = getCanvasPoint(canvas, landmark);
+    const point = getCanvasPoint(canvas, landmark, viewport);
 
     context.beginPath();
     context.arc(point.x, point.y, 5, 0, Math.PI * 2);

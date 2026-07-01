@@ -5,9 +5,10 @@ import styles from "./CaptureSkeletonOverlay.module.css";
 
 export type CaptureSkeletonOverlayProps = {
   poseResult: PoseDetectionResult | null;
+  videoElement?: HTMLVideoElement | null;
 };
 
-export function CaptureSkeletonOverlay({ poseResult }: CaptureSkeletonOverlayProps) {
+export function CaptureSkeletonOverlay({ poseResult, videoElement }: CaptureSkeletonOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -18,8 +19,18 @@ export function CaptureSkeletonOverlay({ poseResult }: CaptureSkeletonOverlayPro
       return;
     }
 
-    renderCaptureSkeleton(canvas, context, poseResult);
-  }, [poseResult]);
+    renderCaptureSkeleton(
+      canvas,
+      context,
+      poseResult,
+      videoElement
+        ? {
+            sourceWidth: videoElement.videoWidth,
+            sourceHeight: videoElement.videoHeight,
+          }
+        : undefined,
+    );
+  }, [poseResult, videoElement]);
 
   return (
     <canvas
