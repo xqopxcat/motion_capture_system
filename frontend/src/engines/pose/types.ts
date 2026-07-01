@@ -22,7 +22,20 @@ export type PoseDetectionResult = {
   landmarks: PoseLandmark[];
 };
 
+export type PoseOutputSchema = "pose.v1";
+
+export type PoseAdapterCapabilities = {
+  supports2D: boolean;
+  supports3D: boolean;
+  supportsRealtime: boolean;
+  supportsVideoFrame: boolean;
+  supportsVisibility: boolean;
+  jointCount: number;
+  outputSchema: PoseOutputSchema;
+};
+
 export type PoseEngineMetadata = {
   name: string;
   version: string;
+  capabilities: PoseAdapterCapabilities;
 };

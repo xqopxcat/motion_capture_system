@@ -1,9 +1,18 @@
 import type { PoseEngine } from "./PoseEngine";
-import type { PoseDetectionInput, PoseDetectionResult } from "./types";
+import type { PoseDetectionInput, PoseDetectionResult, PoseEngineMetadata } from "./types";
 
-const noopPoseEngineMetadata = {
+const noopPoseEngineMetadata: PoseEngineMetadata = {
   name: "noop-pose-engine",
   version: "0.0.0",
+  capabilities: {
+    supports2D: true,
+    supports3D: false,
+    supportsRealtime: false,
+    supportsVideoFrame: true,
+    supportsVisibility: false,
+    jointCount: 0,
+    outputSchema: "pose.v1",
+  },
 };
 
 export function createNoopPoseEngine(): PoseEngine {
