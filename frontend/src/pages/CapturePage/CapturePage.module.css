@@ -1,19 +1,19 @@
 .capturePage {
   background: #f6f8fb;
   min-height: 100vh;
-  padding: 32px 24px;
+  padding: 14px;
 }
 
 .content {
   display: grid;
-  gap: 20px;
+  gap: 14px;
   margin: 0 auto;
-  max-width: 1180px;
+  max-width: 1120px;
 }
 
 .header {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .kicker {
@@ -27,13 +27,14 @@
 
 .title {
   color: #111827;
-  font-size: 2.125rem;
+  font-size: 1.625rem;
   line-height: 1.1;
   margin: 0;
 }
 
 .description {
   color: #4b5563;
+  font-size: 0.9375rem;
   line-height: 1.6;
   margin: 0;
   max-width: 680px;
@@ -42,8 +43,8 @@
 .captureWorkspace {
   align-items: start;
   display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  gap: 14px;
+  grid-template-columns: 1fr;
 }
 
 .livePanel,
@@ -55,8 +56,8 @@
   background: #ffffff;
   border: 1px solid #d8dde5;
   border-radius: 8px;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 10px;
 }
 
 .previewContainer {
@@ -69,8 +70,8 @@
   border: 1px solid #d8dde5;
   border-radius: 8px;
   display: grid;
-  gap: 16px;
-  padding: 16px;
+  gap: 14px;
+  padding: 14px;
 }
 
 .panelHeader {
@@ -96,7 +97,7 @@
 
 .sectionTitle {
   color: #111827;
-  font-size: 1.125rem;
+  font-size: 1rem;
   line-height: 1.25;
   margin: 4px 0 0;
 }
@@ -104,7 +105,7 @@
 .timer {
   font-variant-numeric: tabular-nums;
   color: #111827;
-  font-size: 2.25rem;
+  font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;
   margin: 0;
@@ -144,7 +145,7 @@
 
 .statusGrid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
@@ -156,7 +157,7 @@
   display: grid;
   gap: 4px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 9px 10px;
 }
 
 .statusItem dt {
@@ -199,7 +200,7 @@
 
 .recordingActions,
 .recordedPreviewHeader {
-  align-items: center;
+  align-items: stretch;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -214,13 +215,14 @@
   cursor: pointer;
   font: inherit;
   font-weight: 700;
-  min-height: 40px;
-  padding: 9px 14px;
+  min-height: 48px;
+  padding: 11px 16px;
 }
 
 .recordAction {
   background: #8f2d1f;
   color: #ffffff;
+  flex: 1 1 180px;
 }
 
 .stopAction,
@@ -228,6 +230,10 @@
   background: #ffffff;
   border-color: #cfd6df;
   color: #20242a;
+}
+
+.stopAction {
+  flex: 1 1 150px;
 }
 
 .recordAction:disabled,
@@ -245,7 +251,7 @@
 
 @media (max-width: 720px) {
   .capturePage {
-    padding: 16px;
+    padding: 12px;
   }
 
   .content {
@@ -254,10 +260,6 @@
 
   .title {
     font-size: 1.5rem;
-  }
-
-  .captureWorkspace {
-    grid-template-columns: 1fr;
   }
 
   .panelHeader {
@@ -285,5 +287,37 @@
   .stopAction,
   .secondaryAction {
     width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .capturePage {
+    padding: 24px;
+  }
+
+  .content {
+    gap: 18px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .livePanel,
+  .recordingPanel,
+  .recordedPreview {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .captureWorkspace {
+    gap: 18px;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+  }
+
+  .panelHeader {
+    align-items: start;
+    flex-direction: row;
   }
 }
