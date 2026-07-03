@@ -10,6 +10,8 @@ export { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";
 export type { SkeletonConnection } from "./captureSkeletonConnections";
 export { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 export { RECORDED_POSE_FRAME_MATCH_THRESHOLD_MS } from "./findNearestPoseDatasetFrame";
+export { buildPoseDatasetV1, validatePoseDatasetV1 } from "./poseDatasetV1";
+export type { BuildPoseDatasetV1Options } from "./poseDatasetV1";
 export { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
 export { RecordedPosePreview } from "./RecordedPosePreview";
 export type { RecordedPosePreviewProps } from "./RecordedPosePreview";

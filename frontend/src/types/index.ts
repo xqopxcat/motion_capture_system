@@ -10,3 +10,9 @@
   ViewerRuntimeState,
   VisualizationMode,
 } from "./runtime";
+export type {
+  PoseDataset,
+  PoseDatasetFrame,
+  PoseDatasetLandmark,
+  PoseDatasetValidationResult,
+} from "./poseDataset";
