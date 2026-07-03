@@ -1,0 +1,137 @@
+.viewerPage {
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.header {
+  margin-bottom: 28px;
+  max-width: 760px;
+}
+
+.kicker,
+.panelLabel {
+  color: #5b6572;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.description {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.statePanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.statePanel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.statePanel p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.viewerWorkspace {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.mediaColumn {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.viewerStage {
+  background: #101820;
+  border-radius: 8px;
+  display: grid;
+  min-height: 420px;
+  overflow: hidden;
+  position: relative;
+}
+
+.viewerStage > * {
+  grid-area: 1 / 1;
+}
+
+.viewerStage canvas {
+  height: 100%;
+  pointer-events: none;
+  width: 100%;
+}
+
+.sidePanel {
+  display: grid;
+  gap: 16px;
+}
+
+.summaryPanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.summaryPanel h2 {
+  font-size: 1rem;
+  margin: 0 0 16px;
+  overflow-wrap: anywhere;
+}
+
+.summaryList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.summaryList div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.summaryList dt {
+  color: #5b6572;
+}
+
+.summaryList dd {
+  font-weight: 700;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .viewerPage {
+    padding: 24px;
+  }
+
+  .viewerWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .viewerStage {
+    min-height: 300px;
+  }
+}
