@@ -23,77 +23,122 @@ export function CapturePage() {
     posePipeline,
     previewVideoElement,
   } = useCapturePipeline();
+  const poseStatusText =
+    posePipeline.poseState.status === "detecting"
+      ? "Detecting pose"
+      : posePipeline.poseState.status === "ready"
+        ? "Pose ready"
+        : posePipeline.poseState.status === "initializing"
+          ? "Preparing pose"
+          : posePipeline.poseState.status === "error"
+            ? "Pose unavailable"
+            : "Pose idle";
+  const poseDatasetFrameCount = poseDatasetDraft?.metadata.frameCount ?? 0;
+  const poseDatasetDurationMs = Math.round(poseDatasetDraft?.metadata.durationMs ?? 0);
 
   return (
     <main className={styles.capturePage}>
       <section className={styles.content}>
         <header className={styles.header}>
-          <p className={styles.kicker}>Sprint 1 Capture Foundation</p>
+          <p className={styles.kicker}>Motion Capture</p>
           <h1 className={styles.title}>Capture</h1>
           <p className={styles.description}>
-            Start camera preview to prepare a capture session. Recording stays local in the browser;
-            pose detection, overlays, upload, and record creation remain out of scope.
+            Record a movement sample locally, review the captured video, and verify the pose overlay
+            before continuing.
           </p>
         </header>
 
-        <div className={styles.previewContainer}>
-          <CameraPreview
-            stream={cameraPreview.stream}
-            status={cameraPreview.status}
-            errorMessage={cameraPreview.errorMessage}
-            onStart={cameraPreview.startCamera}
-            onStop={cameraPreview.stopCamera}
-            onVideoElementChange={cameraPreview.onVideoElementChange}
-          />
-          <CaptureSkeletonOverlay poseResult={currentPoseResult} videoElement={previewVideoElement} />
-        </div>
+        <section className={styles.captureWorkspace} aria-label="Capture workspace">
+          <div className={styles.livePanel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <p className={styles.panelLabel}>Live capture</p>
+                <h2 className={styles.sectionTitle}>Camera and pose preview</h2>
+              </div>
+              <span className={captureViewState.isCameraReady ? styles.statusReady : styles.statusIdle}>
+                {captureViewState.isCameraReady ? "Camera ready" : "Camera off"}
+              </span>
+            </div>
 
-        {posePipeline.poseState.errorMessage && (
-          <p className={styles.poseError} role="status">
-            Pose detection unavailable: {posePipeline.poseState.errorMessage}
-          </p>
-        )}
+            <div className={styles.previewContainer}>
+              <CameraPreview
+                stream={cameraPreview.stream}
+                status={cameraPreview.status}
+                errorMessage={cameraPreview.errorMessage}
+                onStart={cameraPreview.startCamera}
+                onStop={cameraPreview.stopCamera}
+                onVideoElementChange={cameraPreview.onVideoElementChange}
+              />
+              <CaptureSkeletonOverlay poseResult={currentPoseResult} videoElement={previewVideoElement} />
+            </div>
+          </div>
 
-        <section className={styles.recordingPanel} aria-label="Local recording controls">
-          <div className={styles.recordingStatus}>
-            <p className={styles.panelLabel}>Local recording</p>
-            <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
-            <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
-            <p className={styles.statusText}>
-              Pose frames collected: {poseFrameCollection.collectedPoseFrameCount}
-            </p>
-            {poseDatasetDraft && (
-              <p className={styles.statusText}>
-                Pose dataset draft: {poseDatasetDraft.metadata.frameCount} frames,{" "}
-                {Math.round(poseDatasetDraft.metadata.durationMs)}ms
+          <section className={styles.recordingPanel} aria-label="Capture session controls">
+            <div className={styles.panelHeader}>
+              <div>
+                <p className={styles.panelLabel}>Session</p>
+                <h2 className={styles.sectionTitle}>Recording controls</h2>
+              </div>
+              <span className={captureViewState.isRecording ? styles.statusRecording : styles.statusIdle}>
+                {captureViewState.isRecording ? "Recording" : "Standby"}
+              </span>
+            </div>
+
+            <div className={styles.recordingStatus}>
+              <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
+              <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
+            </div>
+
+            <dl className={styles.statusGrid} aria-label="Capture runtime status">
+              <div className={styles.statusItem}>
+                <dt>Pose</dt>
+                <dd>{poseStatusText}</dd>
+              </div>
+              <div className={styles.statusItem}>
+                <dt>Frames</dt>
+                <dd>{poseFrameCollection.collectedPoseFrameCount}</dd>
+              </div>
+              <div className={styles.statusItem}>
+                <dt>Dataset</dt>
+                <dd>{poseDatasetFrameCount > 0 ? `${poseDatasetFrameCount} frames` : "Pending"}</dd>
+              </div>
+              <div className={styles.statusItem}>
+                <dt>Duration</dt>
+                <dd>{poseDatasetFrameCount > 0 ? `${poseDatasetDurationMs}ms` : "Pending"}</dd>
+              </div>
+            </dl>
+
+            {posePipeline.poseState.errorMessage && (
+              <p className={styles.poseError} role="status">
+                Pose detection unavailable: {posePipeline.poseState.errorMessage}
               </p>
             )}
-          </div>
 
-          {localRecording.errorMessage && (
-            <p className={styles.error} role="alert">
-              {localRecording.errorMessage}
-            </p>
-          )}
+            {localRecording.errorMessage && (
+              <p className={styles.error} role="alert">
+                {localRecording.errorMessage}
+              </p>
+            )}
 
-          <div className={styles.recordingActions}>
-            <button
-              className={styles.recordAction}
-              type="button"
-              onClick={localRecording.startRecording}
-              disabled={!captureViewState.canStartRecording}
-            >
-              Start Recording
-            </button>
-            <button
-              className={styles.stopAction}
-              type="button"
-              onClick={localRecording.stopRecording}
-              disabled={!captureViewState.canStopRecording}
-            >
-              Stop Recording
-            </button>
-          </div>
+            <div className={styles.recordingActions}>
+              <button
+                className={styles.recordAction}
+                type="button"
+                onClick={localRecording.startRecording}
+                disabled={!captureViewState.canStartRecording}
+              >
+                Start Recording
+              </button>
+              <button
+                className={styles.stopAction}
+                type="button"
+                onClick={localRecording.stopRecording}
+                disabled={!captureViewState.canStopRecording}
+              >
+                Stop Recording
+              </button>
+            </div>
+          </section>
         </section>
 
         {captureViewState.hasRecordedPreview && localRecording.recordedVideoUrl && (
