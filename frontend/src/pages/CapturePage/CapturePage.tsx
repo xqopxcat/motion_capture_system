@@ -34,7 +34,6 @@ export function CapturePage() {
             ? "Pose unavailable"
             : "Pose idle";
   const poseDatasetFrameCount = poseDatasetDraft?.metadata.frameCount ?? 0;
-  const poseDatasetDurationMs = Math.round(poseDatasetDraft?.metadata.durationMs ?? 0);
 
   return (
     <main className={styles.capturePage}>
@@ -85,28 +84,20 @@ export function CapturePage() {
             </div>
 
             <div className={styles.recordingStatus}>
-              <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
-              <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
+              <div className={styles.recordingPrimaryStatus}>
+                <p className={styles.timer}>{formatElapsedTime(localRecording.elapsedSeconds)}</p>
+                <p className={styles.statusText}>{captureViewState.primaryStatusText}</p>
+              </div>
+              <div className={styles.recordingSecondaryStatus}>
+                <p className={styles.panelLabel}>Pose data</p>
+                <p className={styles.statusText}>
+                  {poseStatusText} · {poseFrameCollection.collectedPoseFrameCount} frames collected
+                </p>
+                <p className={styles.statusText}>
+                  Dataset {poseDatasetFrameCount > 0 ? `${poseDatasetFrameCount} frames` : "pending"}
+                </p>
+              </div>
             </div>
-
-            <dl className={styles.statusGrid} aria-label="Capture runtime status">
-              <div className={styles.statusItem}>
-                <dt>Pose</dt>
-                <dd>{poseStatusText}</dd>
-              </div>
-              <div className={styles.statusItem}>
-                <dt>Frames</dt>
-                <dd>{poseFrameCollection.collectedPoseFrameCount}</dd>
-              </div>
-              <div className={styles.statusItem}>
-                <dt>Dataset</dt>
-                <dd>{poseDatasetFrameCount > 0 ? `${poseDatasetFrameCount} frames` : "Pending"}</dd>
-              </div>
-              <div className={styles.statusItem}>
-                <dt>Duration</dt>
-                <dd>{poseDatasetFrameCount > 0 ? `${poseDatasetDurationMs}ms` : "Pending"}</dd>
-              </div>
-            </dl>
 
             {posePipeline.poseState.errorMessage && (
               <p className={styles.poseError} role="status">
