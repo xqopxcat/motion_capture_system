@@ -1,4 +1,6 @@
-﻿export type VisualizationMode = "none" | "skeleton" | "metrics" | "annotations";
+import type { PoseDatasetFrame } from "./poseDataset";
+
+export type VisualizationMode = "none" | "skeleton" | "metrics" | "annotations";
 
 export type PlaybackState = {
   isPlaying: boolean;
@@ -36,12 +38,6 @@ export type CompareRuntimeState = {
   frame: FrameState;
 };
 
-export type RenderContext = {
-  canvasId: string;
-  frameIndex: number;
-  mode: VisualizationMode;
-};
-
 export type MetricDisplayValue = {
   id: string;
   label: string;
@@ -52,4 +48,18 @@ export type AnnotationDisplayItem = {
   id: string;
   frameIndex: number;
   title: string;
+};
+
+export type RenderContext = {
+  annotations?: AnnotationDisplayItem[];
+  canvasId: string;
+  canvasSize?: {
+    height: number;
+    width: number;
+  };
+  frameIndex: number;
+  metrics?: MetricDisplayValue[];
+  mode: VisualizationMode;
+  poseFrame?: PoseDatasetFrame | null;
+  selectedJointId?: number;
 };

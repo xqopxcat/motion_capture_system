@@ -7,9 +7,8 @@ import {
   Timeline,
   VideoPlayer,
 } from "../../components";
-import { useViewerArtifactLoader } from "../../features/viewer";
+import { createViewerRenderContext, useViewerArtifactLoader } from "../../features/viewer";
 import { usePlaybackController } from "../../hooks";
-import type { RenderContext } from "../../types";
 import styles from "./RecordViewerPage.module.css";
 
 export function RecordViewerPage() {
@@ -34,11 +33,11 @@ export function RecordViewerPage() {
     fps: artifactState.poseDataset?.fps ?? 30,
     totalFrames: artifactState.poseDataset?.frameCount ?? 0,
   });
-  const renderContext: RenderContext = {
+  const renderContext = createViewerRenderContext({
     canvasId: "record-viewer-skeleton-canvas",
-    frameIndex: frameState.currentFrame,
-    mode: "skeleton",
-  };
+    currentFrame: frameState.currentFrame,
+    poseDataset: artifactState.poseDataset,
+  });
 
   useEffect(() => {
     setPlaybackBounds({
