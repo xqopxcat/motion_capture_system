@@ -8,4 +8,11 @@ describe("uploadsApi", () => {
     expect(uploadsApi.endpoints.requestMetricsUploadUrl).toBeDefined();
     expect(uploadsApi.endpoints.requestThumbnailUploadUrl).toBeDefined();
   });
+
+  it("exposes artifact complete mutations", () => {
+    expect(uploadsApi.endpoints.completeVideoUpload).toBeDefined();
+    expect(uploadsApi.endpoints.completePoseUpload).toBeDefined();
+    expect(uploadsApi.endpoints.completeMetricsUpload).toBeDefined();
+    expect(uploadsApi.endpoints.completeThumbnailUpload).toBeDefined();
+  });
 });

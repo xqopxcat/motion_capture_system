@@ -18,9 +18,16 @@ export type {
 } from "./poseDataset";
 export type { CreateRecordRequest, CreateRecordResponse, RecordStatus } from "./record";
 export type {
+  ArtifactCompleteResponse,
+  ArtifactCompleteStatus,
+  ArtifactType,
+  MetricsUploadCompleteRequest,
   MetricsUploadUrlRequest,
+  PoseUploadCompleteRequest,
   PoseUploadUrlRequest,
   SignedUploadUrlResponse,
+  ThumbnailUploadCompleteRequest,
   ThumbnailUploadUrlRequest,
+  VideoUploadCompleteRequest,
   VideoUploadUrlRequest,
 } from "./upload";

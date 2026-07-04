@@ -27,3 +27,37 @@ export type ThumbnailUploadUrlRequest = {
   fileSize: number;
   generatedFromFrameIndex: number;
 };
+
+export type ArtifactCompleteStatus = "Complete";
+
+export type ArtifactType = "video" | "pose" | "metrics" | "thumbnail";
+
+export type ArtifactCompleteResponse = {
+  recordId: string;
+  artifactType: ArtifactType;
+  storagePath: string;
+  status: ArtifactCompleteStatus;
+};
+
+export type VideoUploadCompleteRequest = {
+  recordId: string;
+  storagePath: string;
+};
+
+export type PoseUploadCompleteRequest = {
+  recordId: string;
+  storagePath: string;
+  version: string;
+};
+
+export type MetricsUploadCompleteRequest = {
+  recordId: string;
+  storagePath: string;
+  version: string;
+};
+
+export type ThumbnailUploadCompleteRequest = {
+  recordId: string;
+  storagePath: string;
+  generatedFromFrameIndex: number;
+};
