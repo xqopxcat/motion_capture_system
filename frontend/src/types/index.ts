@@ -16,3 +16,4 @@ export type {
   PoseDatasetLandmark,
   PoseDatasetValidationResult,
 } from "./poseDataset";
+export type { CreateRecordRequest, CreateRecordResponse, RecordStatus } from "./record";
