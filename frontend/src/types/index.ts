@@ -17,3 +17,10 @@ export type {
   PoseDatasetValidationResult,
 } from "./poseDataset";
 export type { CreateRecordRequest, CreateRecordResponse, RecordStatus } from "./record";
+export type {
+  MetricsUploadUrlRequest,
+  PoseUploadUrlRequest,
+  SignedUploadUrlResponse,
+  ThumbnailUploadUrlRequest,
+  VideoUploadUrlRequest,
+} from "./upload";
