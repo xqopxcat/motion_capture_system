@@ -1,4 +1,4 @@
-﻿import type { AnnotationDisplayItem, FrameState } from "../../types";
+import type { AnnotationDisplayItem, FrameState } from "../../types";
 import styles from "./Timeline.module.css";
 
 export type TimelineProps = {
@@ -8,6 +8,8 @@ export type TimelineProps = {
 };
 
 export function Timeline({ frame, annotations = [], onSeekFrame }: TimelineProps) {
+  const maxFrame = Math.max(0, frame.totalFrames - 1);
+
   return (
     <section className={styles.timeline} aria-label="Timeline">
       <div className={styles.summary}>
@@ -16,7 +18,7 @@ export function Timeline({ frame, annotations = [], onSeekFrame }: TimelineProps
       <input
         aria-label="Current frame"
         className={styles.slider}
-        max={frame.totalFrames}
+        max={maxFrame}
         min={0}
         type="range"
         value={frame.currentFrame}

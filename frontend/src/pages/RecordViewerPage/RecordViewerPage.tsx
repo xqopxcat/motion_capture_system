@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
   MetricPanel,
@@ -7,30 +8,45 @@ import {
   VideoPlayer,
 } from "../../components";
 import { useViewerArtifactLoader } from "../../features/viewer";
-import type { FrameState, PlaybackState, RenderContext } from "../../types";
+import { usePlaybackController } from "../../hooks";
+import type { RenderContext } from "../../types";
 import styles from "./RecordViewerPage.module.css";
 
 export function RecordViewerPage() {
   const { recordId } = useParams();
   const [searchParams] = useSearchParams();
   const artifactState = useViewerArtifactLoader(recordId, searchParams);
-  const totalFrames = artifactState.poseDataset?.frameCount ?? 0;
-  const playback: PlaybackState = {
-    currentTime: 0,
+  const {
+    frameState,
+    handleVideoDurationChange,
+    handleVideoEnded,
+    handleVideoTimeUpdate,
+    playbackState,
+    requestNextFrame,
+    requestPause,
+    requestPlaybackSpeed,
+    requestPlay,
+    requestPreviousFrame,
+    requestSeekFrame,
+    setPlaybackBounds,
+  } = usePlaybackController({
     duration: artifactState.poseDataset?.duration ?? 0,
-    isPlaying: false,
-    playbackSpeed: 1,
-  };
-  const frame: FrameState = {
-    currentFrame: 0,
     fps: artifactState.poseDataset?.fps ?? 30,
-    totalFrames,
-  };
+    totalFrames: artifactState.poseDataset?.frameCount ?? 0,
+  });
   const renderContext: RenderContext = {
     canvasId: "record-viewer-skeleton-canvas",
-    frameIndex: frame.currentFrame,
+    frameIndex: frameState.currentFrame,
     mode: "skeleton",
   };
+
+  useEffect(() => {
+    setPlaybackBounds({
+      duration: artifactState.poseDataset?.duration ?? 0,
+      fps: artifactState.poseDataset?.fps ?? 30,
+      totalFrames: artifactState.poseDataset?.frameCount ?? 0,
+    });
+  }, [artifactState.poseDataset, setPlaybackBounds]);
 
   return (
     <main className={styles.viewerPage}>
@@ -72,11 +88,25 @@ export function RecordViewerPage() {
           <section className={styles.viewerWorkspace} aria-label="Viewer workspace">
             <div className={styles.mediaColumn}>
               <div className={styles.viewerStage}>
-                <VideoPlayer playback={playback} src={artifactState.videoSrc ?? undefined} />
+                <VideoPlayer
+                  playback={playbackState}
+                  src={artifactState.videoSrc ?? undefined}
+                  onDurationChange={handleVideoDurationChange}
+                  onEnded={handleVideoEnded}
+                  onTimeChange={handleVideoTimeUpdate}
+                />
                 <SkeletonCanvas renderContext={renderContext} />
               </div>
-              <Timeline frame={frame} />
-              <PlaybackControls isPlaying={playback.isPlaying} playbackSpeed={playback.playbackSpeed} />
+              <Timeline frame={frameState} onSeekFrame={requestSeekFrame} />
+              <PlaybackControls
+                isPlaying={playbackState.isPlaying}
+                playbackSpeed={playbackState.playbackSpeed}
+                onNextFrame={requestNextFrame}
+                onPause={requestPause}
+                onPlay={requestPlay}
+                onPlaybackSpeedChange={requestPlaybackSpeed}
+                onPreviousFrame={requestPreviousFrame}
+              />
             </div>
 
             <aside className={styles.sidePanel} aria-label="Viewer artifact summary">

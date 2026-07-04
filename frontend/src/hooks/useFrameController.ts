@@ -1,4 +1,5 @@
-﻿import { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
+import { clampFrameIndex } from "../features/viewer/playbackFrameMath";
 import type { FrameState } from "../types";
 
 const initialFrameState: FrameState = {
@@ -14,20 +15,23 @@ export function useFrameController(initialState: Partial<FrameState> = {}) {
   });
 
   const requestFrame = useCallback((currentFrame: number) => {
-    // TODO: Sprint 1+ clamps frame selection to the active media range.
-    setFrameState((state) => ({ ...state, currentFrame }));
+    setFrameState((state) => ({
+      ...state,
+      currentFrame: clampFrameIndex(currentFrame, state.totalFrames),
+    }));
   }, []);
 
   const requestNextFrame = useCallback(() => {
-    // TODO: Sprint 1+ coordinates frame stepping with playback state.
-    setFrameState((state) => ({ ...state, currentFrame: state.currentFrame + 1 }));
+    setFrameState((state) => ({
+      ...state,
+      currentFrame: clampFrameIndex(state.currentFrame + 1, state.totalFrames),
+    }));
   }, []);
 
   const requestPreviousFrame = useCallback(() => {
-    // TODO: Sprint 1+ coordinates frame stepping with playback state.
     setFrameState((state) => ({
       ...state,
-      currentFrame: Math.max(0, state.currentFrame - 1),
+      currentFrame: clampFrameIndex(state.currentFrame - 1, state.totalFrames),
     }));
   }, []);
 
