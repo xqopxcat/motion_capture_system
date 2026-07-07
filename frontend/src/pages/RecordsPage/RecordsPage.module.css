@@ -71,24 +71,54 @@
   padding: 0;
 }
 
-.recordRow {
+.recordCard {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: 132px minmax(0, 1fr) minmax(240px, 320px);
   padding: 18px;
 }
 
-.recordRow + .recordRow {
+.recordCard + .recordCard {
   border-top: 1px solid #e7ebf1;
+}
+
+.thumbnailFrame {
+  align-items: center;
+  aspect-ratio: 16 / 10;
+  background: #eef2f7;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  color: #5b6572;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.thumbnailFrame img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .primaryColumn {
   min-width: 0;
 }
 
-.primaryColumn h2 {
+.titleRow {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.titleRow h2 {
   font-size: 1rem;
-  margin: 0 0 8px;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
@@ -113,6 +143,39 @@
   color: #374151;
   font-size: 0.82rem;
   padding: 4px 8px;
+}
+
+.statusBadge {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  color: #374151;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.statusBadge[data-tone="ready"] {
+  background: #e8f7ef;
+  border-color: #9bd4b2;
+  color: #17623a;
+}
+
+.statusBadge[data-tone="processing"] {
+  background: #eef4ff;
+  border-color: #a9c5f8;
+  color: #244f9e;
+}
+
+.statusBadge[data-tone="failed"] {
+  background: #fff0f0;
+  border-color: #efb0b0;
+  color: #a52828;
+}
+
+.statusBadge[data-tone="neutral"] {
+  background: #f7f8fa;
 }
 
 .metaList {
@@ -141,7 +204,11 @@
     padding: 24px;
   }
 
-  .recordRow {
+  .recordCard {
     grid-template-columns: 1fr;
+  }
+
+  .thumbnailFrame {
+    max-width: 280px;
   }
 }

@@ -1,5 +1,10 @@
 import { useGetRecordsQuery } from "../../services/recordsApi";
 import type { RecordListItem } from "../../types";
+import {
+  formatRecordDate,
+  formatRecordDuration,
+  getRecordStatusMeta,
+} from "../../features/records/recordDisplay";
 import styles from "./RecordsPage.module.css";
 
 export function RecordsPage() {
@@ -42,7 +47,7 @@ export function RecordsPage() {
             </div>
             <ul className={styles.recordList}>
               {data.items.map((record) => (
-                <RecordRow key={record.recordId} record={record} />
+                <RecordCard key={record.recordId} record={record} />
               ))}
             </ul>
           </section>
@@ -52,11 +57,27 @@ export function RecordsPage() {
   );
 }
 
-function RecordRow({ record }: { record: RecordListItem }) {
+function RecordCard({ record }: { record: RecordListItem }) {
+  const status = getRecordStatusMeta(record.status);
+
   return (
-    <li className={styles.recordRow}>
+    <li className={styles.recordCard}>
+      <div className={styles.thumbnailFrame} aria-label="Record thumbnail">
+        {record.thumbnailUrl && shouldRenderThumbnailImage(record.thumbnailUrl) ? (
+          <img src={record.thumbnailUrl} alt="" loading="lazy" />
+        ) : record.thumbnailUrl ? (
+          <span>Thumbnail ready</span>
+        ) : (
+          <span>No thumbnail</span>
+        )}
+      </div>
       <div className={styles.primaryColumn}>
-        <h2>{record.title}</h2>
+        <div className={styles.titleRow}>
+          <h2>{record.title}</h2>
+          <span className={styles.statusBadge} data-tone={status.tone}>
+            {status.label}
+          </span>
+        </div>
         <p>{record.description || record.recordId}</p>
         {record.tags.length > 0 && (
           <div className={styles.tagList} aria-label="Record tags">
@@ -68,12 +89,8 @@ function RecordRow({ record }: { record: RecordListItem }) {
       </div>
       <dl className={styles.metaList}>
         <div>
-          <dt>Status</dt>
-          <dd>{record.status}</dd>
-        </div>
-        <div>
           <dt>Duration</dt>
-          <dd>{record.duration === null ? "Pending" : `${record.duration}s`}</dd>
+          <dd>{formatRecordDuration(record.duration)}</dd>
         </div>
         <div>
           <dt>Created</dt>
@@ -84,11 +101,6 @@ function RecordRow({ record }: { record: RecordListItem }) {
   );
 }
 
-function formatRecordDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString();
+function shouldRenderThumbnailImage(url: string) {
+  return !url.includes("mock-storage.local/");
 }
