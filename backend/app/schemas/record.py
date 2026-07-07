@@ -15,3 +15,8 @@ class CreateRecordRequest(BaseModel):
 class CreateRecordResponse(BaseModel):
     recordId: str
     status: RecordStatus
+
+
+class FinalizeRecordResponse(BaseModel):
+    recordId: str
+    status: Literal["Ready"]

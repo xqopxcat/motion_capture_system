@@ -1,5 +1,10 @@
 import { baseApi } from "./baseApi";
-import type { CreateRecordRequest, CreateRecordResponse } from "../types";
+import type {
+  CreateRecordRequest,
+  CreateRecordResponse,
+  FinalizeRecordRequest,
+  FinalizeRecordResponse,
+} from "../types";
 
 export const recordsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,7 +15,13 @@ export const recordsApi = baseApi.injectEndpoints({
         url: "/records",
       }),
     }),
+    finalizeRecord: builder.mutation<FinalizeRecordResponse, FinalizeRecordRequest>({
+      query: ({ recordId }) => ({
+        method: "POST",
+        url: `/records/${recordId}/complete`,
+      }),
+    }),
   }),
 });
 
-export const { useCreateRecordMutation } = recordsApi;
+export const { useCreateRecordMutation, useFinalizeRecordMutation } = recordsApi;

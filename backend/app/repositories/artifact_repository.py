@@ -43,3 +43,11 @@ class ArtifactRepository:
         self._completed_artifacts.append(record)
 
         return record
+
+    def has_completed(self, *, record_id: str, artifact_type: ArtifactType) -> bool:
+        return any(
+            record.record_id == record_id
+            and record.artifact_type == artifact_type
+            and record.status == "Complete"
+            for record in self._completed_artifacts
+        )

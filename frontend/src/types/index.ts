@@ -16,7 +16,13 @@ export type {
   PoseDatasetLandmark,
   PoseDatasetValidationResult,
 } from "./poseDataset";
-export type { CreateRecordRequest, CreateRecordResponse, RecordStatus } from "./record";
+export type {
+  CreateRecordRequest,
+  CreateRecordResponse,
+  FinalizeRecordRequest,
+  FinalizeRecordResponse,
+  RecordStatus,
+} from "./record";
 export type {
   ArtifactCompleteResponse,
   ArtifactCompleteStatus,

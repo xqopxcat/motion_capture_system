@@ -2,6 +2,10 @@ from fastapi import HTTPException, status
 
 from app.repositories.artifact_repository import ArtifactRepository, ArtifactType
 from app.repositories.metric_summary_repository import MetricSummaryItemRecord, MetricSummaryRepository
+from app.repositories.runtime_repositories import (
+    artifact_repository as default_artifact_repository,
+    metric_summary_repository as default_metric_summary_repository,
+)
 from app.schemas.upload import (
     ArtifactCompleteResponse,
     MetricsUploadCompleteRequest,
@@ -36,8 +40,8 @@ class UploadService:
         metric_summary_repository: MetricSummaryRepository | None = None,
     ) -> None:
         self.signed_url_service = signed_url_service or SignedUrlService()
-        self.artifact_repository = artifact_repository or ArtifactRepository()
-        self.metric_summary_repository = metric_summary_repository or MetricSummaryRepository()
+        self.artifact_repository = artifact_repository or default_artifact_repository
+        self.metric_summary_repository = metric_summary_repository or default_metric_summary_repository
 
     def request_video_upload_url(self, request: VideoUploadUrlRequest) -> SignedUploadUrlResponse:
         storage_path = build_video_storage_path(request.recordId, request.fileName)

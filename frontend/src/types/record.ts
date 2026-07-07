@@ -10,3 +10,12 @@ export type CreateRecordResponse = {
   recordId: string;
   status: RecordStatus;
 };
+
+export type FinalizeRecordRequest = {
+  recordId: string;
+};
+
+export type FinalizeRecordResponse = {
+  recordId: string;
+  status: "Ready";
+};
