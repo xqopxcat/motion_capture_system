@@ -72,9 +72,10 @@
 }
 
 .recordCard {
+  align-items: center;
   display: grid;
   gap: 18px;
-  grid-template-columns: 132px minmax(0, 1fr) minmax(240px, 320px);
+  grid-template-columns: 132px minmax(0, 1fr) minmax(220px, 300px) auto;
   padding: 18px;
 }
 
@@ -199,6 +200,39 @@
   text-align: right;
 }
 
+.actionColumn {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.openLink,
+.disabledOpen {
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 800;
+  justify-content: center;
+  min-width: 72px;
+  padding: 9px 12px;
+  text-decoration: none;
+}
+
+.openLink {
+  background: #172033;
+  color: #ffffff;
+}
+
+.openLink:focus-visible,
+.openLink:hover {
+  background: #24324f;
+}
+
+.disabledOpen {
+  background: #eef2f7;
+  color: #6b7280;
+}
+
 @media (max-width: 760px) {
   .recordsPage {
     padding: 24px;
@@ -210,5 +244,9 @@
 
   .thumbnailFrame {
     max-width: 280px;
+  }
+
+  .actionColumn {
+    justify-content: flex-start;
   }
 }

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatRecordDate, formatRecordDuration, getRecordStatusMeta } from "./recordDisplay";
+import {
+  buildRecordViewerPath,
+  formatRecordDate,
+  formatRecordDuration,
+  getRecordStatusMeta,
+} from "./recordDisplay";
 
 describe("recordDisplay", () => {
   it("maps record statuses to display tones", () => {
@@ -28,5 +33,11 @@ describe("recordDisplay", () => {
 
   it("keeps invalid record dates readable", () => {
     expect(formatRecordDate("not-a-date")).toBe("not-a-date");
+  });
+
+  it("builds viewer paths from record ids only", () => {
+    expect(buildRecordViewerPath("record_123")).toBe("/records/record_123");
+    expect(buildRecordViewerPath(" record with space ")).toBe("/records/record%20with%20space");
+    expect(buildRecordViewerPath(" ")).toBeNull();
   });
 });

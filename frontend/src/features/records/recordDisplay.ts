@@ -43,3 +43,12 @@ export function formatRecordDate(value: string) {
 
   return date.toLocaleString();
 }
+
+export function buildRecordViewerPath(recordId: string) {
+  const normalizedRecordId = recordId.trim();
+  if (!normalizedRecordId) {
+    return null;
+  }
+
+  return `/records/${encodeURIComponent(normalizedRecordId)}`;
+}

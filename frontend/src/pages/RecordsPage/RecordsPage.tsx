@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom";
 import { useGetRecordsQuery } from "../../services/recordsApi";
 import type { RecordListItem } from "../../types";
 import {
+  buildRecordViewerPath,
   formatRecordDate,
   formatRecordDuration,
   getRecordStatusMeta,
@@ -59,6 +61,7 @@ export function RecordsPage() {
 
 function RecordCard({ record }: { record: RecordListItem }) {
   const status = getRecordStatusMeta(record.status);
+  const viewerPath = buildRecordViewerPath(record.recordId);
 
   return (
     <li className={styles.recordCard}>
@@ -97,6 +100,15 @@ function RecordCard({ record }: { record: RecordListItem }) {
           <dd>{formatRecordDate(record.createdAt)}</dd>
         </div>
       </dl>
+      <div className={styles.actionColumn}>
+        {viewerPath ? (
+          <Link className={styles.openLink} to={viewerPath}>
+            Open
+          </Link>
+        ) : (
+          <span className={styles.disabledOpen}>Unavailable</span>
+        )}
+      </div>
     </li>
   );
 }
