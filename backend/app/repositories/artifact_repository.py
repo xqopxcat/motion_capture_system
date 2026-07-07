@@ -51,3 +51,19 @@ class ArtifactRepository:
             and record.status == "Complete"
             for record in self._completed_artifacts
         )
+
+    def get_completed(
+        self,
+        *,
+        record_id: str,
+        artifact_type: ArtifactType,
+    ) -> ArtifactCompletionRecord | None:
+        for record in reversed(self._completed_artifacts):
+            if (
+                record.record_id == record_id
+                and record.artifact_type == artifact_type
+                and record.status == "Complete"
+            ):
+                return record
+
+        return None

@@ -38,6 +38,42 @@ def test_finalize_record_returns_ready_when_required_data_is_complete() -> None:
     }
 
 
+def test_get_record_detail_returns_ready_record_artifact_urls() -> None:
+    client = TestClient(app)
+    record_id = _create_record(client)
+
+    _complete_all_artifacts(client, record_id)
+    assert client.post(f"/api/records/{record_id}/complete").status_code == 200
+
+    response = client.get(f"/api/records/{record_id}")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["recordId"] == record_id
+    assert body["title"] == "Squat Practice"
+    assert body["status"] == "Ready"
+    assert body["video"]["url"].startswith("https://mock-storage.local/download/")
+    assert body["pose"]["url"].startswith("https://mock-storage.local/download/")
+    assert body["pose"]["version"] == "1.0"
+    assert body["metrics"]["seriesUrl"].startswith("https://mock-storage.local/download/")
+    assert body["metrics"]["summary"][0]["metricId"] == "knee_flexion"
+
+
+def test_get_record_detail_returns_non_ready_state_without_artifact_urls() -> None:
+    client = TestClient(app)
+    record_id = _create_record(client)
+
+    response = client.get(f"/api/records/{record_id}")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["recordId"] == record_id
+    assert body["status"] == "Uploading"
+    assert body["video"] is None
+    assert body["pose"] is None
+    assert body["metrics"] is None
+
+
 def test_finalize_record_fails_when_video_artifact_is_missing() -> None:
     client = TestClient(app)
     record_id = _create_record(client)

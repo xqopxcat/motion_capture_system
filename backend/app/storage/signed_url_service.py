@@ -13,3 +13,8 @@ class SignedUrlService:
         encoded_path = quote(storage_path, safe="")
 
         return f"https://mock-storage.local/upload/{encoded_path}"
+
+    def create_download_url(self, storage_path: str) -> str:
+        encoded_path = quote(storage_path, safe="")
+
+        return f"https://mock-storage.local/download/{encoded_path}"

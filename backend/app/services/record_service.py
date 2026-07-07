@@ -9,6 +9,14 @@ from app.repositories.runtime_repositories import (
     record_repository,
 )
 from app.schemas.record import CreateRecordRequest, CreateRecordResponse, FinalizeRecordResponse
+from app.schemas.record import (
+    RecordDetailMetricSummary,
+    RecordDetailMetrics,
+    RecordDetailPose,
+    RecordDetailResponse,
+    RecordDetailVideo,
+)
+from app.storage.signed_url_service import SignedUrlService
 
 
 REQUIRED_ARTIFACTS: tuple[ArtifactType, ...] = ("video", "pose", "metrics", "thumbnail")
@@ -20,10 +28,12 @@ class RecordService:
         repository: RecordRepository | None = None,
         artifacts: ArtifactRepository | None = None,
         metric_summaries: MetricSummaryRepository | None = None,
+        signed_url_service: SignedUrlService | None = None,
     ) -> None:
         self.repository = repository or record_repository
         self.artifacts = artifacts or artifact_repository
         self.metric_summaries = metric_summaries or metric_summary_repository
+        self.signed_url_service = signed_url_service or SignedUrlService()
 
     def create_record(self, request: CreateRecordRequest) -> CreateRecordResponse:
         return self.repository.create(request)
@@ -53,6 +63,69 @@ class RecordService:
         record = self.repository.update_status(record_id, "Ready")
 
         return FinalizeRecordResponse(recordId=record.recordId, status="Ready")
+
+    def get_record_detail(self, record_id: str) -> RecordDetailResponse:
+        record = self.repository.get(record_id)
+        if record is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "RECORD_NOT_FOUND",
+                    "message": "Record does not exist.",
+                },
+            )
+
+        detail = RecordDetailResponse(
+            recordId=record.record_id,
+            title=record.title,
+            description=record.description,
+            status=record.status,
+            tags=list(record.tags),
+            createdAt=record.created_at.isoformat(),
+        )
+
+        if record.status != "Ready":
+            return detail
+
+        video = self.artifacts.get_completed(record_id=record_id, artifact_type="video")
+        pose = self.artifacts.get_completed(record_id=record_id, artifact_type="pose")
+        metrics = self.artifacts.get_completed(record_id=record_id, artifact_type="metrics")
+        metric_summary = self.metric_summaries.get_summary(record_id)
+
+        return RecordDetailResponse(
+            recordId=record.record_id,
+            title=record.title,
+            description=record.description,
+            status=record.status,
+            video=RecordDetailVideo(
+                url=self.signed_url_service.create_download_url(video.storage_path),
+            )
+            if video is not None
+            else None,
+            pose=RecordDetailPose(
+                url=self.signed_url_service.create_download_url(pose.storage_path),
+                version=pose.version or "1.0",
+            )
+            if pose is not None
+            else None,
+            metrics=RecordDetailMetrics(
+                seriesUrl=self.signed_url_service.create_download_url(metrics.storage_path)
+                if metrics is not None
+                else None,
+                summary=[
+                    RecordDetailMetricSummary(
+                        metricId=item.metric_id,
+                        min=item.min,
+                        max=item.max,
+                        average=item.average,
+                        rangeOfMotion=item.range_of_motion,
+                    )
+                    for item in (metric_summary.items if metric_summary is not None else ())
+                ],
+            ),
+            tags=list(record.tags),
+            createdAt=record.created_at.isoformat(),
+        )
 
     def _missing_finalization_requirements(self, record_id: str) -> list[str]:
         missing = [

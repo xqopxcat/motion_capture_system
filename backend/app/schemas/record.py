@@ -20,3 +20,39 @@ class CreateRecordResponse(BaseModel):
 class FinalizeRecordResponse(BaseModel):
     recordId: str
     status: Literal["Ready"]
+
+
+class RecordDetailVideo(BaseModel):
+    url: str
+    duration: float | None = None
+    fps: float | None = None
+
+
+class RecordDetailPose(BaseModel):
+    url: str
+    version: str
+
+
+class RecordDetailMetricSummary(BaseModel):
+    metricId: str
+    min: float
+    max: float
+    average: float
+    rangeOfMotion: float
+
+
+class RecordDetailMetrics(BaseModel):
+    seriesUrl: str | None = None
+    summary: list[RecordDetailMetricSummary] = Field(default_factory=list)
+
+
+class RecordDetailResponse(BaseModel):
+    recordId: str
+    title: str
+    description: str
+    status: RecordStatus
+    video: RecordDetailVideo | None = None
+    pose: RecordDetailPose | None = None
+    metrics: RecordDetailMetrics | None = None
+    tags: list[str] = Field(default_factory=list)
+    createdAt: str

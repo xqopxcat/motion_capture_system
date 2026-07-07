@@ -19,3 +19,39 @@ export type FinalizeRecordResponse = {
   recordId: string;
   status: "Ready";
 };
+
+export type RecordDetailVideo = {
+  url: string;
+  duration: number | null;
+  fps: number | null;
+};
+
+export type RecordDetailPose = {
+  url: string;
+  version: string;
+};
+
+export type RecordDetailMetricSummary = {
+  metricId: string;
+  min: number;
+  max: number;
+  average: number;
+  rangeOfMotion: number;
+};
+
+export type RecordDetailMetrics = {
+  seriesUrl: string | null;
+  summary: RecordDetailMetricSummary[];
+};
+
+export type RecordDetail = {
+  recordId: string;
+  title: string;
+  description: string;
+  status: RecordStatus;
+  video: RecordDetailVideo | null;
+  pose: RecordDetailPose | null;
+  metrics: RecordDetailMetrics | null;
+  tags: string[];
+  createdAt: string;
+};

@@ -9,4 +9,8 @@ describe("recordsApi", () => {
   it("exposes a finalizeRecord mutation endpoint", () => {
     expect(recordsApi.endpoints.finalizeRecord).toBeDefined();
   });
+
+  it("exposes a getRecordDetail query endpoint", () => {
+    expect(recordsApi.endpoints.getRecordDetail).toBeDefined();
+  });
 });

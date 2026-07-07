@@ -4,6 +4,7 @@ import type {
   CreateRecordResponse,
   FinalizeRecordRequest,
   FinalizeRecordResponse,
+  RecordDetail,
 } from "../types";
 
 export const recordsApi = baseApi.injectEndpoints({
@@ -21,7 +22,11 @@ export const recordsApi = baseApi.injectEndpoints({
         url: `/records/${recordId}/complete`,
       }),
     }),
+    getRecordDetail: builder.query<RecordDetail, string>({
+      query: (recordId) => `/records/${recordId}`,
+    }),
   }),
 });
 
-export const { useCreateRecordMutation, useFinalizeRecordMutation } = recordsApi;
+export const { useCreateRecordMutation, useFinalizeRecordMutation, useGetRecordDetailQuery } =
+  recordsApi;

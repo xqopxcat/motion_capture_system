@@ -1,6 +1,11 @@
 from fastapi import APIRouter, status
 
-from app.schemas.record import CreateRecordRequest, CreateRecordResponse, FinalizeRecordResponse
+from app.schemas.record import (
+    CreateRecordRequest,
+    CreateRecordResponse,
+    FinalizeRecordResponse,
+    RecordDetailResponse,
+)
 from app.services.record_service import RecordService
 
 router = APIRouter(prefix="/records", tags=["records"])
@@ -14,3 +19,8 @@ def create_record(request: CreateRecordRequest) -> CreateRecordResponse:
 @router.post("/{record_id}/complete", response_model=FinalizeRecordResponse)
 def finalize_record(record_id: str) -> FinalizeRecordResponse:
     return RecordService().finalize_record(record_id)
+
+
+@router.get("/{record_id}", response_model=RecordDetailResponse)
+def get_record_detail(record_id: str) -> RecordDetailResponse:
+    return RecordService().get_record_detail(record_id)
