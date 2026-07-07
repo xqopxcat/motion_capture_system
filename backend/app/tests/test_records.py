@@ -23,6 +23,47 @@ def test_create_record_returns_uploading_status() -> None:
     assert body["status"] == "Uploading"
 
 
+def test_list_records_returns_items_and_total() -> None:
+    client = TestClient(app)
+    record_id = _create_record(client)
+
+    response = client.get("/api/records")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["total"] >= 1
+    assert any(item["recordId"] == record_id for item in body["items"])
+    record_item = next(item for item in body["items"] if item["recordId"] == record_id)
+    assert record_item["title"] == "Squat Practice"
+    assert record_item["status"] == "Uploading"
+    assert record_item["duration"] is None
+    assert record_item["tags"] == ["squat", "practice"]
+    assert "video" not in record_item
+    assert "pose" not in record_item
+    assert "metrics" not in record_item
+
+
+def test_list_records_includes_thumbnail_url_when_thumbnail_is_complete() -> None:
+    client = TestClient(app)
+    record_id = _create_record(client)
+
+    response = client.post(
+        "/api/uploads/thumbnail/complete",
+        json={
+            "recordId": record_id,
+            "storagePath": f"thumbnails/{record_id}/thumbnail.jpg",
+            "generatedFromFrameIndex": 0,
+        },
+    )
+    assert response.status_code == 200
+
+    response = client.get("/api/records")
+    body = response.json()
+    record_item = next(item for item in body["items"] if item["recordId"] == record_id)
+
+    assert record_item["thumbnailUrl"].startswith("https://mock-storage.local/download/")
+
+
 def test_finalize_record_returns_ready_when_required_data_is_complete() -> None:
     client = TestClient(app)
     record_id = _create_record(client)

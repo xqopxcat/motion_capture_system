@@ -1,0 +1,147 @@
+.recordsPage {
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 1060px;
+}
+
+.header {
+  margin-bottom: 28px;
+  max-width: 720px;
+}
+
+.kicker {
+  color: #5b6572;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.header p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.statePanel,
+.listPanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+}
+
+.statePanel {
+  padding: 24px;
+}
+
+.statePanel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.statePanel p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.listHeader {
+  border-bottom: 1px solid #d8dee8;
+  color: #5b6572;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 14px 18px;
+}
+
+.recordList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recordRow {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  padding: 18px;
+}
+
+.recordRow + .recordRow {
+  border-top: 1px solid #e7ebf1;
+}
+
+.primaryColumn {
+  min-width: 0;
+}
+
+.primaryColumn h2 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.primaryColumn p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tagList span {
+  background: #eef2f7;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  color: #374151;
+  font-size: 0.82rem;
+  padding: 4px 8px;
+}
+
+.metaList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.metaList div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.metaList dt {
+  color: #5b6572;
+}
+
+.metaList dd {
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .recordsPage {
+    padding: 24px;
+  }
+
+  .recordRow {
+    grid-template-columns: 1fr;
+  }
+}

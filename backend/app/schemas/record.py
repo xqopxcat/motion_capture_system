@@ -56,3 +56,19 @@ class RecordDetailResponse(BaseModel):
     metrics: RecordDetailMetrics | None = None
     tags: list[str] = Field(default_factory=list)
     createdAt: str
+
+
+class RecordListItem(BaseModel):
+    recordId: str
+    title: str
+    description: str
+    thumbnailUrl: str | None = None
+    duration: float | None = None
+    status: RecordStatus
+    tags: list[str] = Field(default_factory=list)
+    createdAt: str
+
+
+class ListRecordsResponse(BaseModel):
+    items: list[RecordListItem] = Field(default_factory=list)
+    total: int

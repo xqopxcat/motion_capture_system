@@ -55,3 +55,19 @@ export type RecordDetail = {
   tags: string[];
   createdAt: string;
 };
+
+export type RecordListItem = {
+  recordId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string | null;
+  duration: number | null;
+  status: RecordStatus;
+  tags: string[];
+  createdAt: string;
+};
+
+export type ListRecordsResponse = {
+  items: RecordListItem[];
+  total: number;
+};

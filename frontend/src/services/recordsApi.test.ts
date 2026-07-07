@@ -13,4 +13,8 @@ describe("recordsApi", () => {
   it("exposes a getRecordDetail query endpoint", () => {
     expect(recordsApi.endpoints.getRecordDetail).toBeDefined();
   });
+
+  it("exposes a getRecords query endpoint", () => {
+    expect(recordsApi.endpoints.getRecords).toBeDefined();
+  });
 });

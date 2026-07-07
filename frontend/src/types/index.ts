@@ -21,11 +21,13 @@ export type {
   CreateRecordResponse,
   FinalizeRecordRequest,
   FinalizeRecordResponse,
+  ListRecordsResponse,
   RecordDetail,
   RecordDetailMetrics,
   RecordDetailMetricSummary,
   RecordDetailPose,
   RecordDetailVideo,
+  RecordListItem,
   RecordStatus,
 } from "./record";
 export type {

@@ -10,6 +10,8 @@ from app.repositories.runtime_repositories import (
 )
 from app.schemas.record import CreateRecordRequest, CreateRecordResponse, FinalizeRecordResponse
 from app.schemas.record import (
+    ListRecordsResponse,
+    RecordListItem,
     RecordDetailMetricSummary,
     RecordDetailMetrics,
     RecordDetailPose,
@@ -37,6 +39,30 @@ class RecordService:
 
     def create_record(self, request: CreateRecordRequest) -> CreateRecordResponse:
         return self.repository.create(request)
+
+    def list_records(self) -> ListRecordsResponse:
+        items = []
+        for record in self.repository.list():
+            thumbnail = self.artifacts.get_completed(
+                record_id=record.record_id,
+                artifact_type="thumbnail",
+            )
+            items.append(
+                RecordListItem(
+                    recordId=record.record_id,
+                    title=record.title,
+                    description=record.description,
+                    thumbnailUrl=self.signed_url_service.create_download_url(thumbnail.storage_path)
+                    if thumbnail is not None
+                    else None,
+                    duration=None,
+                    status=record.status,
+                    tags=list(record.tags),
+                    createdAt=record.created_at.isoformat(),
+                ),
+            )
+
+        return ListRecordsResponse(items=items, total=len(items))
 
     def finalize_record(self, record_id: str) -> FinalizeRecordResponse:
         if not self.repository.exists(record_id):

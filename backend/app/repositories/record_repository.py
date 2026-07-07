@@ -62,3 +62,10 @@ class RecordRepository:
 
     def get(self, record_id: str) -> StoredRecord | None:
         return self._records.get(record_id)
+
+    def list(self) -> list[StoredRecord]:
+        return sorted(
+            self._records.values(),
+            key=lambda record: record.created_at,
+            reverse=True,
+        )
