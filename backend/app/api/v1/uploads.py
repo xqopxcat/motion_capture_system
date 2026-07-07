@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.schemas.upload import (
     ArtifactCompleteResponse,
     MetricsUploadCompleteRequest,
+    MetricsUploadCompleteResponse,
     MetricsUploadUrlRequest,
     PoseUploadCompleteRequest,
     PoseUploadUrlRequest,
@@ -47,8 +48,8 @@ def complete_pose_upload(request: PoseUploadCompleteRequest) -> ArtifactComplete
     return UploadService().complete_pose_upload(request)
 
 
-@router.post("/metrics/complete", response_model=ArtifactCompleteResponse)
-def complete_metrics_upload(request: MetricsUploadCompleteRequest) -> ArtifactCompleteResponse:
+@router.post("/metrics/complete", response_model=MetricsUploadCompleteResponse)
+def complete_metrics_upload(request: MetricsUploadCompleteRequest) -> MetricsUploadCompleteResponse:
     return UploadService().complete_metrics_upload(request)
 
 

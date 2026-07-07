@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { uploadsApi } from "./uploadsApi";
+import type { MetricsUploadCompleteRequest } from "../types";
 
 describe("uploadsApi", () => {
   it("exposes signed upload URL request mutations", () => {
@@ -14,5 +15,25 @@ describe("uploadsApi", () => {
     expect(uploadsApi.endpoints.completePoseUpload).toBeDefined();
     expect(uploadsApi.endpoints.completeMetricsUpload).toBeDefined();
     expect(uploadsApi.endpoints.completeThumbnailUpload).toBeDefined();
+  });
+
+  it("types metric summary on the metrics complete request", () => {
+    const body: MetricsUploadCompleteRequest = {
+      recordId: "record_123",
+      storagePath: "metrics/record_123/metric-series.v1.json",
+      version: "1.0",
+      summary: [
+        {
+          average: 75,
+          max: 120,
+          metricId: "knee_flexion",
+          min: 30,
+          rangeOfMotion: 90,
+        },
+      ],
+    };
+
+    expect(body.summary[0].metricId).toBe("knee_flexion");
+    expect(body.summary[0].rangeOfMotion).toBe(90);
   });
 });

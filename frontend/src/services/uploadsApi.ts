@@ -2,6 +2,7 @@ import { baseApi } from "./baseApi";
 import type {
   ArtifactCompleteResponse,
   MetricsUploadCompleteRequest,
+  MetricsUploadCompleteResponse,
   MetricsUploadUrlRequest,
   PoseUploadCompleteRequest,
   PoseUploadUrlRequest,
@@ -14,7 +15,7 @@ import type {
 
 export const uploadsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    completeMetricsUpload: builder.mutation<ArtifactCompleteResponse, MetricsUploadCompleteRequest>({
+    completeMetricsUpload: builder.mutation<MetricsUploadCompleteResponse, MetricsUploadCompleteRequest>({
       query: (body) => ({
         body,
         method: "POST",

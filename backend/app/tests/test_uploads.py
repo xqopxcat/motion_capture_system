@@ -108,7 +108,7 @@ def test_complete_pose_upload_returns_complete_status() -> None:
     assert response.json()["status"] == "Complete"
 
 
-def test_complete_metrics_upload_returns_complete_status_without_metric_summary() -> None:
+def test_complete_metrics_upload_persists_metric_summary() -> None:
     client = TestClient(app)
 
     response = client.post(
@@ -117,12 +117,22 @@ def test_complete_metrics_upload_returns_complete_status_without_metric_summary(
             "recordId": "record_123",
             "storagePath": "metrics/record_123/metric-series.v1.json",
             "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "knee_flexion",
+                    "min": 30,
+                    "max": 120,
+                    "average": 75,
+                    "rangeOfMotion": 90,
+                },
+            ],
         },
     )
 
     assert response.status_code == 200
     assert response.json()["artifactType"] == "metrics"
     assert response.json()["status"] == "Complete"
+    assert response.json()["summaryPersisted"] is True
 
 
 def test_complete_thumbnail_upload_returns_complete_status() -> None:
@@ -166,6 +176,118 @@ def test_complete_upload_rejects_record_path_mismatch() -> None:
             "recordId": "record_123",
             "storagePath": "poses/record_456/pose.v1.json",
             "version": "1.0",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "INVALID_STORAGE_PATH"
+
+
+def test_complete_metrics_upload_requires_summary() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": "record_123",
+            "storagePath": "metrics/record_123/metric-series.v1.json",
+            "version": "1.0",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_complete_metrics_upload_rejects_invalid_metric_id() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": "record_123",
+            "storagePath": "metrics/record_123/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "",
+                    "min": 30,
+                    "max": 120,
+                    "average": 75,
+                    "rangeOfMotion": 90,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_complete_metrics_upload_rejects_invalid_range_of_motion() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": "record_123",
+            "storagePath": "metrics/record_123/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "knee_flexion",
+                    "min": 30,
+                    "max": 120,
+                    "average": 75,
+                    "rangeOfMotion": -1,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_complete_metrics_upload_rejects_max_less_than_min() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": "record_123",
+            "storagePath": "metrics/record_123/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "knee_flexion",
+                    "min": 120,
+                    "max": 30,
+                    "average": 75,
+                    "rangeOfMotion": 90,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_complete_metrics_upload_rejects_record_path_mismatch() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": "record_123",
+            "storagePath": "metrics/record_456/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "knee_flexion",
+                    "min": 30,
+                    "max": 120,
+                    "average": 75,
+                    "rangeOfMotion": 90,
+                },
+            ],
         },
     )
 

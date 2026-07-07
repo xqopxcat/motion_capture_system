@@ -39,6 +39,19 @@ export type ArtifactCompleteResponse = {
   status: ArtifactCompleteStatus;
 };
 
+export type MetricSummary = {
+  metricId: string;
+  min: number;
+  max: number;
+  average: number;
+  rangeOfMotion: number;
+};
+
+export type MetricsUploadCompleteResponse = ArtifactCompleteResponse & {
+  artifactType: "metrics";
+  summaryPersisted: boolean;
+};
+
 export type VideoUploadCompleteRequest = {
   recordId: string;
   storagePath: string;
@@ -54,6 +67,7 @@ export type MetricsUploadCompleteRequest = {
   recordId: string;
   storagePath: string;
   version: string;
+  summary: MetricSummary[];
 };
 
 export type ThumbnailUploadCompleteRequest = {

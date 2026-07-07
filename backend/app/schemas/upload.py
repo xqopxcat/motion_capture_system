@@ -1,7 +1,8 @@
 from datetime import datetime
+from math import isfinite
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class VideoUploadUrlRequest(BaseModel):
@@ -45,10 +46,34 @@ class PoseUploadCompleteRequest(BaseModel):
     version: str = Field(min_length=1)
 
 
+class MetricSummary(BaseModel):
+    metricId: str = Field(min_length=1)
+    min: float
+    max: float
+    average: float
+    rangeOfMotion: float = Field(ge=0)
+
+    @field_validator("min", "max", "average", "rangeOfMotion")
+    @classmethod
+    def validate_finite_number(cls, value: float) -> float:
+        if not isfinite(value):
+            raise ValueError("Metric summary values must be finite numbers.")
+
+        return value
+
+    @model_validator(mode="after")
+    def validate_range(self) -> "MetricSummary":
+        if self.max < self.min:
+            raise ValueError("Metric summary max must be greater than or equal to min.")
+
+        return self
+
+
 class MetricsUploadCompleteRequest(BaseModel):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
     version: str = Field(min_length=1)
+    summary: list[MetricSummary] = Field(min_length=1)
 
 
 class ThumbnailUploadCompleteRequest(BaseModel):
@@ -62,3 +87,8 @@ class ArtifactCompleteResponse(BaseModel):
     artifactType: Literal["video", "pose", "metrics", "thumbnail"]
     storagePath: str
     status: Literal["Complete"]
+
+
+class MetricsUploadCompleteResponse(ArtifactCompleteResponse):
+    artifactType: Literal["metrics"]
+    summaryPersisted: bool

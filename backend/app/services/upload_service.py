@@ -1,10 +1,12 @@
 from fastapi import HTTPException, status
 
 from app.repositories.artifact_repository import ArtifactRepository, ArtifactType
+from app.repositories.metric_summary_repository import MetricSummaryItemRecord, MetricSummaryRepository
 from app.schemas.upload import (
     ArtifactCompleteResponse,
-    MetricsUploadUrlRequest,
     MetricsUploadCompleteRequest,
+    MetricsUploadCompleteResponse,
+    MetricsUploadUrlRequest,
     PoseUploadUrlRequest,
     PoseUploadCompleteRequest,
     SignedUploadUrlResponse,
@@ -31,9 +33,11 @@ class UploadService:
         self,
         signed_url_service: SignedUrlService | None = None,
         artifact_repository: ArtifactRepository | None = None,
+        metric_summary_repository: MetricSummaryRepository | None = None,
     ) -> None:
         self.signed_url_service = signed_url_service or SignedUrlService()
         self.artifact_repository = artifact_repository or ArtifactRepository()
+        self.metric_summary_repository = metric_summary_repository or MetricSummaryRepository()
 
     def request_video_upload_url(self, request: VideoUploadUrlRequest) -> SignedUploadUrlResponse:
         storage_path = build_video_storage_path(request.recordId, request.fileName)
@@ -81,16 +85,38 @@ class UploadService:
             version=request.version,
         )
 
-    def complete_metrics_upload(self, request: MetricsUploadCompleteRequest) -> ArtifactCompleteResponse:
+    def complete_metrics_upload(self, request: MetricsUploadCompleteRequest) -> MetricsUploadCompleteResponse:
         self._validate_storage_path(
             is_metrics_storage_path_for_record(request.recordId, request.storagePath),
         )
 
-        return self._mark_complete(
+        self.metric_summary_repository.persist_summary(
+            record_id=request.recordId,
+            items=[
+                MetricSummaryItemRecord(
+                    metric_id=item.metricId,
+                    min=item.min,
+                    max=item.max,
+                    average=item.average,
+                    range_of_motion=item.rangeOfMotion,
+                )
+                for item in request.summary
+            ],
+        )
+
+        record = self._mark_complete(
             record_id=request.recordId,
             artifact_type="metrics",
             storage_path=request.storagePath,
             version=request.version,
+        )
+
+        return MetricsUploadCompleteResponse(
+            recordId=record.recordId,
+            artifactType="metrics",
+            storagePath=record.storagePath,
+            status=record.status,
+            summaryPersisted=True,
         )
 
     def complete_thumbnail_upload(
