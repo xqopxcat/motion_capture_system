@@ -84,8 +84,15 @@
   background: #f3f6fa;
 }
 
+.primaryAction:disabled,
+.secondaryAction:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .intentPanel,
-.statusPanel {
+.statusPanel,
+.errorPanel {
   background: #f8fafc;
   border: 1px solid #e1e7ef;
   border-radius: 8px;
@@ -118,6 +125,17 @@
 
 .statusPanel h2 {
   color: #244f9e;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.errorPanel {
+  background: #fff3f1;
+  border-color: #f0b8ae;
+}
+
+.errorPanel h2 {
+  color: #8f2d1f;
   font-size: 1rem;
   margin: 0;
 }
