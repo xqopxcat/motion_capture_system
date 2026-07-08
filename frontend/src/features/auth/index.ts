@@ -1,1 +1,1 @@
-export { getSafeRedirectTo } from "./redirectIntent";
+export { getSafeInternalPath, getSafeRedirectTo } from "./redirectIntent";

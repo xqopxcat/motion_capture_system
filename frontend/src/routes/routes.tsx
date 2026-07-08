@@ -1,4 +1,5 @@
 import type { RouteObject } from "react-router-dom";
+import { ProtectedRoute } from "../components/ProtectedRoute/ProtectedRoute";
 import { CapturePage } from "../pages/CapturePage/CapturePage";
 import { ComparePage } from "../pages/ComparePage/ComparePage";
 import { DashboardPage } from "../pages/DashboardPage/DashboardPage";
@@ -12,23 +13,28 @@ export const routes: RouteObject[] = [
     element: <LoginPage />,
   },
   {
-    path: "/dashboard",
-    element: <DashboardPage />,
-  },
-  {
-    path: "/capture",
-    element: <CapturePage />,
-  },
-  {
-    path: "/records",
-    element: <RecordsPage />,
-  },
-  {
-    path: "/records/:recordId",
-    element: <RecordViewerPage />,
-  },
-  {
-    path: "/compare",
-    element: <ComparePage />,
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: "/dashboard",
+        element: <DashboardPage />,
+      },
+      {
+        path: "/capture",
+        element: <CapturePage />,
+      },
+      {
+        path: "/records",
+        element: <RecordsPage />,
+      },
+      {
+        path: "/records/:recordId",
+        element: <RecordViewerPage />,
+      },
+      {
+        path: "/compare",
+        element: <ComparePage />,
+      },
+    ],
   },
 ];

@@ -1,0 +1,36 @@
+.loadingState {
+  align-items: center;
+  background: #f7f8fa;
+  color: #29313d;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.loadingState p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.spinner {
+  animation: spin 800ms linear infinite;
+  border: 3px solid #cfd5dc;
+  border-radius: 50%;
+  border-top-color: #176b5b;
+  height: 28px;
+  width: 28px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
