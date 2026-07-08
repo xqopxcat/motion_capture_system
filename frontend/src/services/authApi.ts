@@ -1,11 +1,23 @@
 import { baseApi } from "./baseApi";
-import type { CurrentUser, MockLoginRequest, MockLoginResponse } from "../types";
+import type {
+  CurrentUser,
+  LogoutResponse,
+  MockLoginRequest,
+  MockLoginResponse,
+} from "../types";
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCurrentUser: builder.query<CurrentUser, void>({
       query: () => "/me",
       providesTags: ["CurrentUser"],
+    }),
+    logout: builder.mutation<LogoutResponse, void>({
+      query: () => ({
+        method: "POST",
+        url: "/auth/logout",
+      }),
+      invalidatesTags: ["CurrentUser"],
     }),
     mockLogin: builder.mutation<MockLoginResponse, MockLoginRequest>({
       query: (body) => ({
@@ -18,4 +30,8 @@ export const authApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetCurrentUserQuery, useMockLoginMutation } = authApi;
+export const {
+  useGetCurrentUserQuery,
+  useLogoutMutation,
+  useMockLoginMutation,
+} = authApi;

@@ -9,4 +9,8 @@ describe("authApi", () => {
   it("exposes a mockLogin mutation endpoint", () => {
     expect(authApi.endpoints.mockLogin).toBeDefined();
   });
+
+  it("exposes a logout mutation endpoint", () => {
+    expect(authApi.endpoints.logout).toBeDefined();
+  });
 });

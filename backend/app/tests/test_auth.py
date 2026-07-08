@@ -77,3 +77,30 @@ def test_current_user_returns_mock_login_user() -> None:
     assert login_response.status_code == 200
     assert response.status_code == 200
     assert response.json() == login_response.json()["user"]
+
+
+def test_logout_clears_cookie_and_invalidates_session() -> None:
+    client = TestClient(app)
+    login_response = client.post("/api/auth/mock-login", json={"provider": "google"})
+    session_id = login_response.cookies[settings.session_cookie_name]
+
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 200
+    assert response.json() == {"success": True}
+    assert response.cookies.get(settings.session_cookie_name) in (None, "")
+    assert "max-age=0" in response.headers["set-cookie"].lower()
+    assert client.get("/api/me").status_code == 401
+
+    client.cookies.set(settings.session_cookie_name, session_id)
+    assert client.get("/api/me").status_code == 401
+
+
+def test_logout_without_session_is_idempotent() -> None:
+    client = TestClient(app)
+
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 200
+    assert response.json() == {"success": True}
+    assert "max-age=0" in response.headers["set-cookie"].lower()

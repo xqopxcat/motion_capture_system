@@ -15,3 +15,7 @@ export type MockLoginRequest = {
 export type MockLoginResponse = {
   user: CurrentUser;
 };
+
+export type LogoutResponse = {
+  success: boolean;
+};

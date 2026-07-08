@@ -26,3 +26,6 @@ class SessionRepository:
 
     def get(self, session_id: str) -> StoredSession | None:
         return self._sessions.get(session_id)
+
+    def delete(self, session_id: str) -> bool:
+        return self._sessions.pop(session_id, None) is not None

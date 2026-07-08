@@ -10,7 +10,13 @@
   ViewerRuntimeState,
   VisualizationMode,
 } from "./runtime";
-export type { AuthProvider, CurrentUser, MockLoginRequest, MockLoginResponse } from "./auth";
+export type {
+  AuthProvider,
+  CurrentUser,
+  LogoutResponse,
+  MockLoginRequest,
+  MockLoginResponse,
+} from "./auth";
 export type {
   PoseDataset,
   PoseDatasetFrame,

@@ -20,3 +20,7 @@ class MockLoginRequest(BaseModel):
 
 class MockLoginResponse(BaseModel):
     user: CurrentUser
+
+
+class LogoutResponse(BaseModel):
+    success: bool = True

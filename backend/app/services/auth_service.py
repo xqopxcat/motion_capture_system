@@ -46,6 +46,10 @@ class AuthService:
 
         return self._to_current_user(user)
 
+    def logout(self, session_id: str | None) -> None:
+        if session_id is not None:
+            self.sessions.delete(session_id)
+
     @staticmethod
     def _to_current_user(user: StoredUser) -> CurrentUser:
         return CurrentUser(

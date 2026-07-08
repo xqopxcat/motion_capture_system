@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { getLoginRedirect, getProtectedRouteState } from "../../features/auth/protectedRouteIntent";
 import { useGetCurrentUserQuery } from "../../services/authApi";
+import { AuthStatus } from "../AuthStatus/AuthStatus";
 import styles from "./ProtectedRoute.module.css";
 
 export function ProtectedRoute() {
@@ -26,5 +27,10 @@ export function ProtectedRoute() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <AuthStatus currentUser={currentUser!} />
+      <Outlet />
+    </>
+  );
 }

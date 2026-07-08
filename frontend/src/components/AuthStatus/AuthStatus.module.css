@@ -1,0 +1,60 @@
+.authStatus {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgb(32 36 42 / 10%);
+  display: flex;
+  gap: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 10px;
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  z-index: 100;
+}
+
+.userName {
+  color: #4c5664;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutButton {
+  background: #29313d;
+  border: 1px solid #29313d;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 5px 10px;
+}
+
+.logoutButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.logoutButton:focus-visible {
+  outline: 3px solid #77b8aa;
+  outline-offset: 2px;
+}
+
+.errorMessage {
+  color: #a12f2f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .userName {
+    max-width: 100px;
+  }
+}

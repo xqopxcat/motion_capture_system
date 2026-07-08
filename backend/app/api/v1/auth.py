@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Request, Response
 
 from app.core.config import settings
-from app.schemas.auth import MockLoginRequest, MockLoginResponse
+from app.schemas.auth import LogoutResponse, MockLoginRequest, MockLoginResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -19,3 +19,15 @@ def mock_login(request: MockLoginRequest, response: Response) -> MockLoginRespon
     )
 
     return result.response
+
+
+@router.post("/logout", response_model=LogoutResponse)
+def logout(request: Request, response: Response) -> LogoutResponse:
+    AuthService().logout(request.cookies.get(settings.session_cookie_name))
+    response.delete_cookie(
+        key=settings.session_cookie_name,
+        httponly=True,
+        samesite="lax",
+    )
+
+    return LogoutResponse()
