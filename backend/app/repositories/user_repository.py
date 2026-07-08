@@ -16,6 +16,9 @@ class UserRepository:
     def __init__(self) -> None:
         self._users: dict[str, StoredUser] = {}
 
+    def get(self, user_id: str) -> StoredUser | None:
+        return self._users.get(user_id)
+
     def get_or_create_demo_user(self, provider: AuthProvider) -> StoredUser:
         user_id = "user_demo" if provider == "google" else "user_dev"
         existing = self._users.get(user_id)

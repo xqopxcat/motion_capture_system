@@ -23,3 +23,6 @@ class SessionRepository:
         self._sessions[session.session_id] = session
 
         return session
+
+    def get(self, session_id: str) -> StoredSession | None:
+        return self._sessions.get(session_id)
