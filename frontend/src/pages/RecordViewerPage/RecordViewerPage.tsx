@@ -123,6 +123,11 @@ export function RecordViewerPage() {
         .filter((annotation) => !localDeletedAnnotationIds.includes(annotation.annotationId))
         .map((annotation) => localUpdatedAnnotations[annotation.annotationId] ?? annotation)
     : annotationsResponse?.items ?? [];
+  const jumpToAnnotationFrame = (annotation: AnnotationMarker) => {
+    setSelectedAnnotationId(annotation.annotationId);
+    setIsAnnotationDrawerOpen(true);
+    requestSeekFrame(annotation.frameIndex);
+  };
 
   useEffect(() => {
     setPlaybackBounds({
@@ -190,10 +195,7 @@ export function RecordViewerPage() {
               <Timeline
                 annotations={annotationMarkers}
                 frame={frameState}
-                onAnnotationMarkerClick={(annotation) => {
-                  setSelectedAnnotationId(annotation.annotationId);
-                  setIsAnnotationDrawerOpen(true);
-                }}
+                onAnnotationMarkerClick={jumpToAnnotationFrame}
                 onSeekFrame={requestSeekFrame}
               />
               <PlaybackControls
@@ -312,6 +314,7 @@ export function RecordViewerPage() {
                     setDeleteAnnotationError("Annotation could not be deleted.");
                   }
                 }}
+                onJumpToAnnotation={jumpToAnnotationFrame}
                 onSelectAnnotation={(annotation) => setSelectedAnnotationId(annotation.annotationId)}
                 onUpdateAnnotation={async (annotation, draft) => {
                   setEditAnnotationError(null);

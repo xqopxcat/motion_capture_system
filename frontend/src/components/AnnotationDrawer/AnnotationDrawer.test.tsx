@@ -121,9 +121,24 @@ describe("AnnotationDrawer", () => {
     });
     const buttons = findElementsByType(tree, "button");
 
-    buttons[5].props.onClick();
+    buttons[6].props.onClick();
 
     expect(handleDeleteAnnotation).toHaveBeenCalledWith(annotations[0]);
+  });
+
+  it("emits jump intent for the selected annotation", () => {
+    const handleJumpToAnnotation = vi.fn();
+    const tree = AnnotationDrawer({
+      annotations,
+      isOpen: true,
+      selectedAnnotationId: "annotation_1",
+      onJumpToAnnotation: handleJumpToAnnotation,
+    });
+    const buttons = findElementsByType(tree, "button");
+
+    buttons[4].props.onClick();
+
+    expect(handleJumpToAnnotation).toHaveBeenCalledWith(annotations[0]);
   });
 
   it("emits close intent", () => {

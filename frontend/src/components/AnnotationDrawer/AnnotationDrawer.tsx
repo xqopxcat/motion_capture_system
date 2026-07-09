@@ -15,6 +15,7 @@ export type AnnotationDrawerProps = {
   onCreateAnnotation?: (draft: { note: string; title: string }) => void;
   onClose?: () => void;
   onDeleteAnnotation?: (annotation: AnnotationMarker) => void;
+  onJumpToAnnotation?: (annotation: AnnotationMarker) => void;
   onSelectAnnotation?: (annotation: AnnotationMarker) => void;
   onUpdateAnnotation?: (annotation: AnnotationMarker, draft: { note: string; title: string }) => void;
 };
@@ -33,6 +34,7 @@ export function AnnotationDrawer({
   onCreateAnnotation,
   onClose,
   onDeleteAnnotation,
+  onJumpToAnnotation,
   onSelectAnnotation,
   onUpdateAnnotation,
 }: AnnotationDrawerProps) {
@@ -148,6 +150,13 @@ export function AnnotationDrawer({
             {selectedAnnotation.note && (
               <p className={styles.note}>{selectedAnnotation.note}</p>
             )}
+            <button
+              className={styles.jumpButton}
+              type="button"
+              onClick={() => onJumpToAnnotation?.(selectedAnnotation)}
+            >
+              Jump to frame
+            </button>
             <details className={styles.actionBlock}>
               <summary>Edit</summary>
               <form

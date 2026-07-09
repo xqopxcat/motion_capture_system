@@ -105,6 +105,22 @@
   cursor: not-allowed;
 }
 
+.jumpButton {
+  background: #20242a;
+  border: 1px solid #20242a;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.jumpButton:hover,
+.jumpButton:focus-visible {
+  background: #111827;
+  outline: none;
+}
+
 .deleteButton {
   background: #b42318;
   border: 1px solid #b42318;
