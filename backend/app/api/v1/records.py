@@ -1,5 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.api.deps import current_user
+from app.schemas.auth import CurrentUser
 from app.schemas.record import (
     CreateRecordRequest,
     CreateRecordResponse,
@@ -13,20 +15,29 @@ router = APIRouter(prefix="/records", tags=["records"])
 
 
 @router.post("", response_model=CreateRecordResponse, status_code=status.HTTP_201_CREATED)
-def create_record(request: CreateRecordRequest) -> CreateRecordResponse:
-    return RecordService().create_record(request)
+def create_record(
+    request: CreateRecordRequest,
+    user: CurrentUser = Depends(current_user),
+) -> CreateRecordResponse:
+    return RecordService().create_record(request, user)
 
 
 @router.get("", response_model=ListRecordsResponse)
-def list_records() -> ListRecordsResponse:
-    return RecordService().list_records()
+def list_records(user: CurrentUser = Depends(current_user)) -> ListRecordsResponse:
+    return RecordService().list_records(user)
 
 
 @router.post("/{record_id}/complete", response_model=FinalizeRecordResponse)
-def finalize_record(record_id: str) -> FinalizeRecordResponse:
-    return RecordService().finalize_record(record_id)
+def finalize_record(
+    record_id: str,
+    user: CurrentUser = Depends(current_user),
+) -> FinalizeRecordResponse:
+    return RecordService().finalize_record(record_id, user)
 
 
 @router.get("/{record_id}", response_model=RecordDetailResponse)
-def get_record_detail(record_id: str) -> RecordDetailResponse:
-    return RecordService().get_record_detail(record_id)
+def get_record_detail(
+    record_id: str,
+    user: CurrentUser = Depends(current_user),
+) -> RecordDetailResponse:
+    return RecordService().get_record_detail(record_id, user)

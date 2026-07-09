@@ -8,6 +8,7 @@ from app.repositories.runtime_repositories import (
     metric_summary_repository,
     record_repository,
 )
+from app.schemas.auth import CurrentUser
 from app.schemas.record import CreateRecordRequest, CreateRecordResponse, FinalizeRecordResponse
 from app.schemas.record import (
     ListRecordsResponse,
@@ -37,12 +38,12 @@ class RecordService:
         self.metric_summaries = metric_summaries or metric_summary_repository
         self.signed_url_service = signed_url_service or SignedUrlService()
 
-    def create_record(self, request: CreateRecordRequest) -> CreateRecordResponse:
-        return self.repository.create(request)
+    def create_record(self, request: CreateRecordRequest, user: CurrentUser) -> CreateRecordResponse:
+        return self.repository.create(request, owner_user_id=user.userId)
 
-    def list_records(self) -> ListRecordsResponse:
+    def list_records(self, user: CurrentUser) -> ListRecordsResponse:
         items = []
-        for record in self.repository.list():
+        for record in self.repository.list_owned(user.userId):
             thumbnail = self.artifacts.get_completed(
                 record_id=record.record_id,
                 artifact_type="thumbnail",
@@ -64,15 +65,8 @@ class RecordService:
 
         return ListRecordsResponse(items=items, total=len(items))
 
-    def finalize_record(self, record_id: str) -> FinalizeRecordResponse:
-        if not self.repository.exists(record_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "code": "RECORD_NOT_FOUND",
-                    "message": "Record does not exist.",
-                },
-            )
+    def finalize_record(self, record_id: str, user: CurrentUser) -> FinalizeRecordResponse:
+        self._require_owned_record(record_id, user)
 
         missing_requirements = self._missing_finalization_requirements(record_id)
         if missing_requirements:
@@ -90,16 +84,8 @@ class RecordService:
 
         return FinalizeRecordResponse(recordId=record.recordId, status="Ready")
 
-    def get_record_detail(self, record_id: str) -> RecordDetailResponse:
-        record = self.repository.get(record_id)
-        if record is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "code": "RECORD_NOT_FOUND",
-                    "message": "Record does not exist.",
-                },
-            )
+    def get_record_detail(self, record_id: str, user: CurrentUser) -> RecordDetailResponse:
+        record = self._require_owned_record(record_id, user)
 
         detail = RecordDetailResponse(
             recordId=record.record_id,
@@ -164,3 +150,16 @@ class RecordService:
             missing.append("metricSummary")
 
         return missing
+
+    def _require_owned_record(self, record_id: str, user: CurrentUser):
+        record = self.repository.get_owned(record_id, user.userId)
+        if record is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "RECORD_NOT_FOUND",
+                    "message": "Record does not exist.",
+                },
+            )
+
+        return record

@@ -1,11 +1,12 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories.runtime_repositories import artifact_repository
+from app.repositories.runtime_repositories import artifact_repository, record_repository
 
 
 def test_create_record_returns_uploading_status() -> None:
     client = TestClient(app)
+    _login(client)
 
     response = client.post(
         "/api/records",
@@ -23,8 +24,45 @@ def test_create_record_returns_uploading_status() -> None:
     assert body["status"] == "Uploading"
 
 
+def test_create_record_requires_authenticated_user() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/records",
+        json={
+            "title": "Squat Practice",
+            "description": "Morning session",
+            "tags": ["squat", "practice"],
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_record_assigns_owner_from_current_user_and_ignores_request_owner() -> None:
+    client = TestClient(app)
+    _login(client, provider="google")
+
+    response = client.post(
+        "/api/records",
+        json={
+            "title": "Squat Practice",
+            "description": "Morning session",
+            "tags": ["squat", "practice"],
+            "ownerUserId": "user_dev",
+        },
+    )
+    body = response.json()
+    stored_record = record_repository.get(body["recordId"])
+
+    assert response.status_code == 201
+    assert stored_record is not None
+    assert stored_record.owner_user_id == "user_demo"
+
+
 def test_list_records_returns_items_and_total() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     response = client.get("/api/records")
@@ -43,8 +81,31 @@ def test_list_records_returns_items_and_total() -> None:
     assert "metrics" not in record_item
 
 
+def test_list_records_returns_only_current_user_records() -> None:
+    owner_client = TestClient(app)
+    _login(owner_client, provider="google")
+    owner_record_id = _create_record(owner_client)
+
+    other_client = TestClient(app)
+    _login(other_client, provider="dev")
+    other_record_id = _create_record(other_client)
+
+    owner_response = owner_client.get("/api/records")
+    owner_body = owner_response.json()
+    other_response = other_client.get("/api/records")
+    other_body = other_response.json()
+
+    assert owner_response.status_code == 200
+    assert other_response.status_code == 200
+    assert any(item["recordId"] == owner_record_id for item in owner_body["items"])
+    assert all(item["recordId"] != other_record_id for item in owner_body["items"])
+    assert any(item["recordId"] == other_record_id for item in other_body["items"])
+    assert all(item["recordId"] != owner_record_id for item in other_body["items"])
+
+
 def test_list_records_includes_thumbnail_url_when_thumbnail_is_complete() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     response = client.post(
@@ -66,6 +127,7 @@ def test_list_records_includes_thumbnail_url_when_thumbnail_is_complete() -> Non
 
 def test_finalize_record_returns_ready_when_required_data_is_complete() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id)
@@ -81,6 +143,7 @@ def test_finalize_record_returns_ready_when_required_data_is_complete() -> None:
 
 def test_get_record_detail_returns_ready_record_artifact_urls() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id)
@@ -102,6 +165,7 @@ def test_get_record_detail_returns_ready_record_artifact_urls() -> None:
 
 def test_get_record_detail_returns_non_ready_state_without_artifact_urls() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     response = client.get(f"/api/records/{record_id}")
@@ -117,6 +181,7 @@ def test_get_record_detail_returns_non_ready_state_without_artifact_urls() -> No
 
 def test_finalize_record_fails_when_video_artifact_is_missing() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id, skip="video")
@@ -130,6 +195,7 @@ def test_finalize_record_fails_when_video_artifact_is_missing() -> None:
 
 def test_finalize_record_fails_when_pose_artifact_is_missing() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id, skip="pose")
@@ -142,6 +208,7 @@ def test_finalize_record_fails_when_pose_artifact_is_missing() -> None:
 
 def test_finalize_record_fails_when_metrics_artifact_is_missing() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id, skip="metrics")
@@ -154,6 +221,7 @@ def test_finalize_record_fails_when_metrics_artifact_is_missing() -> None:
 
 def test_finalize_record_fails_when_thumbnail_artifact_is_missing() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     _complete_all_artifacts(client, record_id, skip="thumbnail")
@@ -166,6 +234,7 @@ def test_finalize_record_fails_when_thumbnail_artifact_is_missing() -> None:
 
 def test_finalize_record_fails_when_metric_summary_is_missing() -> None:
     client = TestClient(app)
+    _login(client)
     record_id = _create_record(client)
 
     artifact_repository.mark_complete(
@@ -196,6 +265,39 @@ def test_finalize_record_fails_when_metric_summary_is_missing() -> None:
 
     assert response.status_code == 400
     assert "metricSummary" in response.json()["detail"]["missingRequirements"]
+
+
+def test_get_record_detail_returns_404_for_another_users_record() -> None:
+    owner_client = TestClient(app)
+    _login(owner_client, provider="google")
+    record_id = _create_record(owner_client)
+
+    other_client = TestClient(app)
+    _login(other_client, provider="dev")
+
+    response = other_client.get(f"/api/records/{record_id}")
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "RECORD_NOT_FOUND"
+
+
+def test_finalize_record_returns_404_for_another_users_record() -> None:
+    owner_client = TestClient(app)
+    _login(owner_client, provider="google")
+    record_id = _create_record(owner_client)
+
+    other_client = TestClient(app)
+    _login(other_client, provider="dev")
+
+    response = other_client.post(f"/api/records/{record_id}/complete")
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "RECORD_NOT_FOUND"
+
+
+def _login(client: TestClient, *, provider: str = "google") -> None:
+    response = client.post("/api/auth/mock-login", json={"provider": provider})
+    assert response.status_code == 200
 
 
 def _create_record(client: TestClient) -> str:

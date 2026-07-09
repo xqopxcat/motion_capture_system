@@ -2,10 +2,13 @@ from fastapi import HTTPException, status
 
 from app.repositories.artifact_repository import ArtifactRepository, ArtifactType
 from app.repositories.metric_summary_repository import MetricSummaryItemRecord, MetricSummaryRepository
+from app.repositories.record_repository import RecordRepository
 from app.repositories.runtime_repositories import (
     artifact_repository as default_artifact_repository,
     metric_summary_repository as default_metric_summary_repository,
+    record_repository as default_record_repository,
 )
+from app.schemas.auth import CurrentUser
 from app.schemas.upload import (
     ArtifactCompleteResponse,
     MetricsUploadCompleteRequest,
@@ -38,22 +41,39 @@ class UploadService:
         signed_url_service: SignedUrlService | None = None,
         artifact_repository: ArtifactRepository | None = None,
         metric_summary_repository: MetricSummaryRepository | None = None,
+        record_repository: RecordRepository | None = None,
     ) -> None:
         self.signed_url_service = signed_url_service or SignedUrlService()
         self.artifact_repository = artifact_repository or default_artifact_repository
         self.metric_summary_repository = metric_summary_repository or default_metric_summary_repository
+        self.record_repository = record_repository or default_record_repository
 
-    def request_video_upload_url(self, request: VideoUploadUrlRequest) -> SignedUploadUrlResponse:
+    def request_video_upload_url(
+        self,
+        request: VideoUploadUrlRequest,
+        user: CurrentUser,
+    ) -> SignedUploadUrlResponse:
+        self._validate_record_ownership(request.recordId, user)
         storage_path = build_video_storage_path(request.recordId, request.fileName)
 
         return self._build_response(storage_path)
 
-    def request_pose_upload_url(self, request: PoseUploadUrlRequest) -> SignedUploadUrlResponse:
+    def request_pose_upload_url(
+        self,
+        request: PoseUploadUrlRequest,
+        user: CurrentUser,
+    ) -> SignedUploadUrlResponse:
+        self._validate_record_ownership(request.recordId, user)
         storage_path = build_pose_storage_path(request.recordId)
 
         return self._build_response(storage_path)
 
-    def request_metrics_upload_url(self, request: MetricsUploadUrlRequest) -> SignedUploadUrlResponse:
+    def request_metrics_upload_url(
+        self,
+        request: MetricsUploadUrlRequest,
+        user: CurrentUser,
+    ) -> SignedUploadUrlResponse:
+        self._validate_record_ownership(request.recordId, user)
         storage_path = build_metrics_storage_path(request.recordId)
 
         return self._build_response(storage_path)
@@ -61,12 +81,19 @@ class UploadService:
     def request_thumbnail_upload_url(
         self,
         request: ThumbnailUploadUrlRequest,
+        user: CurrentUser,
     ) -> SignedUploadUrlResponse:
+        self._validate_record_ownership(request.recordId, user)
         storage_path = build_thumbnail_storage_path(request.recordId)
 
         return self._build_response(storage_path)
 
-    def complete_video_upload(self, request: VideoUploadCompleteRequest) -> ArtifactCompleteResponse:
+    def complete_video_upload(
+        self,
+        request: VideoUploadCompleteRequest,
+        user: CurrentUser,
+    ) -> ArtifactCompleteResponse:
+        self._validate_record_ownership(request.recordId, user)
         self._validate_storage_path(
             is_video_storage_path_for_record(request.recordId, request.storagePath),
         )
@@ -77,7 +104,12 @@ class UploadService:
             storage_path=request.storagePath,
         )
 
-    def complete_pose_upload(self, request: PoseUploadCompleteRequest) -> ArtifactCompleteResponse:
+    def complete_pose_upload(
+        self,
+        request: PoseUploadCompleteRequest,
+        user: CurrentUser,
+    ) -> ArtifactCompleteResponse:
+        self._validate_record_ownership(request.recordId, user)
         self._validate_storage_path(
             is_pose_storage_path_for_record(request.recordId, request.storagePath),
         )
@@ -89,7 +121,12 @@ class UploadService:
             version=request.version,
         )
 
-    def complete_metrics_upload(self, request: MetricsUploadCompleteRequest) -> MetricsUploadCompleteResponse:
+    def complete_metrics_upload(
+        self,
+        request: MetricsUploadCompleteRequest,
+        user: CurrentUser,
+    ) -> MetricsUploadCompleteResponse:
+        self._validate_record_ownership(request.recordId, user)
         self._validate_storage_path(
             is_metrics_storage_path_for_record(request.recordId, request.storagePath),
         )
@@ -126,7 +163,9 @@ class UploadService:
     def complete_thumbnail_upload(
         self,
         request: ThumbnailUploadCompleteRequest,
+        user: CurrentUser,
     ) -> ArtifactCompleteResponse:
+        self._validate_record_ownership(request.recordId, user)
         self._validate_storage_path(
             is_thumbnail_storage_path_for_record(request.recordId, request.storagePath),
         )
@@ -178,5 +217,17 @@ class UploadService:
             detail={
                 "code": "INVALID_STORAGE_PATH",
                 "message": "Storage path does not match the requested record and artifact type.",
+            },
+        )
+
+    def _validate_record_ownership(self, record_id: str, user: CurrentUser) -> None:
+        if self.record_repository.is_owned_by(record_id, user.userId):
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RECORD_NOT_FOUND",
+                "message": "Record does not exist.",
             },
         )
