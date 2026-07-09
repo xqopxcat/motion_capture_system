@@ -44,14 +44,19 @@ export type MetricDisplayValue = {
   value: string;
 };
 
-export type AnnotationDisplayItem = {
-  id: string;
+export type AnnotationMarker = {
+  annotationId: string;
   frameIndex: number;
+  timestamp?: number;
   title: string;
 };
 
+export type AnnotationDisplayItem = AnnotationMarker & {
+  id: string;
+};
+
 export type RenderContext = {
-  annotations?: AnnotationDisplayItem[];
+  annotations?: AnnotationMarker[];
   canvasId: string;
   canvasSize?: {
     height: number;

@@ -1,5 +1,6 @@
 ﻿export type {
   AnnotationDisplayItem,
+  AnnotationMarker,
   CaptureRuntimeState,
   CompareRuntimeState,
   FrameState,
