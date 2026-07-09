@@ -64,8 +64,9 @@ export type RenderContext = {
     width: number;
   };
   frameIndex: number;
+  highlightedJointIds?: number[];
   metrics?: MetricDisplayValue[];
   mode: VisualizationMode;
   poseFrame?: PoseDatasetFrame | null;
-  selectedJointId?: number;
+  selectedJointId?: number | null;
 };

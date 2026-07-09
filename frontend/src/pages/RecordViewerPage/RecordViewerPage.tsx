@@ -33,6 +33,7 @@ export function RecordViewerPage() {
   const [searchParams] = useSearchParams();
   const [isAnnotationDrawerOpen, setIsAnnotationDrawerOpen] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [selectedJointId, setSelectedJointId] = useState<number | null>(null);
   const [localCreatedAnnotations, setLocalCreatedAnnotations] = useState<AnnotationMarker[]>([]);
   const [localDeletedAnnotationIds, setLocalDeletedAnnotationIds] = useState<string[]>([]);
   const [localUpdatedAnnotations, setLocalUpdatedAnnotations] = useState<
@@ -109,7 +110,9 @@ export function RecordViewerPage() {
   const renderContext = createViewerRenderContext({
     canvasId: "record-viewer-skeleton-canvas",
     currentFrame: frameState.currentFrame,
+    highlightedJointIds: selectedJointId !== null ? [selectedJointId] : [],
     poseDataset,
+    selectedJointId,
   });
   const localFixtureAnnotations = useMemo(
     () =>
@@ -190,7 +193,10 @@ export function RecordViewerPage() {
                   onEnded={handleVideoEnded}
                   onTimeChange={handleVideoTimeUpdate}
                 />
-                <SkeletonCanvas renderContext={renderContext} />
+                <SkeletonCanvas
+                  renderContext={renderContext}
+                  onJointClick={(jointId) => setSelectedJointId(jointId)}
+                />
               </div>
               <Timeline
                 annotations={annotationMarkers}
@@ -239,6 +245,22 @@ export function RecordViewerPage() {
                   onClick={() => setIsAnnotationDrawerOpen((isOpen) => !isOpen)}
                 >
                   {isAnnotationDrawerOpen ? "Hide drawer" : "Show drawer"}
+                </button>
+              </section>
+              <section className={styles.jointPanel}>
+                <div>
+                  <p className={styles.panelLabel}>Joint</p>
+                  <h2>
+                    {selectedJointId === null ? "No joint selected" : `Joint ${selectedJointId}`}
+                  </h2>
+                </div>
+                <button
+                  className={styles.annotationToggle}
+                  disabled={selectedJointId === null}
+                  type="button"
+                  onClick={() => setSelectedJointId(null)}
+                >
+                  Clear
                 </button>
               </section>
               <AnnotationDrawer

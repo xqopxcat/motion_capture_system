@@ -80,7 +80,7 @@
 
 .viewerStage canvas {
   height: 100%;
-  pointer-events: none;
+  pointer-events: auto;
   width: 100%;
 }
 
@@ -90,7 +90,8 @@
 }
 
 .summaryPanel,
-.annotationPanel {
+.annotationPanel,
+.jointPanel {
   background: #ffffff;
   border: 1px solid #d8dee8;
   border-radius: 8px;
@@ -98,20 +99,23 @@
 }
 
 .summaryPanel h2,
-.annotationPanel h2 {
+.annotationPanel h2,
+.jointPanel h2 {
   font-size: 1rem;
   margin: 0 0 16px;
   overflow-wrap: anywhere;
 }
 
-.annotationPanel {
+.annotationPanel,
+.jointPanel {
   align-items: center;
   display: flex;
   gap: 12px;
   justify-content: space-between;
 }
 
-.annotationPanel h2 {
+.annotationPanel h2,
+.jointPanel h2 {
   margin-bottom: 0;
 }
 
@@ -130,6 +134,12 @@
 .annotationToggle:focus-visible {
   background: #111827;
   outline: none;
+}
+
+.annotationToggle:disabled {
+  background: #94a3b8;
+  border-color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .summaryList {

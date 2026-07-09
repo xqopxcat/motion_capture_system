@@ -46,16 +46,20 @@ describe("viewerRenderContext", () => {
     const context = createViewerRenderContext({
       canvasId: "viewer-canvas",
       currentFrame: 1,
+      highlightedJointIds: [12],
       poseDataset: createPoseDataset(),
+      selectedJointId: 12,
     });
 
     expect(context).toMatchObject({
       canvasId: "viewer-canvas",
       frameIndex: 1,
+      highlightedJointIds: [12],
       mode: "skeleton",
       poseFrame: {
         frameIndex: 1,
       },
+      selectedJointId: 12,
     });
   });
 });

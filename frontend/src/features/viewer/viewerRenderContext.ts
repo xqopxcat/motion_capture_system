@@ -4,7 +4,9 @@ import { clampFrameIndex } from "./playbackFrameMath";
 export type CreateViewerRenderContextInput = {
   canvasId: string;
   currentFrame: number;
+  highlightedJointIds?: number[];
   poseDataset: PoseDataset | null;
+  selectedJointId?: number | null;
 };
 
 export function selectPoseFrameByIndex(
@@ -23,7 +25,9 @@ export function selectPoseFrameByIndex(
 export function createViewerRenderContext({
   canvasId,
   currentFrame,
+  highlightedJointIds = [],
   poseDataset,
+  selectedJointId = null,
 }: CreateViewerRenderContextInput): RenderContext {
   const poseFrame = selectPoseFrameByIndex(poseDataset, currentFrame);
 
@@ -31,8 +35,10 @@ export function createViewerRenderContext({
     annotations: [],
     canvasId,
     frameIndex: poseFrame?.frameIndex ?? clampFrameIndex(currentFrame, poseDataset?.frames.length ?? 0),
+    highlightedJointIds,
     metrics: [],
     mode: "skeleton",
     poseFrame,
+    selectedJointId,
   };
 }
