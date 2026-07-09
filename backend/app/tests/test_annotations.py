@@ -26,9 +26,61 @@ def test_create_annotation_returns_created_annotation() -> None:
     assert body["timestamp"] == 1.4
     assert body["title"] == "Knee inward"
     assert body["note"] == "Left knee moves inward during descent."
+    assert body["jointId"] is None
     assert body["authorUserId"] == "user_demo"
     assert body["createdAt"]
     assert body["updatedAt"]
+
+
+def test_create_annotation_can_target_joint() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+
+    response = client.post(
+        f"/api/records/{record_id}/annotations",
+        json={
+            "frameIndex": 42,
+            "timestamp": 1.4,
+            "title": "Knee inward",
+            "note": "Left knee moves inward during descent.",
+            "jointId": 25,
+        },
+    )
+    body = response.json()
+
+    assert response.status_code == 201
+    assert body["jointId"] == 25
+
+
+def test_create_annotation_rejects_joint_outside_pose_range() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+
+    low_response = client.post(
+        f"/api/records/{record_id}/annotations",
+        json={
+            "frameIndex": 42,
+            "timestamp": 1.4,
+            "title": "Knee inward",
+            "note": "",
+            "jointId": -1,
+        },
+    )
+    high_response = client.post(
+        f"/api/records/{record_id}/annotations",
+        json={
+            "frameIndex": 42,
+            "timestamp": 1.4,
+            "title": "Knee inward",
+            "note": "",
+            "jointId": 33,
+        },
+    )
+
+    assert low_response.status_code == 422
+    assert high_response.status_code == 422
 
 
 def test_list_annotations_returns_record_annotations() -> None:

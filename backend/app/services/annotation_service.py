@@ -124,6 +124,7 @@ class AnnotationService:
             timestamp=annotation.timestamp,
             title=annotation.title,
             note=annotation.note,
+            jointId=annotation.joint_id,
             authorUserId=annotation.author_user_id,
             createdAt=annotation.created_at.isoformat(),
             updatedAt=annotation.updated_at.isoformat(),

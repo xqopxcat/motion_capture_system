@@ -15,6 +15,7 @@ class StoredAnnotation:
     timestamp: float
     title: str
     note: str
+    joint_id: int | None
     author_user_id: str
     created_at: datetime
     updated_at: datetime
@@ -39,6 +40,7 @@ class AnnotationRepository:
             timestamp=request.timestamp,
             title=request.title.strip(),
             note=request.note,
+            joint_id=request.jointId,
             author_user_id=author_user_id,
             created_at=now,
             updated_at=now,
@@ -72,6 +74,7 @@ class AnnotationRepository:
             timestamp=current.timestamp,
             title=request.title.strip() if request.title is not None else current.title,
             note=request.note if request.note is not None else current.note,
+            joint_id=current.joint_id,
             author_user_id=current.author_user_id,
             created_at=current.created_at,
             updated_at=datetime.now(UTC),

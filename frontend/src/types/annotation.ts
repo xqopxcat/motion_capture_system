@@ -5,6 +5,7 @@ export type Annotation = {
   timestamp: number;
   title: string;
   note: string;
+  jointId?: number | null;
   authorUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ export type CreateAnnotationRequest = {
   timestamp: number;
   title: string;
   note: string;
+  jointId?: number | null;
 };
 
 export type UpdateAnnotationRequest = {

@@ -128,8 +128,14 @@ export function RecordViewerPage() {
     : annotationsResponse?.items ?? [];
   const jumpToAnnotationFrame = (annotation: AnnotationMarker) => {
     setSelectedAnnotationId(annotation.annotationId);
+    setSelectedJointId(typeof annotation.jointId === "number" ? annotation.jointId : null);
     setIsAnnotationDrawerOpen(true);
     requestSeekFrame(annotation.frameIndex);
+  };
+
+  const selectAnnotation = (annotation: AnnotationMarker) => {
+    setSelectedAnnotationId(annotation.annotationId);
+    setSelectedJointId(typeof annotation.jointId === "number" ? annotation.jointId : null);
   };
 
   useEffect(() => {
@@ -274,6 +280,7 @@ export function RecordViewerPage() {
                 isUpdating={updateAnnotationState.isLoading}
                 isOpen={isAnnotationDrawerOpen}
                 selectedAnnotationId={selectedAnnotationId}
+                selectedJointId={selectedJointId}
                 onCreateAnnotation={async (draft) => {
                   setCreateAnnotationError(null);
 
@@ -281,6 +288,7 @@ export function RecordViewerPage() {
                     const annotation: AnnotationMarker = {
                       annotationId: `local_annotation_${Date.now()}`,
                       frameIndex: frameState.currentFrame,
+                      jointId: selectedJointId,
                       note: draft.note,
                       timestamp: playbackState.currentTime,
                       title: draft.title,
@@ -298,6 +306,7 @@ export function RecordViewerPage() {
                   try {
                     const createdAnnotation = await createAnnotation({
                       frameIndex: frameState.currentFrame,
+                      jointId: selectedJointId,
                       note: draft.note,
                       recordId,
                       timestamp: playbackState.currentTime,
@@ -337,7 +346,7 @@ export function RecordViewerPage() {
                   }
                 }}
                 onJumpToAnnotation={jumpToAnnotationFrame}
-                onSelectAnnotation={(annotation) => setSelectedAnnotationId(annotation.annotationId)}
+                onSelectAnnotation={selectAnnotation}
                 onUpdateAnnotation={async (annotation, draft) => {
                   setEditAnnotationError(null);
 

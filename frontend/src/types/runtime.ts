@@ -47,6 +47,7 @@ export type MetricDisplayValue = {
 export type AnnotationMarker = {
   annotationId: string;
   frameIndex: number;
+  jointId?: number | null;
   note?: string;
   timestamp?: number;
   title: string;

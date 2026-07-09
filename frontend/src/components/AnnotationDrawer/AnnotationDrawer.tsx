@@ -12,6 +12,7 @@ export type AnnotationDrawerProps = {
   isUpdating?: boolean;
   isOpen: boolean;
   selectedAnnotationId?: string | null;
+  selectedJointId?: number | null;
   onCreateAnnotation?: (draft: { note: string; title: string }) => void;
   onClose?: () => void;
   onDeleteAnnotation?: (annotation: AnnotationMarker) => void;
@@ -31,6 +32,7 @@ export function AnnotationDrawer({
   isUpdating = false,
   isOpen,
   selectedAnnotationId,
+  selectedJointId = null,
   onCreateAnnotation,
   onClose,
   onDeleteAnnotation,
@@ -97,6 +99,11 @@ export function AnnotationDrawer({
             rows={3}
           />
         </label>
+        <p className={styles.currentFrame}>
+          {typeof selectedJointId === "number"
+            ? `Joint target: Joint ${selectedJointId}`
+            : "Joint target: None"}
+        </p>
         {createErrorMessage && <p className={styles.errorMessage}>{createErrorMessage}</p>}
         <button
           className={styles.createButton}
@@ -144,6 +151,12 @@ export function AnnotationDrawer({
                 <div>
                   <dt>Timestamp</dt>
                   <dd>{selectedAnnotation.timestamp.toFixed(2)}s</dd>
+                </div>
+              )}
+              {typeof selectedAnnotation.jointId === "number" && (
+                <div>
+                  <dt>Joint</dt>
+                  <dd>{`Joint ${selectedAnnotation.jointId}`}</dd>
                 </div>
               )}
             </dl>

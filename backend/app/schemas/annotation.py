@@ -6,6 +6,7 @@ class CreateAnnotationRequest(BaseModel):
     timestamp: float = Field(ge=0)
     title: str = Field(min_length=1)
     note: str = ""
+    jointId: int | None = Field(default=None, ge=0, le=32)
 
 
 class UpdateAnnotationRequest(BaseModel):
@@ -22,6 +23,7 @@ class AnnotationResponse(BaseModel):
     timestamp: float
     title: str
     note: str
+    jointId: int | None = None
     authorUserId: str
     createdAt: str
     updatedAt: str

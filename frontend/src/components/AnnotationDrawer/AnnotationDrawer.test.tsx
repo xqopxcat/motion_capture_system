@@ -12,6 +12,7 @@ const annotations: AnnotationMarker[] = [
   {
     annotationId: "annotation_2",
     frameIndex: 48,
+    jointId: 25,
     timestamp: 1.6,
     title: "Second marker",
   },
@@ -39,6 +40,18 @@ describe("AnnotationDrawer", () => {
     expect(findText(tree, "Frame")).toBe(true);
     expect(findText(tree, "48")).toBe(true);
     expect(findText(tree, "1.60")).toBe(true);
+    expect(findText(tree, "Joint")).toBe(true);
+    expect(findText(tree, "Joint 25")).toBe(true);
+  });
+
+  it("renders selected joint target for creation", () => {
+    const tree = AnnotationDrawer({
+      annotations,
+      isOpen: true,
+      selectedJointId: 12,
+    });
+
+    expect(findText(tree, "Joint target: Joint 12")).toBe(true);
   });
 
   it("emits selection intent when annotation is clicked", () => {
