@@ -12,6 +12,11 @@
   VisualizationMode,
 } from "./runtime";
 export type {
+  Annotation,
+  CreateAnnotationRequest,
+  ListAnnotationsResponse,
+} from "./annotation";
+export type {
   AuthProvider,
   CurrentUser,
   LogoutResponse,

@@ -89,17 +89,47 @@
   gap: 16px;
 }
 
-.summaryPanel {
+.summaryPanel,
+.annotationPanel {
   background: #ffffff;
   border: 1px solid #d8dee8;
   border-radius: 8px;
   padding: 18px;
 }
 
-.summaryPanel h2 {
+.summaryPanel h2,
+.annotationPanel h2 {
   font-size: 1rem;
   margin: 0 0 16px;
   overflow-wrap: anywhere;
+}
+
+.annotationPanel {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.annotationPanel h2 {
+  margin-bottom: 0;
+}
+
+.annotationToggle {
+  background: #20242a;
+  border: 1px solid #20242a;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.annotationToggle:hover,
+.annotationToggle:focus-visible {
+  background: #111827;
+  outline: none;
 }
 
 .summaryList {

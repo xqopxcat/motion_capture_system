@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
+  AnnotationDrawer,
   MetricPanel,
   PlaybackControls,
   SkeletonCanvas,
@@ -9,8 +10,18 @@ import {
 } from "../../components";
 import { createViewerRenderContext, useViewerArtifactLoader } from "../../features/viewer";
 import { useMetricSeriesLoader, usePlaybackController, usePoseLoader } from "../../hooks";
+import {
+  useCreateAnnotationMutation,
+  useGetAnnotationsQuery,
+} from "../../services/annotationsApi";
 import { useGetRecordDetailQuery } from "../../services/recordsApi";
-import type { MetricDisplayValue, PoseDataset, RecordDetail, RecordDetailMetricSummary } from "../../types";
+import type {
+  AnnotationMarker,
+  MetricDisplayValue,
+  PoseDataset,
+  RecordDetail,
+  RecordDetailMetricSummary,
+} from "../../types";
 import styles from "./RecordViewerPage.module.css";
 
 const LOCAL_DEMO_RECORD_ID = "local-demo";
@@ -18,6 +29,10 @@ const LOCAL_DEMO_RECORD_ID = "local-demo";
 export function RecordViewerPage() {
   const { recordId } = useParams();
   const [searchParams] = useSearchParams();
+  const [isAnnotationDrawerOpen, setIsAnnotationDrawerOpen] = useState(false);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [localCreatedAnnotations, setLocalCreatedAnnotations] = useState<AnnotationMarker[]>([]);
+  const [createAnnotationError, setCreateAnnotationError] = useState<string | null>(null);
   const shouldUseLocalFallback =
     recordId === LOCAL_DEMO_RECORD_ID || searchParams.get("poseFixture") === LOCAL_DEMO_RECORD_ID;
   const localArtifactState = useViewerArtifactLoader(recordId, searchParams);
@@ -28,6 +43,10 @@ export function RecordViewerPage() {
   } = useGetRecordDetailQuery(recordId ?? "", {
     skip: !recordId || shouldUseLocalFallback,
   });
+  const { data: annotationsResponse } = useGetAnnotationsQuery(recordId ?? "", {
+    skip: !recordId || shouldUseLocalFallback,
+  });
+  const [createAnnotation, createAnnotationState] = useCreateAnnotationMutation();
   const poseLoader = usePoseLoader(
     !shouldUseLocalFallback && recordDetail?.status === "Ready" ? recordDetail.pose?.url : null,
   );
@@ -82,6 +101,16 @@ export function RecordViewerPage() {
     currentFrame: frameState.currentFrame,
     poseDataset,
   });
+  const localFixtureAnnotations = useMemo(
+    () =>
+      shouldUseLocalFallback && poseDataset
+        ? createLocalAnnotationFixtures(poseDataset.frameCount, poseDataset.fps)
+        : [],
+    [poseDataset, shouldUseLocalFallback],
+  );
+  const annotationMarkers = shouldUseLocalFallback
+    ? [...localFixtureAnnotations, ...localCreatedAnnotations]
+    : annotationsResponse?.items ?? [];
 
   useEffect(() => {
     setPlaybackBounds({
@@ -90,6 +119,15 @@ export function RecordViewerPage() {
       totalFrames: poseDataset?.frameCount ?? 0,
     });
   }, [poseDataset, setPlaybackBounds]);
+
+  useEffect(() => {
+    if (
+      selectedAnnotationId &&
+      !annotationMarkers.some((annotation) => annotation.annotationId === selectedAnnotationId)
+    ) {
+      setSelectedAnnotationId(null);
+    }
+  }, [annotationMarkers, selectedAnnotationId]);
 
   return (
     <main className={styles.viewerPage}>
@@ -137,7 +175,15 @@ export function RecordViewerPage() {
                 />
                 <SkeletonCanvas renderContext={renderContext} />
               </div>
-              <Timeline frame={frameState} onSeekFrame={requestSeekFrame} />
+              <Timeline
+                annotations={annotationMarkers}
+                frame={frameState}
+                onAnnotationMarkerClick={(annotation) => {
+                  setSelectedAnnotationId(annotation.annotationId);
+                  setIsAnnotationDrawerOpen(true);
+                }}
+                onSeekFrame={requestSeekFrame}
+              />
               <PlaybackControls
                 isPlaying={playbackState.isPlaying}
                 playbackSpeed={playbackState.playbackSpeed}
@@ -168,6 +214,63 @@ export function RecordViewerPage() {
                   </div>
                 </dl>
               </section>
+              <section className={styles.annotationPanel}>
+                <div>
+                  <p className={styles.panelLabel}>Annotations</p>
+                  <h2>Record markers</h2>
+                </div>
+                <button
+                  className={styles.annotationToggle}
+                  type="button"
+                  onClick={() => setIsAnnotationDrawerOpen((isOpen) => !isOpen)}
+                >
+                  {isAnnotationDrawerOpen ? "Hide drawer" : "Show drawer"}
+                </button>
+              </section>
+              <AnnotationDrawer
+                annotations={annotationMarkers}
+                createErrorMessage={createAnnotationError}
+                currentFrame={frameState.currentFrame}
+                isCreating={createAnnotationState.isLoading}
+                isOpen={isAnnotationDrawerOpen}
+                selectedAnnotationId={selectedAnnotationId}
+                onCreateAnnotation={async (draft) => {
+                  setCreateAnnotationError(null);
+
+                  if (shouldUseLocalFallback) {
+                    const annotation: AnnotationMarker = {
+                      annotationId: `local_annotation_${Date.now()}`,
+                      frameIndex: frameState.currentFrame,
+                      note: draft.note,
+                      timestamp: playbackState.currentTime,
+                      title: draft.title,
+                    };
+                    setLocalCreatedAnnotations((annotations) => [...annotations, annotation]);
+                    setSelectedAnnotationId(annotation.annotationId);
+                    return;
+                  }
+
+                  if (!recordId) {
+                    setCreateAnnotationError("Record id is missing.");
+                    return;
+                  }
+
+                  try {
+                    const createdAnnotation = await createAnnotation({
+                      frameIndex: frameState.currentFrame,
+                      note: draft.note,
+                      recordId,
+                      timestamp: playbackState.currentTime,
+                      title: draft.title,
+                    }).unwrap();
+                    setSelectedAnnotationId(createdAnnotation.annotationId);
+                  } catch {
+                    setCreateAnnotationError("Annotation could not be created.");
+                  }
+                }}
+                onClose={() => setIsAnnotationDrawerOpen(false)}
+                onSelectAnnotation={(annotation) => setSelectedAnnotationId(annotation.annotationId)}
+              />
               <MetricPanel metrics={metrics} />
             </aside>
           </section>
@@ -175,6 +278,27 @@ export function RecordViewerPage() {
       </section>
     </main>
   );
+}
+
+function createLocalAnnotationFixtures(frameCount: number, fps: number): AnnotationMarker[] {
+  if (!Number.isFinite(frameCount) || frameCount <= 1) {
+    return [];
+  }
+
+  const maxFrame = Math.max(0, frameCount - 1);
+  const safeFps = Number.isFinite(fps) && fps > 0 ? fps : 30;
+  const frameIndexes = [
+    Math.round(maxFrame * 0.25),
+    Math.round(maxFrame * 0.5),
+    Math.round(maxFrame * 0.75),
+  ];
+
+  return frameIndexes.map((frameIndex, index) => ({
+    annotationId: `local_fixture_annotation_${index + 1}`,
+    frameIndex,
+    timestamp: frameIndex / safeFps,
+    title: `Fixture marker ${index + 1}`,
+  }));
 }
 
 type RecordViewerStateInput = {
