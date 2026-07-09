@@ -7,6 +7,7 @@ from app.schemas.annotation import (
     AnnotationResponse,
     CreateAnnotationRequest,
     ListAnnotationsResponse,
+    UpdateAnnotationRequest,
 )
 from app.schemas.auth import CurrentUser
 
@@ -54,6 +55,39 @@ class AnnotationService:
 
         return self._to_response(annotation)
 
+    def update_annotation(
+        self,
+        record_id: str,
+        annotation_id: str,
+        request: UpdateAnnotationRequest,
+        user: CurrentUser,
+    ) -> AnnotationResponse:
+        self._require_owned_record(record_id, user)
+        annotation = self._require_record_annotation(record_id, annotation_id)
+
+        if request.title is not None and not request.title.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "ANNOTATION_TITLE_REQUIRED",
+                    "message": "Annotation title is required.",
+                },
+            )
+
+        updated_annotation = self.annotations.update(annotation.annotation_id, request)
+
+        return self._to_response(updated_annotation)
+
+    def delete_annotation(
+        self,
+        record_id: str,
+        annotation_id: str,
+        user: CurrentUser,
+    ) -> None:
+        self._require_owned_record(record_id, user)
+        annotation = self._require_record_annotation(record_id, annotation_id)
+        self.annotations.delete(annotation.annotation_id)
+
     def _require_owned_record(self, record_id: str, user: CurrentUser) -> None:
         record = self.records.get_owned(record_id, user.userId)
         if record is None:
@@ -64,6 +98,23 @@ class AnnotationService:
                     "message": "Record does not exist.",
                 },
             )
+
+    def _require_record_annotation(
+        self,
+        record_id: str,
+        annotation_id: str,
+    ) -> StoredAnnotation:
+        annotation = self.annotations.get(annotation_id)
+        if annotation is None or annotation.record_id != record_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "ANNOTATION_NOT_FOUND",
+                    "message": "Annotation does not exist.",
+                },
+            )
+
+        return annotation
 
     def _to_response(self, annotation: StoredAnnotation) -> AnnotationResponse:
         return AnnotationResponse(

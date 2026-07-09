@@ -84,6 +84,48 @@ describe("AnnotationDrawer", () => {
     expect(reset).toHaveBeenCalledOnce();
   });
 
+  it("emits update intent from edit form submission", () => {
+    const handleUpdateAnnotation = vi.fn();
+    const tree = AnnotationDrawer({
+      annotations,
+      isOpen: true,
+      selectedAnnotationId: "annotation_1",
+      onUpdateAnnotation: handleUpdateAnnotation,
+    });
+    const forms = findElementsByType(tree, "form");
+
+    forms[1].props.onSubmit({
+      currentTarget: {
+        elements: {
+          namedItem: (name: string) => ({
+            value: name === "editTitle" ? "  Updated marker  " : "Updated note",
+          }),
+        },
+      },
+      preventDefault: vi.fn(),
+    });
+
+    expect(handleUpdateAnnotation).toHaveBeenCalledWith(annotations[0], {
+      note: "Updated note",
+      title: "Updated marker",
+    });
+  });
+
+  it("emits delete intent from confirmed delete action", () => {
+    const handleDeleteAnnotation = vi.fn();
+    const tree = AnnotationDrawer({
+      annotations,
+      isOpen: true,
+      selectedAnnotationId: "annotation_1",
+      onDeleteAnnotation: handleDeleteAnnotation,
+    });
+    const buttons = findElementsByType(tree, "button");
+
+    buttons[5].props.onClick();
+
+    expect(handleDeleteAnnotation).toHaveBeenCalledWith(annotations[0]);
+  });
+
   it("emits close intent", () => {
     const handleClose = vi.fn();
     const tree = AnnotationDrawer({

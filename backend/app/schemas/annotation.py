@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateAnnotationRequest(BaseModel):
@@ -6,6 +6,13 @@ class CreateAnnotationRequest(BaseModel):
     timestamp: float = Field(ge=0)
     title: str = Field(min_length=1)
     note: str = ""
+
+
+class UpdateAnnotationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = None
+    note: str | None = None
 
 
 class AnnotationResponse(BaseModel):

@@ -128,6 +128,170 @@ def test_create_annotation_rejects_blank_title() -> None:
     assert response.status_code == 422
 
 
+def test_update_annotation_updates_title_and_note_for_owner() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    annotation = _create_annotation(client, record_id)
+
+    response = client.patch(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+        json={
+            "title": "Updated title",
+            "note": "Updated note",
+        },
+    )
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["annotationId"] == annotation["annotationId"]
+    assert body["recordId"] == record_id
+    assert body["frameIndex"] == annotation["frameIndex"]
+    assert body["timestamp"] == annotation["timestamp"]
+    assert body["title"] == "Updated title"
+    assert body["note"] == "Updated note"
+    assert body["authorUserId"] == annotation["authorUserId"]
+    assert body["createdAt"] == annotation["createdAt"]
+    assert body["updatedAt"] != annotation["updatedAt"]
+
+
+def test_update_annotation_requires_authenticated_user() -> None:
+    client = TestClient(app)
+
+    response = client.patch(
+        "/api/records/record_missing/annotations/annotation_missing",
+        json={"title": "Updated title"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_update_annotation_returns_404_for_another_users_record() -> None:
+    owner_client = TestClient(app)
+    _login(owner_client, provider="google")
+    record_id = _create_record(owner_client)
+    annotation = _create_annotation(owner_client, record_id)
+
+    other_client = TestClient(app)
+    _login(other_client, provider="dev")
+
+    response = other_client.patch(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+        json={"title": "Updated title"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "RECORD_NOT_FOUND"
+
+
+def test_update_annotation_rejects_blank_title() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    annotation = _create_annotation(client, record_id)
+
+    response = client.patch(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+        json={"title": "   "},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_annotation_rejects_immutable_fields() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    annotation = _create_annotation(client, record_id)
+
+    response = client.patch(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+        json={
+            "frameIndex": 100,
+            "timestamp": 3.33,
+            "authorUserId": "user_other",
+            "jointId": 12,
+            "title": "Updated title",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_annotation_returns_404_when_annotation_belongs_to_another_record() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    other_record_id = _create_record(client)
+    annotation = _create_annotation(client, other_record_id)
+
+    response = client.patch(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+        json={"title": "Updated title"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "ANNOTATION_NOT_FOUND"
+
+
+def test_delete_annotation_removes_annotation_for_owner() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    annotation = _create_annotation(client, record_id)
+
+    response = client.delete(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+    )
+
+    assert response.status_code == 204
+    list_response = client.get(f"/api/records/{record_id}/annotations")
+    assert all(
+        item["annotationId"] != annotation["annotationId"]
+        for item in list_response.json()["items"]
+    )
+
+
+def test_delete_annotation_requires_authenticated_user() -> None:
+    client = TestClient(app)
+
+    response = client.delete("/api/records/record_missing/annotations/annotation_missing")
+
+    assert response.status_code == 401
+
+
+def test_delete_annotation_returns_404_for_another_users_record() -> None:
+    owner_client = TestClient(app)
+    _login(owner_client, provider="google")
+    record_id = _create_record(owner_client)
+    annotation = _create_annotation(owner_client, record_id)
+
+    other_client = TestClient(app)
+    _login(other_client, provider="dev")
+
+    response = other_client.delete(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "RECORD_NOT_FOUND"
+
+
+def test_delete_annotation_returns_404_when_annotation_belongs_to_another_record() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    other_record_id = _create_record(client)
+    annotation = _create_annotation(client, other_record_id)
+
+    response = client.delete(
+        f"/api/records/{record_id}/annotations/{annotation['annotationId']}",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "ANNOTATION_NOT_FOUND"
+
+
 def _login(client: TestClient, *, provider: str = "google") -> None:
     response = client.post("/api/auth/mock-login", json={"provider": provider})
     assert response.status_code == 200
@@ -146,3 +310,19 @@ def _create_record(client: TestClient) -> str:
     assert response.status_code == 201
 
     return response.json()["recordId"]
+
+
+def _create_annotation(client: TestClient, record_id: str) -> dict:
+    response = client.post(
+        f"/api/records/{record_id}/annotations",
+        json={
+            "frameIndex": 42,
+            "timestamp": 1.4,
+            "title": "Knee inward",
+            "note": "Left knee moves inward during descent.",
+        },
+    )
+
+    assert response.status_code == 201
+
+    return response.json()

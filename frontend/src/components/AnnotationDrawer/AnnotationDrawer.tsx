@@ -5,24 +5,36 @@ export type AnnotationDrawerProps = {
   annotations: AnnotationMarker[];
   currentFrame?: number;
   createErrorMessage?: string | null;
+  deleteErrorMessage?: string | null;
+  editErrorMessage?: string | null;
   isCreating?: boolean;
+  isDeleting?: boolean;
+  isUpdating?: boolean;
   isOpen: boolean;
   selectedAnnotationId?: string | null;
   onCreateAnnotation?: (draft: { note: string; title: string }) => void;
   onClose?: () => void;
+  onDeleteAnnotation?: (annotation: AnnotationMarker) => void;
   onSelectAnnotation?: (annotation: AnnotationMarker) => void;
+  onUpdateAnnotation?: (annotation: AnnotationMarker, draft: { note: string; title: string }) => void;
 };
 
 export function AnnotationDrawer({
   annotations,
   currentFrame,
   createErrorMessage,
+  deleteErrorMessage,
+  editErrorMessage,
   isCreating = false,
+  isDeleting = false,
+  isUpdating = false,
   isOpen,
   selectedAnnotationId,
   onCreateAnnotation,
   onClose,
+  onDeleteAnnotation,
   onSelectAnnotation,
+  onUpdateAnnotation,
 }: AnnotationDrawerProps) {
   if (!isOpen) {
     return null;
@@ -136,6 +148,67 @@ export function AnnotationDrawer({
             {selectedAnnotation.note && (
               <p className={styles.note}>{selectedAnnotation.note}</p>
             )}
+            <details className={styles.actionBlock}>
+              <summary>Edit</summary>
+              <form
+                className={styles.editForm}
+                key={selectedAnnotation.annotationId}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = event.currentTarget;
+                  const title = readFormValue(form, "editTitle").trim();
+                  const note = readFormValue(form, "editNote");
+
+                  if (!title) {
+                    return;
+                  }
+
+                  onUpdateAnnotation?.(selectedAnnotation, {
+                    note,
+                    title,
+                  });
+                }}
+              >
+                <label className={styles.field}>
+                  <span>Title</span>
+                  <input
+                    defaultValue={selectedAnnotation.title}
+                    maxLength={80}
+                    name="editTitle"
+                    type="text"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Note</span>
+                  <textarea
+                    defaultValue={selectedAnnotation.note ?? ""}
+                    name="editNote"
+                    rows={3}
+                  />
+                </label>
+                {editErrorMessage && <p className={styles.errorMessage}>{editErrorMessage}</p>}
+                <button
+                  className={styles.createButton}
+                  disabled={isUpdating}
+                  type="submit"
+                >
+                  {isUpdating ? "Saving..." : "Save changes"}
+                </button>
+              </form>
+            </details>
+            <details className={styles.actionBlock}>
+              <summary>Delete</summary>
+              <p className={styles.deleteCopy}>This removes the annotation marker.</p>
+              {deleteErrorMessage && <p className={styles.errorMessage}>{deleteErrorMessage}</p>}
+              <button
+                className={styles.deleteButton}
+                disabled={isDeleting}
+                type="button"
+                onClick={() => onDeleteAnnotation?.(selectedAnnotation)}
+              >
+                {isDeleting ? "Deleting..." : "Confirm delete"}
+              </button>
+            </details>
           </>
         ) : (
           <p className={styles.emptyState}>Select an annotation marker to view details.</p>

@@ -59,6 +59,12 @@
   padding-bottom: 14px;
 }
 
+.editForm {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+}
+
 .field {
   color: #20242a;
   display: grid;
@@ -96,6 +102,22 @@
 .createButton:disabled {
   background: #94a3b8;
   border-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.deleteButton {
+  background: #b42318;
+  border: 1px solid #b42318;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.deleteButton:disabled {
+  background: #d0d5dd;
+  border-color: #d0d5dd;
   cursor: not-allowed;
 }
 
@@ -188,6 +210,26 @@
   line-height: 1.5;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.actionBlock {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.actionBlock summary {
+  color: #20242a;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.deleteCopy {
+  color: #5b6572;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .emptyState {

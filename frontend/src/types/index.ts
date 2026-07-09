@@ -14,7 +14,9 @@
 export type {
   Annotation,
   CreateAnnotationRequest,
+  DeleteAnnotationRequest,
   ListAnnotationsResponse,
+  UpdateAnnotationRequest,
 } from "./annotation";
 export type {
   AuthProvider,

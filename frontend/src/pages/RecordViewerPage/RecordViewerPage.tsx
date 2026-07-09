@@ -12,7 +12,9 @@ import { createViewerRenderContext, useViewerArtifactLoader } from "../../featur
 import { useMetricSeriesLoader, usePlaybackController, usePoseLoader } from "../../hooks";
 import {
   useCreateAnnotationMutation,
+  useDeleteAnnotationMutation,
   useGetAnnotationsQuery,
+  useUpdateAnnotationMutation,
 } from "../../services/annotationsApi";
 import { useGetRecordDetailQuery } from "../../services/recordsApi";
 import type {
@@ -32,7 +34,13 @@ export function RecordViewerPage() {
   const [isAnnotationDrawerOpen, setIsAnnotationDrawerOpen] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [localCreatedAnnotations, setLocalCreatedAnnotations] = useState<AnnotationMarker[]>([]);
+  const [localDeletedAnnotationIds, setLocalDeletedAnnotationIds] = useState<string[]>([]);
+  const [localUpdatedAnnotations, setLocalUpdatedAnnotations] = useState<
+    Record<string, AnnotationMarker>
+  >({});
   const [createAnnotationError, setCreateAnnotationError] = useState<string | null>(null);
+  const [deleteAnnotationError, setDeleteAnnotationError] = useState<string | null>(null);
+  const [editAnnotationError, setEditAnnotationError] = useState<string | null>(null);
   const shouldUseLocalFallback =
     recordId === LOCAL_DEMO_RECORD_ID || searchParams.get("poseFixture") === LOCAL_DEMO_RECORD_ID;
   const localArtifactState = useViewerArtifactLoader(recordId, searchParams);
@@ -47,6 +55,8 @@ export function RecordViewerPage() {
     skip: !recordId || shouldUseLocalFallback,
   });
   const [createAnnotation, createAnnotationState] = useCreateAnnotationMutation();
+  const [deleteAnnotation, deleteAnnotationState] = useDeleteAnnotationMutation();
+  const [updateAnnotation, updateAnnotationState] = useUpdateAnnotationMutation();
   const poseLoader = usePoseLoader(
     !shouldUseLocalFallback && recordDetail?.status === "Ready" ? recordDetail.pose?.url : null,
   );
@@ -110,6 +120,8 @@ export function RecordViewerPage() {
   );
   const annotationMarkers = shouldUseLocalFallback
     ? [...localFixtureAnnotations, ...localCreatedAnnotations]
+        .filter((annotation) => !localDeletedAnnotationIds.includes(annotation.annotationId))
+        .map((annotation) => localUpdatedAnnotations[annotation.annotationId] ?? annotation)
     : annotationsResponse?.items ?? [];
 
   useEffect(() => {
@@ -230,8 +242,12 @@ export function RecordViewerPage() {
               <AnnotationDrawer
                 annotations={annotationMarkers}
                 createErrorMessage={createAnnotationError}
+                deleteErrorMessage={deleteAnnotationError}
+                editErrorMessage={editAnnotationError}
                 currentFrame={frameState.currentFrame}
                 isCreating={createAnnotationState.isLoading}
+                isDeleting={deleteAnnotationState.isLoading}
+                isUpdating={updateAnnotationState.isLoading}
                 isOpen={isAnnotationDrawerOpen}
                 selectedAnnotationId={selectedAnnotationId}
                 onCreateAnnotation={async (draft) => {
@@ -269,7 +285,65 @@ export function RecordViewerPage() {
                   }
                 }}
                 onClose={() => setIsAnnotationDrawerOpen(false)}
+                onDeleteAnnotation={async (annotation) => {
+                  setDeleteAnnotationError(null);
+
+                  if (shouldUseLocalFallback) {
+                    setLocalDeletedAnnotationIds((annotationIds) => [
+                      ...annotationIds,
+                      annotation.annotationId,
+                    ]);
+                    setSelectedAnnotationId(null);
+                    return;
+                  }
+
+                  if (!recordId) {
+                    setDeleteAnnotationError("Record id is missing.");
+                    return;
+                  }
+
+                  try {
+                    await deleteAnnotation({
+                      annotationId: annotation.annotationId,
+                      recordId,
+                    }).unwrap();
+                    setSelectedAnnotationId(null);
+                  } catch {
+                    setDeleteAnnotationError("Annotation could not be deleted.");
+                  }
+                }}
                 onSelectAnnotation={(annotation) => setSelectedAnnotationId(annotation.annotationId)}
+                onUpdateAnnotation={async (annotation, draft) => {
+                  setEditAnnotationError(null);
+
+                  if (shouldUseLocalFallback) {
+                    setLocalUpdatedAnnotations((annotations) => ({
+                      ...annotations,
+                      [annotation.annotationId]: {
+                        ...annotation,
+                        note: draft.note,
+                        title: draft.title,
+                      },
+                    }));
+                    return;
+                  }
+
+                  if (!recordId) {
+                    setEditAnnotationError("Record id is missing.");
+                    return;
+                  }
+
+                  try {
+                    await updateAnnotation({
+                      annotationId: annotation.annotationId,
+                      note: draft.note,
+                      recordId,
+                      title: draft.title,
+                    }).unwrap();
+                  } catch {
+                    setEditAnnotationError("Annotation could not be updated.");
+                  }
+                }}
               />
               <MetricPanel metrics={metrics} />
             </aside>

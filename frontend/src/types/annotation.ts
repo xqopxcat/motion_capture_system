@@ -22,3 +22,15 @@ export type CreateAnnotationRequest = {
   title: string;
   note: string;
 };
+
+export type UpdateAnnotationRequest = {
+  annotationId: string;
+  recordId: string;
+  title?: string;
+  note?: string;
+};
+
+export type DeleteAnnotationRequest = {
+  annotationId: string;
+  recordId: string;
+};
