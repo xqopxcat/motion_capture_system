@@ -1,0 +1,101 @@
+.comparePage {
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 960px;
+}
+
+.header {
+  margin-bottom: 28px;
+  max-width: 720px;
+}
+
+.kicker {
+  color: #5b6572;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.description {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.statePanel,
+.selectionPanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.statePanel h2,
+.selectionPanel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.statePanel p,
+.selectionPanel p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.selectionGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.selectionSlot {
+  background: #f7f8fa;
+  border: 1px solid #e1e6ef;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.selectionSlot dt {
+  color: #5b6572;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.selectionSlot dd {
+  color: #172033;
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.taskNote {
+  border-top: 1px solid #e1e6ef;
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .comparePage {
+    padding: 24px;
+  }
+
+  .selectionGrid {
+    grid-template-columns: 1fr;
+  }
+}

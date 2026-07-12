@@ -26,6 +26,11 @@ export type {
   MockLoginResponse,
 } from "./auth";
 export type {
+  CompareApiParams,
+  CompareDataResponse,
+  CompareRouteSelection,
+} from "./compare";
+export type {
   PoseDataset,
   PoseDatasetFrame,
   PoseDatasetLandmark,
