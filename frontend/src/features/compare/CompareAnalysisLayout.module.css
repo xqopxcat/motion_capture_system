@@ -135,9 +135,42 @@
   text-align: right;
 }
 
+.sharedPlaybackArea,
 .sharedArea {
   display: grid;
   gap: 16px;
+}
+
+.sharedPlaybackArea {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.jumpControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.jumpControls button {
+  background: #ffffff;
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  color: #172033;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.jumpControls button:disabled {
+  background: #eef2f7;
+  color: #8a94a3;
+  cursor: not-allowed;
+}
+
+.sharedArea {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 

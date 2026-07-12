@@ -9,3 +9,7 @@ export {
   updateCompareRouteSelectionParam,
 } from "./compareRouteParams";
 export { useCompareRecordRuntime } from "./useCompareRecordRuntime";
+export {
+  deriveComparePlaybackBounds,
+  useComparePlaybackController,
+} from "./useComparePlaybackController";
