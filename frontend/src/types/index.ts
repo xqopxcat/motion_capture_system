@@ -28,6 +28,8 @@ export type {
 export type {
   CompareApiParams,
   CompareDataResponse,
+  CompareRecordRuntimeState,
+  CompareRecordRuntimeStatus,
   CompareRouteSelection,
   CompareSelectionSide,
 } from "./compare";

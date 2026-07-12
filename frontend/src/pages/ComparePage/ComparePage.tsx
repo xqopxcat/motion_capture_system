@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  CompareAnalysisLayout,
   CompareRecordSelector,
   mapCompareSelectionToApiParams,
   parseCompareRouteSelection,
   updateCompareRouteSelectionParam,
+  useCompareRecordRuntime,
 } from "../../features/compare";
 import { useGetRecordsQuery } from "../../services/recordsApi";
 import type { CompareSelectionSide, RecordListItem } from "../../types";
@@ -22,9 +24,29 @@ export function ComparePage() {
   const validationMessages = isLoading || isError
     ? []
     : getSelectionValidationMessages(routeSelection, records);
+  const selectedLeftRecord = findRecord(records, routeSelection.leftRecordId);
+  const selectedRightRecord = findRecord(records, routeSelection.rightRecordId);
+  const canShowAnalysisLayout = Boolean(
+    selectedLeftRecord &&
+      selectedRightRecord &&
+      selectedLeftRecord.status === "Ready" &&
+      selectedRightRecord.status === "Ready" &&
+      validationMessages.length === 0 &&
+      !isLoading &&
+      !isError,
+  );
+  const leftRuntime = useCompareRecordRuntime(
+    canShowAnalysisLayout ? routeSelection.leftRecordId : null,
+    "compare-left-skeleton-canvas",
+  );
+  const rightRuntime = useCompareRecordRuntime(
+    canShowAnalysisLayout ? routeSelection.rightRecordId : null,
+    "compare-right-skeleton-canvas",
+  );
   const selectionStateMessage = getSelectionStateMessage(
     routeSelection.leftRecordId,
     routeSelection.rightRecordId,
+    canShowAnalysisLayout,
   );
   const handleSelectRecord = (side: CompareSelectionSide, recordId: string) => {
     const record = records.find((item) => item.recordId === recordId);
@@ -53,7 +75,7 @@ export function ComparePage() {
           <p className={styles.kicker}>Compare Foundation</p>
           <h1 className={styles.title}>Compare</h1>
           <p className={styles.description}>
-            Select two Ready Records for Compare. Side-by-side rendering starts in Task 49.
+            Select two Ready Records for Compare. Shared playback starts in Task 50.
           </p>
         </header>
 
@@ -103,14 +125,31 @@ export function ComparePage() {
             onSelectRecord={handleSelectRecord}
           />
         )}
+
+        {canShowAnalysisLayout && selectedLeftRecord && selectedRightRecord && (
+          <CompareAnalysisLayout
+            leftRecord={selectedLeftRecord}
+            leftRuntime={leftRuntime}
+            rightRecord={selectedRightRecord}
+            rightRuntime={rightRuntime}
+          />
+        )}
       </section>
     </main>
   );
 }
 
-function getSelectionStateMessage(leftRecordId: string | null, rightRecordId: string | null) {
+function getSelectionStateMessage(
+  leftRecordId: string | null,
+  rightRecordId: string | null,
+  canShowAnalysisLayout: boolean,
+) {
+  if (canShowAnalysisLayout) {
+    return "Two Ready Records are selected. The side-by-side Compare layout is available below.";
+  }
+
   if (leftRecordId && rightRecordId) {
-    return "Left and right Records are selected. Task 49 will render the side-by-side workspace.";
+    return "Left and right Records are selected. Resolve any validation issues before analysis.";
   }
 
   if (leftRecordId) {
