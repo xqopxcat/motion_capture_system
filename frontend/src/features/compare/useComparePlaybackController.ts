@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePlaybackController } from "../../hooks";
+import { clampFrameIndex } from "../viewer/playbackFrameMath";
 
 export type UseComparePlaybackControllerInput = {
   leftDuration?: number;
@@ -51,8 +52,28 @@ export function deriveComparePlaybackBounds({
   };
 }
 
+export type CompareSyncFrameMappingInput = {
+  leftFrameCount?: number;
+  rightFrameCount?: number;
+  sharedFrame: number;
+  syncOffsetFrames: number;
+};
+
+export function mapCompareSyncFrames({
+  leftFrameCount = 0,
+  rightFrameCount = 0,
+  sharedFrame,
+  syncOffsetFrames,
+}: CompareSyncFrameMappingInput) {
+  return {
+    leftFrame: clampFrameIndex(sharedFrame, leftFrameCount),
+    rightFrame: clampFrameIndex(sharedFrame + syncOffsetFrames, rightFrameCount),
+  };
+}
+
 export function useComparePlaybackController(input: UseComparePlaybackControllerInput) {
   const controller = usePlaybackController();
+  const [syncOffsetFrames, setSyncOffsetFrames] = useState(0);
   const bounds = deriveComparePlaybackBounds(input);
   const {
     frameState,
@@ -73,6 +94,18 @@ export function useComparePlaybackController(input: UseComparePlaybackController
     },
     [frameState.currentFrame, requestSeekFrame],
   );
+  const requestSyncOffsetDelta = useCallback((frameDelta: number) => {
+    setSyncOffsetFrames((currentOffset) => currentOffset + frameDelta);
+  }, []);
+  const requestSyncOffsetReset = useCallback(() => {
+    setSyncOffsetFrames(0);
+  }, []);
+  const frameMapping = mapCompareSyncFrames({
+    leftFrameCount: input.leftFrameCount,
+    rightFrameCount: input.rightFrameCount,
+    sharedFrame: frameState.currentFrame,
+    syncOffsetFrames,
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -123,7 +156,11 @@ export function useComparePlaybackController(input: UseComparePlaybackController
 
   return {
     ...controller,
+    frameMapping,
     requestJumpFrames,
+    requestSyncOffsetDelta,
+    requestSyncOffsetReset,
     sharedBounds: bounds,
+    syncOffsetFrames,
   };
 }

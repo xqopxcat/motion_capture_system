@@ -1,5 +1,6 @@
 import { PlaybackControls, SkeletonCanvas, Timeline, VideoPlayer } from "../../components";
 import type { CompareRecordRuntimeState, PlaybackState, RecordListItem } from "../../types";
+import { frameIndexToTime } from "../viewer/playbackFrameMath";
 import styles from "./CompareAnalysisLayout.module.css";
 import { createCompareRenderContext } from "./compareRenderContext";
 import { useComparePlaybackController } from "./useComparePlaybackController";
@@ -41,21 +42,30 @@ export function CompareAnalysisLayout({
       <div className={styles.viewerGrid}>
         <CompareViewerPanel
           label="Left"
-          playback={sharedPlaybackState}
+          playback={createPanelPlaybackState(
+            sharedPlaybackState,
+            comparePlayback.frameMapping.leftFrame,
+            leftRuntime.poseDataset?.fps,
+            leftRuntime.poseDataset?.frameCount,
+          )}
           record={leftRecord}
           runtime={leftRuntime}
-          sharedFrameIndex={comparePlayback.frameState.currentFrame}
+          frameIndex={comparePlayback.frameMapping.leftFrame}
           onEnded={comparePlayback.handleVideoEnded}
           onTimeChange={canUseSharedPlayback ? comparePlayback.handleVideoTimeUpdate : undefined}
         />
         <CompareViewerPanel
           label="Right"
-          playback={sharedPlaybackState}
+          playback={createPanelPlaybackState(
+            sharedPlaybackState,
+            comparePlayback.frameMapping.rightFrame,
+            rightRuntime.poseDataset?.fps,
+            rightRuntime.poseDataset?.frameCount,
+          )}
           record={rightRecord}
           runtime={rightRuntime}
-          sharedFrameIndex={comparePlayback.frameState.currentFrame}
+          frameIndex={comparePlayback.frameMapping.rightFrame}
           onEnded={comparePlayback.handleVideoEnded}
-          onTimeChange={canUseSharedPlayback ? comparePlayback.handleVideoTimeUpdate : undefined}
         />
       </div>
       <section className={styles.sharedPlaybackArea} aria-label="Shared compare playback">
@@ -88,6 +98,51 @@ export function CompareAnalysisLayout({
             +10 frames
           </button>
         </div>
+        <section className={styles.syncControls} aria-label="Sync offset controls">
+          <div>
+            <h2>Sync offset</h2>
+            <p>
+              Current offset: <strong>{comparePlayback.syncOffsetFrames}</strong> frames
+            </p>
+          </div>
+          <div className={styles.syncButtons}>
+            <button
+              disabled={!canUseSharedPlayback}
+              type="button"
+              onClick={() => comparePlayback.requestSyncOffsetDelta(-10)}
+            >
+              -10
+            </button>
+            <button
+              disabled={!canUseSharedPlayback}
+              type="button"
+              onClick={() => comparePlayback.requestSyncOffsetDelta(-1)}
+            >
+              -1
+            </button>
+            <button
+              disabled={!canUseSharedPlayback}
+              type="button"
+              onClick={comparePlayback.requestSyncOffsetReset}
+            >
+              Reset
+            </button>
+            <button
+              disabled={!canUseSharedPlayback}
+              type="button"
+              onClick={() => comparePlayback.requestSyncOffsetDelta(1)}
+            >
+              +1
+            </button>
+            <button
+              disabled={!canUseSharedPlayback}
+              type="button"
+              onClick={() => comparePlayback.requestSyncOffsetDelta(10)}
+            >
+              +10
+            </button>
+          </div>
+        </section>
       </section>
       <section className={styles.sharedArea} aria-label="Shared compare analysis placeholders">
         <PlaceholderPanel
@@ -104,7 +159,7 @@ function CompareViewerPanel({
   playback,
   record,
   runtime,
-  sharedFrameIndex,
+  frameIndex,
   onEnded,
   onTimeChange,
 }: {
@@ -112,13 +167,13 @@ function CompareViewerPanel({
   playback: PlaybackState;
   record: RecordListItem;
   runtime: CompareRecordRuntimeState;
-  sharedFrameIndex: number;
+  frameIndex: number;
   onEnded?: () => void;
   onTimeChange?: (currentTime: number) => void;
 }) {
   const renderContext = createCompareRenderContext({
     canvasId: runtime.renderContext.canvasId,
-    frameIndex: sharedFrameIndex,
+    frameIndex,
     poseDataset: runtime.poseDataset,
   });
 
@@ -165,12 +220,28 @@ function CompareViewerPanel({
           <dd>{runtime.poseDataset?.frameCount ?? "Pending"}</dd>
         </div>
         <div>
+          <dt>Rendered frame</dt>
+          <dd>{frameIndex}</dd>
+        </div>
+        <div>
           <dt>Metric series</dt>
           <dd>{runtime.metricSeries === null ? "Pending" : "Loaded"}</dd>
         </div>
       </dl>
     </article>
   );
+}
+
+function createPanelPlaybackState(
+  playback: PlaybackState,
+  frameIndex: number,
+  fps = 30,
+  frameCount = 0,
+): PlaybackState {
+  return {
+    ...playback,
+    currentTime: frameIndexToTime(frameIndex, fps, frameCount),
+  };
 }
 
 function PlaceholderPanel({ title, description }: { title: string; description: string }) {

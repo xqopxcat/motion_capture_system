@@ -148,13 +148,15 @@
   padding: 18px;
 }
 
-.jumpControls {
+.jumpControls,
+.syncButtons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.jumpControls button {
+.jumpControls button,
+.syncButtons button {
   background: #ffffff;
   border: 1px solid #c9d2df;
   border-radius: 8px;
@@ -164,10 +166,33 @@
   padding: 8px 10px;
 }
 
-.jumpControls button:disabled {
+.jumpControls button:disabled,
+.syncButtons button:disabled {
   background: #eef2f7;
   color: #8a94a3;
   cursor: not-allowed;
+}
+
+.syncControls {
+  align-items: center;
+  background: #f7f8fa;
+  border: 1px solid #e1e6ef;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.syncControls h2 {
+  font-size: 1rem;
+  margin: 0 0 6px;
+}
+
+.syncControls p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .sharedArea {
@@ -197,5 +222,10 @@
   .viewerGrid,
   .sharedArea {
     grid-template-columns: 1fr;
+  }
+
+  .syncControls {
+    align-items: start;
+    flex-direction: column;
   }
 }
