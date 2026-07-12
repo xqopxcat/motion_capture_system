@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   mapCompareSelectionToApiParams,
   parseCompareRouteSelection,
+  updateCompareRouteSelectionParam,
 } from "./compareRouteParams";
 
 describe("compare route params", () => {
@@ -42,5 +43,25 @@ describe("compare route params", () => {
         rightRecordId: null,
       }),
     ).toBeNull();
+  });
+
+  it("updates one side while preserving unrelated query params", () => {
+    const searchParams = updateCompareRouteSelectionParam(
+      new URLSearchParams("tab=records&right=record_b"),
+      "left",
+      "record_a",
+    );
+
+    expect(searchParams.toString()).toBe("tab=records&right=record_b&left=record_a");
+  });
+
+  it("removes one side when the next record id is empty", () => {
+    const searchParams = updateCompareRouteSelectionParam(
+      new URLSearchParams("left=record_a&right=record_b"),
+      "left",
+      null,
+    );
+
+    expect(searchParams.toString()).toBe("right=record_b");
   });
 });

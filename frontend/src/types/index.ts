@@ -29,6 +29,7 @@ export type {
   CompareApiParams,
   CompareDataResponse,
   CompareRouteSelection,
+  CompareSelectionSide,
 } from "./compare";
 export type {
   PoseDataset,

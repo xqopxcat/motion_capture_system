@@ -5,6 +5,8 @@ export type CompareRouteSelection = {
   rightRecordId: string | null;
 };
 
+export type CompareSelectionSide = "left" | "right";
+
 export type CompareApiParams = {
   recordA: string;
   recordB: string;

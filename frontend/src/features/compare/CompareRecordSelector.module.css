@@ -1,0 +1,185 @@
+.selector {
+  display: grid;
+  gap: 20px;
+}
+
+.slots {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.slot,
+.recordListPanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+}
+
+.slot {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 18px;
+}
+
+.slotLabel {
+  color: #5b6572;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.slot h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.slot p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.slot button,
+.recordActions button {
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.slot button {
+  background: #ffffff;
+  color: #172033;
+}
+
+.recordActions button {
+  background: #172033;
+  color: #ffffff;
+}
+
+.slot button:disabled,
+.recordActions button:disabled {
+  background: #eef2f7;
+  color: #8a94a3;
+  cursor: not-allowed;
+}
+
+.listHeader {
+  border-bottom: 1px solid #d8dee8;
+  padding: 18px;
+}
+
+.listHeader h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.listHeader p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.recordList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recordItem {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 18px;
+}
+
+.recordItem + .recordItem {
+  border-top: 1px solid #e7ebf1;
+}
+
+.recordSummary {
+  min-width: 0;
+}
+
+.titleRow {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.titleRow h3 {
+  font-size: 1rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.recordSummary p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  color: #374151;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.statusBadge[data-status="Ready"] {
+  background: #e8f7ef;
+  border-color: #9bd4b2;
+  color: #17623a;
+}
+
+.statusBadge[data-status="Processing"] {
+  background: #eef4ff;
+  border-color: #a9c5f8;
+  color: #244f9e;
+}
+
+.statusBadge[data-status="Failed"] {
+  background: #fff0f0;
+  border-color: #efb0b0;
+  color: #a52828;
+}
+
+.statusBadge[data-status="Uploading"] {
+  background: #f7f8fa;
+}
+
+.recordActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 760px) {
+  .slots,
+  .recordItem {
+    grid-template-columns: 1fr;
+  }
+
+  .recordActions {
+    justify-content: flex-start;
+  }
+}
