@@ -1,7 +1,14 @@
 export { CompareAnalysisLayout } from "./CompareAnalysisLayout";
 export type { CompareAnalysisLayoutProps } from "./CompareAnalysisLayout";
+export { CompareMetricDifferencePanel } from "./CompareMetricDifferencePanel";
+export type { CompareMetricDifferencePanelProps } from "./CompareMetricDifferencePanel";
 export { CompareRecordSelector } from "./CompareRecordSelector";
 export type { CompareRecordSelectorProps } from "./CompareRecordSelector";
+export {
+  buildCompareMetricDifferenceRows,
+  formatCompareMetricValue,
+  parseCompareMetricSeries,
+} from "./compareMetricDifference";
 export { createCompareRenderContext } from "./compareRenderContext";
 export {
   mapCompareSelectionToApiParams,

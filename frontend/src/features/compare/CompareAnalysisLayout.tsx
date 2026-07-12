@@ -3,6 +3,7 @@ import type { CompareRecordRuntimeState, PlaybackState, RecordListItem } from ".
 import { frameIndexToTime } from "../viewer/playbackFrameMath";
 import styles from "./CompareAnalysisLayout.module.css";
 import { createCompareRenderContext } from "./compareRenderContext";
+import { CompareMetricDifferencePanel } from "./CompareMetricDifferencePanel";
 import { useComparePlaybackController } from "./useComparePlaybackController";
 
 export type CompareAnalysisLayoutProps = {
@@ -145,9 +146,11 @@ export function CompareAnalysisLayout({
         </section>
       </section>
       <section className={styles.sharedArea} aria-label="Shared compare analysis placeholders">
-        <PlaceholderPanel
-          title="Metric difference"
-          description="Metric difference display starts in Task 52."
+        <CompareMetricDifferencePanel
+          leftFrame={comparePlayback.frameMapping.leftFrame}
+          leftMetricSeries={leftRuntime.metricSeries}
+          rightFrame={comparePlayback.frameMapping.rightFrame}
+          rightMetricSeries={rightRuntime.metricSeries}
         />
       </section>
     </section>
@@ -242,13 +245,4 @@ function createPanelPlaybackState(
     ...playback,
     currentTime: frameIndexToTime(frameIndex, fps, frameCount),
   };
-}
-
-function PlaceholderPanel({ title, description }: { title: string; description: string }) {
-  return (
-    <section className={styles.placeholderPanel}>
-      <h2>{title}</h2>
-      <p>{description}</p>
-    </section>
-  );
 }

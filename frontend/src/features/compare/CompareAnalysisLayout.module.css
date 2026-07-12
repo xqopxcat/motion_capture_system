@@ -21,8 +21,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.viewerPanel,
-.placeholderPanel {
+.viewerPanel {
   background: #ffffff;
   border: 1px solid #d8dee8;
   border-radius: 8px;
@@ -190,25 +189,6 @@
 }
 
 .syncControls p {
-  color: #4b5563;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.sharedArea {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.placeholderPanel {
-  padding: 18px;
-}
-
-.placeholderPanel h2 {
-  font-size: 1rem;
-  margin: 0 0 8px;
-}
-
-.placeholderPanel p {
   color: #4b5563;
   line-height: 1.5;
   margin: 0;
