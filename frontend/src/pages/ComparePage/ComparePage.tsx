@@ -69,7 +69,7 @@ export function ComparePage() {
           <p className={styles.kicker}>Compare Foundation</p>
           <h1 className={styles.title}>Compare</h1>
           <p className={styles.description}>
-            Select two Ready Records for Compare. Shared playback starts in Task 50.
+            Select two Ready Records for Compare. Use shared playback and manual sync offset to compare two Ready Records.
           </p>
         </header>
 
