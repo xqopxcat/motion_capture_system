@@ -24,6 +24,24 @@ describe("compare route params", () => {
     });
   });
 
+  it("parses one-sided route params without requiring the other side", () => {
+    expect(parseCompareRouteSelection(new URLSearchParams("left=record_a"))).toEqual({
+      leftRecordId: "record_a",
+      rightRecordId: null,
+    });
+    expect(parseCompareRouteSelection(new URLSearchParams("right=record_b"))).toEqual({
+      leftRecordId: null,
+      rightRecordId: "record_b",
+    });
+  });
+
+  it("normalizes blank params without crashing", () => {
+    expect(parseCompareRouteSelection(new URLSearchParams("left=%20%20&right="))).toEqual({
+      leftRecordId: null,
+      rightRecordId: null,
+    });
+  });
+
   it("maps frontend left and right params to backend recordA and recordB params", () => {
     expect(
       mapCompareSelectionToApiParams({
@@ -63,5 +81,15 @@ describe("compare route params", () => {
     );
 
     expect(searchParams.toString()).toBe("right=record_b");
+  });
+
+  it("removes one side when the next record id is whitespace", () => {
+    const searchParams = updateCompareRouteSelectionParam(
+      new URLSearchParams("left=record_a&right=record_b"),
+      "right",
+      "   ",
+    );
+
+    expect(searchParams.toString()).toBe("left=record_a");
   });
 });

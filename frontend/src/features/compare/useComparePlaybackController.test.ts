@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_COMPARE_SYNC_OFFSET_FRAMES,
+  applyCompareSyncOffsetDelta,
   deriveComparePlaybackBounds,
   mapCompareSyncFrames,
+  resetCompareSyncOffset,
 } from "./useComparePlaybackController";
 
 describe("deriveComparePlaybackBounds", () => {
@@ -38,6 +41,21 @@ describe("deriveComparePlaybackBounds", () => {
 });
 
 describe("mapCompareSyncFrames", () => {
+  it("uses zero as the default sync offset", () => {
+    expect(DEFAULT_COMPARE_SYNC_OFFSET_FRAMES).toBe(0);
+    expect(
+      mapCompareSyncFrames({
+        leftFrameCount: 100,
+        rightFrameCount: 100,
+        sharedFrame: 10,
+        syncOffsetFrames: DEFAULT_COMPARE_SYNC_OFFSET_FRAMES,
+      }),
+    ).toEqual({
+      leftFrame: 10,
+      rightFrame: 10,
+    });
+  });
+
   it("keeps left on the shared frame and offsets right", () => {
     expect(
       mapCompareSyncFrames({
@@ -76,5 +94,37 @@ describe("mapCompareSyncFrames", () => {
       leftFrame: 2,
       rightFrame: 0,
     });
+  });
+
+  it("does not crash when frame counts differ or are unavailable", () => {
+    expect(
+      mapCompareSyncFrames({
+        leftFrameCount: 2,
+        rightFrameCount: 200,
+        sharedFrame: 10,
+        syncOffsetFrames: 3,
+      }),
+    ).toEqual({
+      leftFrame: 1,
+      rightFrame: 13,
+    });
+
+    expect(
+      mapCompareSyncFrames({
+        sharedFrame: 10,
+        syncOffsetFrames: 3,
+      }),
+    ).toEqual({
+      leftFrame: 0,
+      rightFrame: 0,
+    });
+  });
+});
+
+describe("compare sync offset helpers", () => {
+  it("applies manual offset deltas and reset", () => {
+    expect(applyCompareSyncOffsetDelta(0, 1)).toBe(1);
+    expect(applyCompareSyncOffsetDelta(1, -10)).toBe(-9);
+    expect(resetCompareSyncOffset()).toBe(0);
   });
 });

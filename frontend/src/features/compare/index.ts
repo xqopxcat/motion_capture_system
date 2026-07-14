@@ -12,7 +12,14 @@ export {
 } from "./compareMetricDifference";
 export { createCompareRenderContext } from "./compareRenderContext";
 export {
+  canSelectCompareRecord,
+  findCompareRecord,
+  getCompareSelectionValidationMessages,
+} from "./compareSelection";
+export {
+  buildCompareRuntimeArtifactIssues,
   createCompareRuntimeIssue,
+  getBlockingCompareRuntimeIssues,
   getPrimaryCompareRuntimeMessage,
   hasBlockingCompareRuntimeIssue,
 } from "./compareRuntimeIssues";
@@ -23,6 +30,10 @@ export {
 } from "./compareRouteParams";
 export { useCompareRecordRuntime } from "./useCompareRecordRuntime";
 export {
+  DEFAULT_COMPARE_SYNC_OFFSET_FRAMES,
+  applyCompareSyncOffsetDelta,
   deriveComparePlaybackBounds,
+  mapCompareSyncFrames,
+  resetCompareSyncOffset,
   useComparePlaybackController,
 } from "./useComparePlaybackController";

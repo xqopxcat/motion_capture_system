@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCompareMetricDifferenceRows,
   formatCompareMetricValue,
+  getCompareMetricSeriesDiagnostics,
   parseCompareMetricSeries,
 } from "./compareMetricDifference";
 
@@ -62,6 +63,71 @@ describe("compareMetricDifference", () => {
       difference: null,
       leftValue: 1,
       rightValue: null,
+    });
+  });
+
+  it("reads values from independent left and right frames", () => {
+    expect(
+      buildCompareMetricDifferenceRows({
+        leftFrame: 0,
+        leftMetricSeries: [{ metricId: "hip_height", values: [3, 30] }],
+        rightFrame: 1,
+        rightMetricSeries: [{ metricId: "hip_height", values: [4, 40] }],
+      })[0],
+    ).toMatchObject({
+      difference: 37,
+      leftValue: 3,
+      rightValue: 40,
+    });
+  });
+
+  it("handles missing frame values without calculating a difference", () => {
+    expect(
+      buildCompareMetricDifferenceRows({
+        leftFrame: 5,
+        leftMetricSeries: [{ metricId: "knee_flexion", values: [10] }],
+        rightFrame: 0,
+        rightMetricSeries: [{ metricId: "knee_flexion", values: [12] }],
+      })[0],
+    ).toMatchObject({
+      difference: null,
+      leftValue: null,
+      rightValue: 12,
+    });
+  });
+
+  it("returns no rows when there are no comparable metric ids", () => {
+    expect(
+      buildCompareMetricDifferenceRows({
+        leftFrame: 0,
+        leftMetricSeries: null,
+        rightFrame: 0,
+        rightMetricSeries: { series: [] },
+      }),
+    ).toEqual([]);
+  });
+
+  it("falls back to metricId when a label is missing", () => {
+    expect(
+      buildCompareMetricDifferenceRows({
+        leftFrame: 0,
+        leftMetricSeries: [{ metricId: "ankle_speed", values: [1] }],
+        rightFrame: 0,
+        rightMetricSeries: [{ metricId: "ankle_speed", values: [2] }],
+      })[0].label,
+    ).toBe("ankle_speed");
+  });
+
+  it("reports missing or invalid metric series diagnostics", () => {
+    expect(getCompareMetricSeriesDiagnostics(null)).toEqual({
+      hasInput: false,
+      isValid: true,
+      message: "Metric Series is missing.",
+    });
+    expect(getCompareMetricSeriesDiagnostics({ series: [{ values: [1] }] })).toEqual({
+      hasInput: true,
+      isValid: false,
+      message: "Metric Series JSON has no valid metric values.",
     });
   });
 

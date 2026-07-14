@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { usePlaybackController } from "../../hooks";
 import { clampFrameIndex } from "../viewer/playbackFrameMath";
 
+export const DEFAULT_COMPARE_SYNC_OFFSET_FRAMES = 0;
+
 export type UseComparePlaybackControllerInput = {
   leftDuration?: number;
   leftFps?: number;
@@ -71,9 +73,17 @@ export function mapCompareSyncFrames({
   };
 }
 
+export function applyCompareSyncOffsetDelta(currentOffset: number, frameDelta: number) {
+  return currentOffset + frameDelta;
+}
+
+export function resetCompareSyncOffset() {
+  return DEFAULT_COMPARE_SYNC_OFFSET_FRAMES;
+}
+
 export function useComparePlaybackController(input: UseComparePlaybackControllerInput) {
   const controller = usePlaybackController();
-  const [syncOffsetFrames, setSyncOffsetFrames] = useState(0);
+  const [syncOffsetFrames, setSyncOffsetFrames] = useState(DEFAULT_COMPARE_SYNC_OFFSET_FRAMES);
   const bounds = deriveComparePlaybackBounds(input);
   const {
     frameState,
@@ -95,10 +105,10 @@ export function useComparePlaybackController(input: UseComparePlaybackController
     [frameState.currentFrame, requestSeekFrame],
   );
   const requestSyncOffsetDelta = useCallback((frameDelta: number) => {
-    setSyncOffsetFrames((currentOffset) => currentOffset + frameDelta);
+    setSyncOffsetFrames((currentOffset) => applyCompareSyncOffsetDelta(currentOffset, frameDelta));
   }, []);
   const requestSyncOffsetReset = useCallback(() => {
-    setSyncOffsetFrames(0);
+    setSyncOffsetFrames(resetCompareSyncOffset());
   }, []);
   const frameMapping = mapCompareSyncFrames({
     leftFrameCount: input.leftFrameCount,

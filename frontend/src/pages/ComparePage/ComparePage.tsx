@@ -3,13 +3,16 @@ import { useSearchParams } from "react-router-dom";
 import {
   CompareAnalysisLayout,
   CompareRecordSelector,
+  canSelectCompareRecord,
+  findCompareRecord,
+  getCompareSelectionValidationMessages,
   mapCompareSelectionToApiParams,
   parseCompareRouteSelection,
   updateCompareRouteSelectionParam,
   useCompareRecordRuntime,
 } from "../../features/compare";
 import { useGetRecordsQuery } from "../../services/recordsApi";
-import type { CompareSelectionSide, RecordListItem } from "../../types";
+import type { CompareSelectionSide } from "../../types";
 import styles from "./ComparePage.module.css";
 
 export function ComparePage() {
@@ -23,9 +26,9 @@ export function ComparePage() {
   const apiParams = mapCompareSelectionToApiParams(routeSelection);
   const validationMessages = isLoading || isError
     ? []
-    : getSelectionValidationMessages(routeSelection, records);
-  const selectedLeftRecord = findRecord(records, routeSelection.leftRecordId);
-  const selectedRightRecord = findRecord(records, routeSelection.rightRecordId);
+    : getCompareSelectionValidationMessages(routeSelection, records);
+  const selectedLeftRecord = findCompareRecord(records, routeSelection.leftRecordId);
+  const selectedRightRecord = findCompareRecord(records, routeSelection.rightRecordId);
   const canShowAnalysisLayout = Boolean(
     selectedLeftRecord &&
       selectedRightRecord &&
@@ -49,16 +52,7 @@ export function ComparePage() {
     canShowAnalysisLayout,
   );
   const handleSelectRecord = (side: CompareSelectionSide, recordId: string) => {
-    const record = records.find((item) => item.recordId === recordId);
-
-    if (!record || record.status !== "Ready") {
-      return;
-    }
-
-    if (
-      (side === "left" && routeSelection.rightRecordId === recordId) ||
-      (side === "right" && routeSelection.leftRecordId === recordId)
-    ) {
+    if (!canSelectCompareRecord({ records, recordId, selection: routeSelection, side })) {
       return;
     }
 
@@ -161,50 +155,4 @@ function getSelectionStateMessage(
   }
 
   return "No Records selected. Choose one Ready Record for each side.";
-}
-
-function getSelectionValidationMessages(
-  selection: {
-    leftRecordId: string | null;
-    rightRecordId: string | null;
-  },
-  records: RecordListItem[],
-) {
-  const messages: string[] = [];
-  const leftRecord = findRecord(records, selection.leftRecordId);
-  const rightRecord = findRecord(records, selection.rightRecordId);
-
-  if (
-    selection.leftRecordId &&
-    selection.rightRecordId &&
-    selection.leftRecordId === selection.rightRecordId
-  ) {
-    messages.push("Left and right cannot use the same Record.");
-  }
-
-  if (selection.leftRecordId && !leftRecord) {
-    messages.push(`Left Record "${selection.leftRecordId}" was not found.`);
-  }
-
-  if (selection.rightRecordId && !rightRecord) {
-    messages.push(`Right Record "${selection.rightRecordId}" was not found.`);
-  }
-
-  if (leftRecord && leftRecord.status !== "Ready") {
-    messages.push(`Left Record "${leftRecord.title}" is ${leftRecord.status}, not Ready.`);
-  }
-
-  if (rightRecord && rightRecord.status !== "Ready") {
-    messages.push(`Right Record "${rightRecord.title}" is ${rightRecord.status}, not Ready.`);
-  }
-
-  return messages;
-}
-
-function findRecord(records: RecordListItem[], recordId: string | null) {
-  if (!recordId) {
-    return undefined;
-  }
-
-  return records.find((record) => record.recordId === recordId);
 }
