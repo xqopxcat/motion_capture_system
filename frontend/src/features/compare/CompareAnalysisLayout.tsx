@@ -4,6 +4,10 @@ import { frameIndexToTime } from "../viewer/playbackFrameMath";
 import styles from "./CompareAnalysisLayout.module.css";
 import { createCompareRenderContext } from "./compareRenderContext";
 import { CompareMetricDifferencePanel } from "./CompareMetricDifferencePanel";
+import {
+  getPrimaryCompareRuntimeMessage,
+  hasBlockingCompareRuntimeIssue,
+} from "./compareRuntimeIssues";
 import { useComparePlaybackController } from "./useComparePlaybackController";
 
 export type CompareAnalysisLayoutProps = {
@@ -27,7 +31,11 @@ export function CompareAnalysisLayout({
     rightFps: rightRuntime.poseDataset?.fps ?? rightRuntime.recordDetail?.video?.fps ?? undefined,
     rightFrameCount: rightRuntime.poseDataset?.frameCount,
   });
-  const canUseSharedPlayback = leftRuntime.status === "ready" && rightRuntime.status === "ready";
+  const canUseSharedPlayback =
+    leftRuntime.status === "ready" &&
+    rightRuntime.status === "ready" &&
+    !hasBlockingCompareRuntimeIssue(leftRuntime) &&
+    !hasBlockingCompareRuntimeIssue(rightRuntime);
   const sharedPlaybackState = canUseSharedPlayback
     ? comparePlayback.playbackState
     : {
@@ -196,10 +204,15 @@ function CompareViewerPanel({
         )}
         {(runtime.status === "error" || runtime.status === "missing") && (
           <div className={styles.stageState} role="alert">
-            {runtime.errorMessage ?? "Runtime data is not available."}
+            {getPrimaryCompareRuntimeMessage(runtime) ?? "Runtime data is not available."}
+            {runtime.retry && (
+              <button type="button" onClick={runtime.retry}>
+                Retry
+              </button>
+            )}
           </div>
         )}
-        {runtime.status === "ready" && (
+        {runtime.status === "ready" && runtime.videoSrc && (
           <>
             <VideoPlayer
               playback={playback}
@@ -212,6 +225,17 @@ function CompareViewerPanel({
           </>
         )}
       </div>
+
+      {runtime.issues.length > 0 && (
+        <ul className={styles.issueList} aria-label={`${label} runtime issues`}>
+          {runtime.issues.map((issue) => (
+            <li key={`${issue.artifact}-${issue.message}`} data-severity={issue.severity}>
+              <strong>{issue.artifact}</strong>
+              <span>{issue.message}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <dl className={styles.runtimeSummary}>
         <div>

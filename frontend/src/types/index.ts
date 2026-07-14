@@ -31,6 +31,9 @@ export type {
   CompareRecordRuntimeState,
   CompareRecordRuntimeStatus,
   CompareRouteSelection,
+  CompareRuntimeArtifact,
+  CompareRuntimeIssue,
+  CompareRuntimeIssueSeverity,
   CompareSelectionSide,
 } from "./compare";
 export type {

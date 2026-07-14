@@ -2,6 +2,7 @@ import styles from "./CompareMetricDifferencePanel.module.css";
 import {
   buildCompareMetricDifferenceRows,
   formatCompareMetricValue,
+  getCompareMetricSeriesDiagnostics,
 } from "./compareMetricDifference";
 
 export type CompareMetricDifferencePanelProps = {
@@ -23,6 +24,12 @@ export function CompareMetricDifferencePanel({
     rightFrame,
     rightMetricSeries,
   });
+  const leftDiagnostics = getCompareMetricSeriesDiagnostics(leftMetricSeries);
+  const rightDiagnostics = getCompareMetricSeriesDiagnostics(rightMetricSeries);
+  const diagnostics = [
+    leftDiagnostics.message ? `Left: ${leftDiagnostics.message}` : null,
+    rightDiagnostics.message ? `Right: ${rightDiagnostics.message}` : null,
+  ].filter((message): message is string => message !== null);
 
   return (
     <section className={styles.panel} aria-label="Basic metric difference">
@@ -37,7 +44,16 @@ export function CompareMetricDifferencePanel({
       </header>
 
       {rows.length === 0 ? (
-        <p className={styles.empty}>No comparable Metric Series values are available.</p>
+        <div className={styles.empty}>
+          <p>No comparable Metric Series values are available.</p>
+          {diagnostics.length > 0 && (
+            <ul>
+              {diagnostics.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

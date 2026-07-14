@@ -14,6 +14,12 @@ export type CompareMetricDifferenceRow = {
   unit: string | null;
 };
 
+export type CompareMetricSeriesDiagnostics = {
+  hasInput: boolean;
+  isValid: boolean;
+  message: string | null;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -48,6 +54,26 @@ export function parseCompareMetricSeries(metricSeries: unknown): CompareMetricSe
   return candidateSeries
     .map(parseMetricSeriesItem)
     .filter((item): item is CompareMetricSeriesItem => item !== null);
+}
+
+export function getCompareMetricSeriesDiagnostics(
+  metricSeries: unknown,
+): CompareMetricSeriesDiagnostics {
+  if (metricSeries === null || typeof metricSeries === "undefined") {
+    return {
+      hasInput: false,
+      isValid: true,
+      message: "Metric Series is missing.",
+    };
+  }
+
+  const parsedSeries = parseCompareMetricSeries(metricSeries);
+
+  return {
+    hasInput: true,
+    isValid: parsedSeries.length > 0,
+    message: parsedSeries.length > 0 ? null : "Metric Series JSON has no valid metric values.",
+  };
 }
 
 function getFrameValue(metric: CompareMetricSeriesItem | undefined, frameIndex: number) {

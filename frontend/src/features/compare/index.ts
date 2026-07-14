@@ -7,9 +7,15 @@ export type { CompareRecordSelectorProps } from "./CompareRecordSelector";
 export {
   buildCompareMetricDifferenceRows,
   formatCompareMetricValue,
+  getCompareMetricSeriesDiagnostics,
   parseCompareMetricSeries,
 } from "./compareMetricDifference";
 export { createCompareRenderContext } from "./compareRenderContext";
+export {
+  createCompareRuntimeIssue,
+  getPrimaryCompareRuntimeMessage,
+  hasBlockingCompareRuntimeIssue,
+} from "./compareRuntimeIssues";
 export {
   mapCompareSelectionToApiParams,
   parseCompareRouteSelection,

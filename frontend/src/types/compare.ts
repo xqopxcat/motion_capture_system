@@ -21,12 +21,25 @@ export type CompareDataResponse = {
 
 export type CompareRecordRuntimeStatus = "idle" | "loading" | "error" | "missing" | "ready";
 
+export type CompareRuntimeArtifact = "record" | "video" | "pose" | "metrics" | "playback" | "unknown";
+
+export type CompareRuntimeIssueSeverity = "blocking" | "warning";
+
+export type CompareRuntimeIssue = {
+  artifact: CompareRuntimeArtifact;
+  debugMessage?: string;
+  message: string;
+  severity: CompareRuntimeIssueSeverity;
+};
+
 export type CompareRecordRuntimeState = {
   errorMessage: string | null;
+  issues: CompareRuntimeIssue[];
   metricSeries: unknown | null;
   poseDataset: PoseDataset | null;
   recordDetail: RecordDetail | null;
   renderContext: RenderContext;
+  retry: (() => void) | null;
   status: CompareRecordRuntimeStatus;
   videoSrc: string | null;
 };
