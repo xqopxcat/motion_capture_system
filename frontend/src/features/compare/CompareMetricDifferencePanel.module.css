@@ -12,6 +12,7 @@
   gap: 16px;
   justify-content: space-between;
   margin-bottom: 16px;
+  min-width: 0;
 }
 
 .header h2 {
@@ -23,6 +24,7 @@
   color: #4b5563;
   line-height: 1.5;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .header span {
@@ -37,6 +39,7 @@
   color: #4b5563;
   line-height: 1.5;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .empty ul {
@@ -48,6 +51,7 @@
 
 .tableWrap {
   overflow-x: auto;
+  width: 100%;
 }
 
 .table {
@@ -61,6 +65,7 @@
   border-top: 1px solid #e1e6ef;
   padding: 12px;
   text-align: left;
+  vertical-align: top;
 }
 
 .table thead th {
@@ -72,10 +77,16 @@
 
 .table tbody th {
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
   .header {
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .table {
+    min-width: 560px;
   }
 }

@@ -3,6 +3,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .controls button,
@@ -15,8 +16,16 @@
   padding: 6px 10px;
 }
 
+.controls button:focus-visible,
+.speedControl select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .speedControl {
   align-items: center;
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }

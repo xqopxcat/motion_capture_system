@@ -14,6 +14,7 @@
   background: #ffffff;
   border: 1px solid #d8dee8;
   border-radius: 8px;
+  min-width: 0;
 }
 
 .slot {
@@ -53,6 +54,7 @@
   cursor: pointer;
   flex: 0 0 auto;
   font-weight: 800;
+  line-height: 1.2;
   padding: 8px 10px;
 }
 
@@ -71,6 +73,12 @@
   background: #eef2f7;
   color: #8a94a3;
   cursor: not-allowed;
+}
+
+.slot button:focus-visible,
+.recordActions button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .listHeader {
@@ -101,6 +109,7 @@
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
   padding: 18px;
 }
 
@@ -118,11 +127,13 @@
   gap: 12px;
   justify-content: space-between;
   margin-bottom: 8px;
+  min-width: 0;
 }
 
 .titleRow h3 {
   font-size: 1rem;
   margin: 0;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
@@ -171,12 +182,23 @@
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .slots {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
-  .slots,
   .recordItem {
     grid-template-columns: 1fr;
+  }
+
+  .slot,
+  .titleRow {
+    flex-direction: column;
   }
 
   .recordActions {

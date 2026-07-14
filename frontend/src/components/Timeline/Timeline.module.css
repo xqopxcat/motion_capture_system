@@ -1,17 +1,20 @@
 ﻿.timeline {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .summary {
   color: #20242a;
   font-size: 0.875rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .track {
   display: grid;
   min-height: 34px;
+  min-width: 0;
   position: relative;
 }
 
