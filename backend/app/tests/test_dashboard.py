@@ -30,9 +30,14 @@ def test_dashboard_summary_api_returns_owned_contract() -> None:
     body = response.json()
 
     assert response.status_code == 200
-    assert set(body) == {"counts", "metricTrends"}
+    assert set(body) == {"counts", "metricTrends", "trendAvailability"}
     assert body["counts"]["recentActivityWindowDays"] == 30
     assert isinstance(body["metricTrends"], list)
+    serialized = response.text.lower()
+    assert "videourl" not in serialized
+    assert "poseurl" not in serialized
+    assert "seriesurl" not in serialized
+    assert "storagepath" not in serialized
 
 
 def test_dashboard_service_groups_only_fully_compatible_ready_summaries() -> None:
@@ -79,6 +84,9 @@ def test_dashboard_service_groups_only_fully_compatible_ready_summaries() -> Non
     assert trend.statistic == "average"
     assert all(point.status == "Ready" for point in trend.points)
     assert [point.value for point in trend.points] == [70, 80]
+    assert response.trendAvailability.readyRecords == 3
+    assert response.trendAvailability.recordsWithMetricSummary == 3
+    assert response.trendAvailability.recordsWithCompatibleMetricSummary == 2
 
 
 def test_dashboard_service_separates_incompatible_units_versions_activities_and_sides() -> None:
@@ -104,6 +112,7 @@ def test_dashboard_service_separates_incompatible_units_versions_activities_and_
 
     assert len(response.metricTrends) == 5
     assert sum(len(trend.points) for trend in response.metricTrends) == 5
+    assert response.trendAvailability.recordsWithCompatibleMetricSummary == 5
 
 
 def test_dashboard_service_never_includes_another_users_records_or_metrics() -> None:
@@ -123,6 +132,75 @@ def test_dashboard_service_never_includes_another_users_records_or_metrics() -> 
 
     assert response.counts.totalRecords == 1
     assert [point.recordId for trend in response.metricTrends for point in trend.points] == [owner_id]
+    assert response.trendAvailability.readyRecords == 1
+    assert response.trendAvailability.recordsWithMetricSummary == 1
+    assert response.trendAvailability.recordsWithCompatibleMetricSummary == 1
+
+
+def test_trend_availability_distinguishes_no_ready_no_summary_and_incompatible_summary() -> None:
+    records = RecordRepository()
+    summaries = MetricSummaryRepository()
+    user = _user("owner")
+    service = DashboardService(records, summaries)
+
+    _create_record(records, user, "Uploading", "Uploading")
+    no_ready = service.get_summary(user, reference_time=REFERENCE_TIME)
+    assert no_ready.trendAvailability.model_dump() == {
+        "readyRecords": 0,
+        "recordsWithMetricSummary": 0,
+        "recordsWithCompatibleMetricSummary": 0,
+    }
+
+    ready_without_summary = _create_record(records, user, "Ready no summary", "Ready")
+    no_summary = service.get_summary(user, reference_time=REFERENCE_TIME)
+    assert no_summary.trendAvailability.model_dump() == {
+        "readyRecords": 1,
+        "recordsWithMetricSummary": 0,
+        "recordsWithCompatibleMetricSummary": 0,
+    }
+
+    summaries.persist_summary(
+        record_id=ready_without_summary,
+        items=[_summary(average=70, unit=None)],
+    )
+    incompatible = service.get_summary(user, reference_time=REFERENCE_TIME)
+    assert incompatible.trendAvailability.model_dump() == {
+        "readyRecords": 1,
+        "recordsWithMetricSummary": 1,
+        "recordsWithCompatibleMetricSummary": 0,
+    }
+
+
+def test_trend_availability_counts_a_record_once_when_it_has_multiple_metrics() -> None:
+    records = RecordRepository()
+    summaries = MetricSummaryRepository()
+    user = _user("owner")
+    record_id = _create_record(records, user, "Multiple metrics", "Ready")
+    second_metric = _summary(average=40)
+    second_metric = MetricSummaryItemRecord(
+        metric_id="hip_flexion",
+        unit=second_metric.unit,
+        metric_definition_version="hip-flexion.v1",
+        activity_type=second_metric.activity_type,
+        side=second_metric.side,
+        min=20,
+        max=80,
+        average=40,
+        range_of_motion=60,
+    )
+    summaries.persist_summary(
+        record_id=record_id,
+        items=[_summary(average=70), second_metric],
+    )
+
+    response = DashboardService(records, summaries).get_summary(
+        user,
+        reference_time=REFERENCE_TIME,
+    )
+
+    assert len(response.metricTrends) == 2
+    assert response.trendAvailability.recordsWithMetricSummary == 1
+    assert response.trendAvailability.recordsWithCompatibleMetricSummary == 1
 
 
 def _user(user_id: str) -> CurrentUser:

@@ -1,4 +1,4 @@
-import type { RecordListItem } from "../../types";
+import type { DashboardRecordItem } from "./dashboardState";
 
 export const RECENT_ACTIVITY_WINDOW_DAYS = 30 as const;
 
@@ -13,7 +13,7 @@ export type DashboardRecordSummary = {
 };
 
 export function deriveDashboardRecordSummary(
-  records: ReadonlyArray<Pick<RecordListItem, "status" | "createdAt">>,
+  records: ReadonlyArray<Pick<DashboardRecordItem, "status" | "createdAt">>,
   referenceTime: number,
 ): DashboardRecordSummary {
   const recentBoundary = referenceTime - RECENT_ACTIVITY_WINDOW_DAYS * DAY_IN_MILLISECONDS;

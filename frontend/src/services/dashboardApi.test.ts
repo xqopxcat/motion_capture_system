@@ -36,6 +36,11 @@ describe("dashboardApi", () => {
           ],
         },
       ],
+      trendAvailability: {
+        readyRecords: 2,
+        recordsWithMetricSummary: 2,
+        recordsWithCompatibleMetricSummary: 1,
+      },
     };
 
     expect(response.metricTrends[0].statistic).toBe("average");

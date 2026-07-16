@@ -12,6 +12,7 @@ from app.schemas.dashboard import (
     DashboardMetricTrend,
     DashboardMetricTrendPoint,
     DashboardSummaryResponse,
+    DashboardTrendAvailability,
 )
 
 
@@ -36,10 +37,12 @@ class DashboardService:
     ) -> DashboardSummaryResponse:
         now = reference_time or datetime.now(UTC)
         owned_records = self.records.list_owned(user.userId)
+        metric_trends, trend_availability = self._build_metric_trends(owned_records)
 
         return DashboardSummaryResponse(
             counts=self._build_counts(owned_records, now),
-            metricTrends=self._build_metric_trends(owned_records),
+            metricTrends=metric_trends,
+            trendAvailability=trend_availability,
         )
 
     def _build_counts(
@@ -63,12 +66,13 @@ class DashboardService:
     def _build_metric_trends(
         self,
         records: list[StoredRecord],
-    ) -> list[DashboardMetricTrend]:
+    ) -> tuple[list[DashboardMetricTrend], DashboardTrendAvailability]:
         ready_records = [record for record in records if record.status == "Ready"]
         summaries = self.metric_summaries.get_summaries(
             [record.record_id for record in ready_records],
         )
         grouped_points: dict[TrendKey, list[DashboardMetricTrendPoint]] = {}
+        records_with_compatible_summary: set[str] = set()
 
         for record in ready_records:
             summary = summaries.get(record.record_id)
@@ -80,6 +84,7 @@ class DashboardService:
                 if key is None:
                     continue
 
+                records_with_compatible_summary.add(record.record_id)
                 grouped_points.setdefault(key, []).append(
                     DashboardMetricTrendPoint(
                         recordId=record.record_id,
@@ -106,7 +111,11 @@ class DashboardService:
                 ),
             )
 
-        return trends
+        return trends, DashboardTrendAvailability(
+            readyRecords=len(ready_records),
+            recordsWithMetricSummary=len(summaries),
+            recordsWithCompatibleMetricSummary=len(records_with_compatible_summary),
+        )
 
     @staticmethod
     def _compatibility_key(item) -> TrendKey | None:

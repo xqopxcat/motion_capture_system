@@ -41,6 +41,29 @@
   margin-top: 32px;
 }
 
+.dashboardFailure {
+  background: #fff7ed;
+  border: 1px solid #f0b879;
+  border-radius: 8px;
+  margin-top: 32px;
+  padding: 24px;
+}
+
+.dashboardFailure h2,
+.dashboardFailure p {
+  margin: 0;
+}
+
+.dashboardFailure h2 {
+  font-size: 1.15rem;
+}
+
+.dashboardFailure p {
+  color: #6b4f2b;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
 .sectionHeader {
   align-items: end;
   display: flex;
@@ -272,6 +295,26 @@
   font-size: 0.82rem;
   margin: 8px 0 0;
   text-align: center;
+}
+
+.trendValues {
+  border-top: 1px solid #e7ebf1;
+  color: #4b5563;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.trendValues summary {
+  color: #244f9e;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.trendValues ul {
+  line-height: 1.6;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+  padding-left: 22px;
 }
 
 .singleTrendPoint {
@@ -599,6 +642,11 @@
 .retryButton:hover,
 .retryButton:focus-visible {
   background: #dfe5ed;
+}
+
+.retryButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .srOnly {

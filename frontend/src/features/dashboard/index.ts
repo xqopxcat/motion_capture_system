@@ -21,3 +21,16 @@ export type {
   DashboardTrendChartModel,
   DashboardTrendChartPoint,
 } from "./dashboardMetricTrend";
+export {
+  getDashboardIntegrationState,
+  getDashboardTrendContentState,
+  normalizeDashboardMetricTrends,
+  normalizeDashboardRecords,
+  normalizeTrendAvailability,
+  retryFailedDashboardQueries,
+} from "./dashboardState";
+export type {
+  DashboardIntegrationState,
+  DashboardRecordItem,
+  DashboardTrendContentState,
+} from "./dashboardState";

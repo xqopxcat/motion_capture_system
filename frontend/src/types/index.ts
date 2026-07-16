@@ -41,6 +41,7 @@ export type {
   DashboardMetricTrend,
   DashboardMetricTrendPoint,
   DashboardSummaryResponse,
+  DashboardTrendAvailability,
 } from "./dashboard";
 export type {
   PoseDataset,

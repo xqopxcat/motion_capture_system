@@ -29,6 +29,13 @@ class DashboardMetricTrend(BaseModel):
     points: list[DashboardMetricTrendPoint] = Field(default_factory=list)
 
 
+class DashboardTrendAvailability(BaseModel):
+    readyRecords: int = Field(ge=0)
+    recordsWithMetricSummary: int = Field(ge=0)
+    recordsWithCompatibleMetricSummary: int = Field(ge=0)
+
+
 class DashboardSummaryResponse(BaseModel):
     counts: DashboardCounts
     metricTrends: list[DashboardMetricTrend] = Field(default_factory=list)
+    trendAvailability: DashboardTrendAvailability

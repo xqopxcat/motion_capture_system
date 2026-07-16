@@ -9,8 +9,15 @@ import {
   formatDashboardTrendSeriesLabel,
   formatTrendDate,
   formatTrendValue,
+  getDashboardIntegrationState,
+  getDashboardTrendContentState,
   getRecentRecordPresentation,
+  normalizeDashboardMetricTrends,
+  normalizeDashboardRecords,
+  normalizeTrendAvailability,
+  retryFailedDashboardQueries,
   selectRecentRecords,
+  type DashboardRecordItem,
   type DashboardRecordSummary,
 } from "../../features/dashboard";
 import {
@@ -20,32 +27,67 @@ import {
 } from "../../features/records/recordDisplay";
 import { useGetDashboardSummaryQuery } from "../../services/dashboardApi";
 import { useGetRecordsQuery } from "../../services/recordsApi";
-import type { DashboardMetricTrend, RecordListItem } from "../../types";
+import type { DashboardMetricTrend, DashboardTrendAvailability } from "../../types";
 import styles from "./DashboardPage.module.css";
 
 export function DashboardPage() {
-  const { data, isError, isLoading, refetch } = useGetRecordsQuery();
+  const { data, isError, isFetching, isLoading, refetch } = useGetRecordsQuery();
   const {
     data: dashboardSummary,
     isError: isTrendError,
+    isFetching: isTrendFetching,
     isLoading: isTrendLoading,
     refetch: refetchTrend,
   } = useGetDashboardSummaryQuery();
-  const recentRecords = selectRecentRecords(data?.items ?? []);
-  const summary = data
-    ? deriveDashboardRecordSummary(data.items, Date.now())
+  const normalizedRecords = data ? normalizeDashboardRecords(data.items) : [];
+  const recordsContractError = Boolean(data && normalizedRecords === null);
+  const recordsError = isError || recordsContractError;
+  const safeRecords = normalizedRecords ?? [];
+  const recentRecords = selectRecentRecords(safeRecords);
+  const summary = data && !recordsError
+    ? deriveDashboardRecordSummary(safeRecords, Date.now())
     : null;
+  const normalizedTrends = dashboardSummary
+    ? normalizeDashboardMetricTrends(dashboardSummary.metricTrends)
+    : [];
+  const trendAvailability = dashboardSummary
+    ? normalizeTrendAvailability(dashboardSummary.trendAvailability)
+    : null;
+  const trendContractError = Boolean(
+    dashboardSummary && (normalizedTrends === null || trendAvailability === null),
+  );
+  const effectiveTrendError = isTrendError || trendContractError;
+  const integration = getDashboardIntegrationState({
+    recordsError,
+    recordsLoading: isLoading,
+    trendError: effectiveTrendError,
+    trendLoading: isTrendLoading,
+  });
+
+  const retryFailedSections = () => {
+    retryFailedDashboardQueries({
+      recordsError,
+      refetchRecords: refetch,
+      refetchTrend,
+      trendError: effectiveTrendError,
+    });
+  };
 
   return (
     <DashboardContent
-      isError={isError}
+      isError={recordsError}
       isLoading={isLoading}
+      isRetrying={isFetching}
+      isFullFailure={integration.isFullFailure}
+      onFullRetry={retryFailedSections}
       onRetry={() => void refetch()}
       records={recentRecords}
       summary={summary}
-      trends={dashboardSummary?.metricTrends ?? []}
-      isTrendError={isTrendError}
+      trends={normalizedTrends ?? []}
+      trendAvailability={trendAvailability}
+      isTrendError={effectiveTrendError}
       isTrendLoading={isTrendLoading}
+      isTrendRetrying={isTrendFetching}
       onTrendRetry={() => void refetchTrend()}
     />
   );
@@ -54,24 +96,34 @@ export function DashboardPage() {
 export type DashboardContentProps = {
   isError: boolean;
   isLoading: boolean;
+  isRetrying: boolean;
+  isFullFailure: boolean;
+  onFullRetry: () => void;
   onRetry: () => void;
-  records: RecordListItem[];
+  records: DashboardRecordItem[];
   summary: DashboardRecordSummary | null;
   trends: DashboardMetricTrend[];
+  trendAvailability: DashboardTrendAvailability | null;
   isTrendError: boolean;
   isTrendLoading: boolean;
+  isTrendRetrying: boolean;
   onTrendRetry: () => void;
 };
 
 export function DashboardContent({
   isError,
   isLoading,
+  isRetrying,
+  isFullFailure,
+  onFullRetry,
   onRetry,
   records,
   summary,
   trends,
+  trendAvailability,
   isTrendError,
   isTrendLoading,
+  isTrendRetrying,
   onTrendRetry,
 }: DashboardContentProps) {
   return (
@@ -84,18 +136,29 @@ export function DashboardContent({
         </header>
 
         <QuickActions />
+        {isFullFailure && (
+          <DashboardFailure
+            isRetrying={isRetrying || isTrendRetrying}
+            onRetry={onFullRetry}
+          />
+        )}
         <SummaryCards isError={isError} isLoading={isLoading} summary={summary} />
         <MetricSummaryTrendSection
+          availability={trendAvailability}
           isError={isTrendError}
           isLoading={isTrendLoading}
+          isRetrying={isTrendRetrying}
           onRetry={onTrendRetry}
+          showRetry={!isFullFailure}
           trends={trends}
         />
         <RecentRecordsSection
           isError={isError}
           isLoading={isLoading}
+          isRetrying={isRetrying}
           onRetry={onRetry}
           records={records}
+          showRetry={!isFullFailure}
         />
       </div>
     </main>
@@ -103,20 +166,27 @@ export function DashboardContent({
 }
 
 export type MetricSummaryTrendSectionProps = {
+  availability: DashboardTrendAvailability | null;
   isError: boolean;
   isLoading: boolean;
+  isRetrying: boolean;
   onRetry: () => void;
+  showRetry: boolean;
   trends: DashboardMetricTrend[];
 };
 
 export function MetricSummaryTrendSection({
+  availability,
   isError,
   isLoading,
+  isRetrying,
   onRetry,
+  showRetry,
   trends,
 }: MetricSummaryTrendSectionProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const selectedTrend = findDashboardTrendSeries(trends, selectedKey);
+  const contentState = getDashboardTrendContentState(availability, selectedTrend);
 
   return (
     <section className={styles.section} aria-labelledby="metric-trend-title">
@@ -147,9 +217,17 @@ export function MetricSummaryTrendSection({
       </div>
 
       {isLoading && <MetricTrendLoading />}
-      {!isLoading && isError && <MetricTrendError onRetry={onRetry} />}
-      {!isLoading && !isError && !selectedTrend && <MetricTrendEmpty />}
-      {!isLoading && !isError && selectedTrend && (
+      {!isLoading && isError && (
+        <MetricTrendError
+          isRetrying={isRetrying}
+          onRetry={onRetry}
+          showRetry={showRetry}
+        />
+      )}
+      {!isLoading && !isError && contentState !== "single-point" && contentState !== "trend" && (
+        <MetricTrendEmpty state={contentState} />
+      )}
+      {!isLoading && !isError && selectedTrend && (contentState === "single-point" || contentState === "trend") && (
         <MetricTrendContent trend={selectedTrend} />
       )}
     </section>
@@ -166,30 +244,43 @@ export function MetricTrendLoading() {
   );
 }
 
-export function MetricTrendError({ onRetry }: { onRetry: () => void }) {
+export function MetricTrendError({ isRetrying, onRetry, showRetry }: {
+  isRetrying: boolean;
+  onRetry: () => void;
+  showRetry: boolean;
+}) {
   return (
     <div className={styles.statePanel} role="alert">
       <h3>Metric trend cannot load</h3>
       <p>Your other Dashboard sections are still available.</p>
-      <button className={styles.retryButton} type="button" onClick={onRetry}>
-        Retry trend
-      </button>
+      {showRetry && <RetryButton isRetrying={isRetrying} label="Retry trend" onRetry={onRetry} />}
     </div>
   );
 }
 
-export function MetricTrendEmpty() {
+const TREND_EMPTY_COPY = {
+  "no-ready": ["No Ready Records", "A Record with status Ready is needed before trends can be evaluated."],
+  "no-summary": ["No Metric Summary", "Ready Records exist, but none has a persisted Metric Summary."],
+  "no-compatible": ["No Compatible Metric Summary", "Metric Summaries exist, but none has the complete compatible metric metadata required for a trend."],
+  "no-history": ["No compatible history for this metric", "Compatible data exists, but the selected metric has no compatible history points."],
+  unavailable: ["Metric trend data is unavailable", "The trend response could not be interpreted safely."],
+} as const;
+
+export function MetricTrendEmpty({ state }: {
+  state: Exclude<ReturnType<typeof getDashboardTrendContentState>, "single-point" | "trend">;
+}) {
+  const [title, description] = TREND_EMPTY_COPY[state];
   return (
     <div className={styles.statePanel}>
-      <h3>No compatible metric history</h3>
-      <p>Compatible Ready Records are needed before a Metric Summary trend can be shown.</p>
+      <h3>{title}</h3>
+      <p>{description}</p>
     </div>
   );
 }
 
 export function MetricTrendContent({ trend }: { trend: DashboardMetricTrend }) {
   if (trend.points.length === 0) {
-    return <MetricTrendEmpty />;
+    return <MetricTrendEmpty state="no-history" />;
   }
 
   if (trend.points.length === 1) {
@@ -285,6 +376,17 @@ export function MetricTrendChart({ trend }: { trend: DashboardMetricTrend }) {
         ))}
       </svg>
       <p className={styles.trendHint}>Select a point to open its Ready Record in Viewer.</p>
+      <details className={styles.trendValues}>
+        <summary>View trend values</summary>
+        <ul>
+          {trend.points.map((point) => (
+            <li key={point.recordId}>
+              <Link to={buildRecordViewerPath(point.recordId) ?? "/records"}>{point.recordTitle}</Link>
+              {` — ${formatRecordDate(point.createdAt)} — ${formatTrendValue(point.value)} ${trend.unit}`}
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>
   );
 }
@@ -395,9 +497,11 @@ export function QuickActions() {
 export function RecentRecordsSection({
   isError,
   isLoading,
+  isRetrying,
   onRetry,
   records,
-}: Pick<DashboardContentProps, "isError" | "isLoading" | "onRetry" | "records">) {
+  showRetry,
+}: Pick<DashboardContentProps, "isError" | "isLoading" | "isRetrying" | "onRetry" | "records"> & { showRetry: boolean }) {
   return (
     <section className={styles.section} aria-labelledby="recent-records-title">
       <div className={styles.sectionHeader}>
@@ -411,7 +515,9 @@ export function RecentRecordsSection({
       </div>
 
       {isLoading && <RecentRecordsLoading />}
-      {!isLoading && isError && <RecentRecordsError onRetry={onRetry} />}
+      {!isLoading && isError && (
+        <RecentRecordsError isRetrying={isRetrying} onRetry={onRetry} showRetry={showRetry} />
+      )}
       {!isLoading && !isError && records.length === 0 && <RecentRecordsEmpty />}
       {!isLoading && !isError && records.length > 0 && (
         <ul className={styles.recordList} aria-label="Recent record list">
@@ -447,25 +553,43 @@ export function RecentRecordsEmpty() {
   );
 }
 
-export function RecentRecordsError({ onRetry }: { onRetry: () => void }) {
+export function RecentRecordsError({ isRetrying, onRetry, showRetry }: {
+  isRetrying: boolean;
+  onRetry: () => void;
+  showRetry: boolean;
+}) {
   return (
     <div className={styles.statePanel} role="alert">
       <h3>Recent records cannot load</h3>
       <p>We could not retrieve your records. Try the request again.</p>
-      <RetryButton onRetry={onRetry} />
+      {showRetry && <RetryButton isRetrying={isRetrying} onRetry={onRetry} />}
     </div>
   );
 }
 
-export function RetryButton({ onRetry }: { onRetry: () => void }) {
+export function RetryButton({ isRetrying = false, label = "Retry", onRetry }: {
+  isRetrying?: boolean;
+  label?: string;
+  onRetry: () => void;
+}) {
   return (
-    <button className={styles.retryButton} type="button" onClick={onRetry}>
-      Retry
+    <button className={styles.retryButton} type="button" onClick={onRetry} disabled={isRetrying}>
+      {isRetrying ? "Retrying…" : label}
     </button>
   );
 }
 
-export function RecentRecordItem({ record }: { record: RecordListItem }) {
+export function DashboardFailure({ isRetrying, onRetry }: { isRetrying: boolean; onRetry: () => void }) {
+  return (
+    <section className={styles.dashboardFailure} role="alert" aria-labelledby="dashboard-failure-title">
+      <h2 id="dashboard-failure-title">Dashboard data cannot load</h2>
+      <p>Records and Metric Summary trends are temporarily unavailable. Quick Actions remain available.</p>
+      <RetryButton isRetrying={isRetrying} label="Retry Dashboard" onRetry={onRetry} />
+    </section>
+  );
+}
+
+export function RecentRecordItem({ record }: { record: DashboardRecordItem }) {
   const presentation = getRecentRecordPresentation(record);
 
   return (

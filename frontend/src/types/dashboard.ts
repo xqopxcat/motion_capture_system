@@ -24,7 +24,14 @@ export type DashboardMetricTrend = {
   points: DashboardMetricTrendPoint[];
 };
 
+export type DashboardTrendAvailability = {
+  readyRecords: number;
+  recordsWithMetricSummary: number;
+  recordsWithCompatibleMetricSummary: number;
+};
+
 export type DashboardSummaryResponse = {
   counts: DashboardCounts;
   metricTrends: DashboardMetricTrend[];
+  trendAvailability: DashboardTrendAvailability;
 };

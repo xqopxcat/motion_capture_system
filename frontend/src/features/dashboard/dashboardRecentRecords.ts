@@ -1,9 +1,9 @@
-import type { RecordListItem } from "../../types";
 import {
   buildRecordViewerPath,
   getRecordStatusMeta,
   type RecordStatusTone,
 } from "../records/recordDisplay";
+import type { DashboardRecordItem } from "./dashboardState";
 
 export const RECENT_RECORD_LIMIT = 5;
 
@@ -20,12 +20,12 @@ type RecentRecordPresentation = {
   statusTone: RecordStatusTone;
 };
 
-export function selectRecentRecords(records: RecordListItem[]) {
+export function selectRecentRecords(records: DashboardRecordItem[]) {
   return records.slice(0, RECENT_RECORD_LIMIT);
 }
 
 export function getRecentRecordPresentation(
-  record: Pick<RecordListItem, "recordId"> & { status: string },
+  record: Pick<DashboardRecordItem, "recordId" | "status">,
 ): RecentRecordPresentation {
   const statusMeta = getKnownStatusMeta(record.status);
 

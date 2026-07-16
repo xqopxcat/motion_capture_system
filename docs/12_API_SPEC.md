@@ -642,7 +642,12 @@ Response：
         }
       ]
     }
-  ]
+  ],
+  "trendAvailability": {
+    "readyRecords": 20,
+    "recordsWithMetricSummary": 18,
+    "recordsWithCompatibleMetricSummary": 12
+  }
 }
 ```
 
@@ -655,6 +660,8 @@ Rules：
 * Only `Ready` Records contribute trend points.
 * MVP trend statistic is `average`.
 * Points are ordered by `createdAt` ascending.
+* `trendAvailability` is additive diagnostic metadata used to distinguish no Ready Records, no Metric Summary, and no compatible Metric Summary states.
+* Availability counts are based only on owned Ready Records, count each Record at most once, and use the same compatibility contract as `metricTrends`.
 
 ---
 

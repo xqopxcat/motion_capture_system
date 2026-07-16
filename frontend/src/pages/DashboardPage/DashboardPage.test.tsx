@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { deriveDashboardRecordSummary } from "../../features/dashboard";
-import type { DashboardMetricTrend, RecordListItem } from "../../types";
+import type { DashboardMetricTrend, DashboardTrendAvailability, RecordListItem } from "../../types";
 import {
   DashboardContent,
   MetricSummaryTrendSection,
@@ -17,6 +17,7 @@ function renderDashboard(props: {
   trendIsError?: boolean;
   trendIsLoading?: boolean;
   trends?: DashboardMetricTrend[];
+  trendAvailability?: DashboardTrendAvailability;
 }) {
   const records = props.records ?? [];
   const summary = props.isError || props.isLoading
@@ -28,12 +29,21 @@ function renderDashboard(props: {
       <DashboardContent
         isError={props.isError ?? false}
         isLoading={props.isLoading ?? false}
+        isRetrying={false}
+        isFullFailure={Boolean(props.isError && props.trendIsError)}
+        onFullRetry={() => undefined}
         onRetry={() => undefined}
         records={records}
         summary={summary}
         trends={props.trends ?? []}
+        trendAvailability={props.trendAvailability ?? {
+          readyRecords: props.trends?.length ? 1 : 0,
+          recordsWithMetricSummary: props.trends?.length ? 1 : 0,
+          recordsWithCompatibleMetricSummary: props.trends?.length ? 1 : 0,
+        }}
         isTrendError={props.trendIsError ?? false}
         isTrendLoading={props.trendIsLoading ?? false}
+        isTrendRetrying={false}
         onTrendRetry={() => undefined}
       />
     </MemoryRouter>,
@@ -177,7 +187,32 @@ describe("DashboardPage Task 56 Metric Summary Trend", () => {
   it("renders the no-compatible-series empty state", () => {
     const markup = renderDashboard({});
 
-    expect(markup).toContain("No compatible metric history");
+    expect(markup).toContain("No Ready Records");
+  });
+
+  it.each([
+    [{ readyRecords: 0, recordsWithMetricSummary: 0, recordsWithCompatibleMetricSummary: 0 }, "No Ready Records"],
+    [{ readyRecords: 2, recordsWithMetricSummary: 0, recordsWithCompatibleMetricSummary: 0 }, "No Metric Summary"],
+    [{ readyRecords: 2, recordsWithMetricSummary: 1, recordsWithCompatibleMetricSummary: 0 }, "No Compatible Metric Summary"],
+  ] satisfies Array<[DashboardTrendAvailability, string]>) (
+    "uses trendAvailability for the locked empty state %#",
+    (trendAvailability, expected) => {
+      expect(renderDashboard({ trendAvailability })).toContain(expected);
+    },
+  );
+
+  it("does not fall back to No Metric Summary when a selected compatible series has no points", () => {
+    const markup = renderDashboard({
+      trends: [createTrend(0)],
+      trendAvailability: {
+        readyRecords: 2,
+        recordsWithMetricSummary: 2,
+        recordsWithCompatibleMetricSummary: 1,
+      },
+    });
+
+    expect(markup).toContain("No compatible history for this metric");
+    expect(markup).not.toContain("<h3>No Metric Summary</h3>");
   });
 
   it("renders a single point without implying a direction", () => {
@@ -204,9 +239,16 @@ describe("DashboardPage Task 56 Metric Summary Trend", () => {
     const markup = renderToStaticMarkup(
       <MemoryRouter>
         <MetricSummaryTrendSection
+          availability={{
+            readyRecords: 1,
+            recordsWithMetricSummary: 1,
+            recordsWithCompatibleMetricSummary: 1,
+          }}
           isError={false}
           isLoading={false}
+          isRetrying={false}
           onRetry={() => undefined}
+          showRetry
           trends={[createTrend(2, "left"), createTrend(2, "right")]}
         />
       </MemoryRouter>,
@@ -215,5 +257,39 @@ describe("DashboardPage Task 56 Metric Summary Trend", () => {
     expect(markup).toContain("Metric series");
     expect(markup).toContain("knee_flexion — squat / left — degree");
     expect(markup).toContain("knee_flexion — squat / right — degree");
+  });
+});
+
+describe("DashboardPage Task 57 integrated failures", () => {
+  it("keeps trend content usable when Records fail", () => {
+    const markup = renderDashboard({ isError: true, trends: [createTrend(2)] });
+
+    expect(markup).toContain("Recent records cannot load");
+    expect(markup).toContain("knee_flexion average history");
+    expect(markup).not.toContain("Dashboard data cannot load");
+  });
+
+  it("keeps Record sections usable when Trend fails", () => {
+    const markup = renderDashboard({ records: [createRecord()], trendIsError: true });
+
+    expect(markup).toContain("Latest Session");
+    expect(markup).toContain("Metric trend cannot load");
+    expect(markup).not.toContain("Dashboard data cannot load");
+  });
+
+  it("shows one full-dashboard retry while preserving section context", () => {
+    const markup = renderDashboard({ isError: true, trendIsError: true });
+
+    expect(markup).toContain("Dashboard data cannot load");
+    expect(markup).toContain("Retry Dashboard");
+    expect(markup).toContain("Recent records cannot load");
+    expect(markup).toContain("Metric trend cannot load");
+    expect(markup.match(/<button/g)).toHaveLength(1);
+  });
+
+  it("disables a retry while the request is in progress", () => {
+    const button = RetryButton({ isRetrying: true, onRetry: () => undefined });
+    expect(button.props.disabled).toBe(true);
+    expect(button.props.children).toBe("Retrying…");
   });
 });
