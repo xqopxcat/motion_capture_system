@@ -2,9 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { deriveDashboardRecordSummary } from "../../features/dashboard";
-import type { RecordListItem } from "../../types";
+import type { DashboardMetricTrend, RecordListItem } from "../../types";
 import {
   DashboardContent,
+  MetricSummaryTrendSection,
   RecentRecordItem,
   RetryButton,
 } from "./DashboardPage";
@@ -13,6 +14,9 @@ function renderDashboard(props: {
   isError?: boolean;
   isLoading?: boolean;
   records?: RecordListItem[];
+  trendIsError?: boolean;
+  trendIsLoading?: boolean;
+  trends?: DashboardMetricTrend[];
 }) {
   const records = props.records ?? [];
   const summary = props.isError || props.isLoading
@@ -27,6 +31,10 @@ function renderDashboard(props: {
         onRetry={() => undefined}
         records={records}
         summary={summary}
+        trends={props.trends ?? []}
+        isTrendError={props.trendIsError ?? false}
+        isTrendLoading={props.trendIsLoading ?? false}
+        onTrendRetry={() => undefined}
       />
     </MemoryRouter>,
   );
@@ -43,6 +51,24 @@ function createRecord(status: RecordListItem["status"] = "Ready") {
     tags: ["practice"],
     createdAt: "2026-07-17T00:00:00Z",
   } satisfies RecordListItem;
+}
+
+function createTrend(pointCount = 2, side = "left"): DashboardMetricTrend {
+  return {
+    metricId: "knee_flexion",
+    unit: "degree",
+    metricDefinitionVersion: "knee-flexion.v1",
+    activityType: "squat",
+    side,
+    statistic: "average",
+    points: Array.from({ length: pointCount }, (_, index) => ({
+      recordId: `trend_record_${side}_${index}`,
+      recordTitle: `Trend Record ${index + 1}`,
+      status: "Ready",
+      createdAt: `2026-07-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+      value: 70 + index * 5,
+    })),
+  };
 }
 
 describe("DashboardPage Task 54 states", () => {
@@ -123,11 +149,71 @@ describe("DashboardPage Task 54 states", () => {
     expect(markup).toContain("Last 30 days");
   });
 
-  it("does not render Metric Summary or runtime controls", () => {
+  it("does not render runtime controls", () => {
     const markup = renderDashboard({ records: [createRecord()] });
 
-    expect(markup).not.toContain("Metric Summary");
     expect(markup).not.toContain("VideoPlayer");
     expect(markup).not.toContain("Metric Series");
+  });
+});
+
+describe("DashboardPage Task 56 Metric Summary Trend", () => {
+  it("renders an independent stable Trend loading state", () => {
+    const markup = renderDashboard({ trendIsLoading: true });
+
+    expect(markup).toContain("Loading Metric Summary trend");
+    expect(markup).toContain("Quick Actions");
+    expect(markup).toContain("No records yet");
+  });
+
+  it("renders section-level Trend error and retry without hiding Record sections", () => {
+    const markup = renderDashboard({ trendIsError: true });
+
+    expect(markup).toContain("Metric trend cannot load");
+    expect(markup).toContain("Retry trend");
+    expect(markup).toContain("No records yet");
+  });
+
+  it("renders the no-compatible-series empty state", () => {
+    const markup = renderDashboard({});
+
+    expect(markup).toContain("No compatible metric history");
+  });
+
+  it("renders a single point without implying a direction", () => {
+    const markup = renderDashboard({ trends: [createTrend(1)] });
+
+    expect(markup).not.toContain(">75 <");
+    expect(markup).toContain("70");
+    expect(markup).toContain("One compatible Record is available");
+    expect(markup).not.toContain("trendLine");
+    expect(markup).toContain('href="/records/trend_record_left_0"');
+  });
+
+  it("renders a labeled SVG trend and Viewer links for two points", () => {
+    const markup = renderDashboard({ trends: [createTrend(2)] });
+
+    expect(markup).toContain("knee_flexion average history in degree");
+    expect(markup).toContain("2 compatible Ready Records");
+    expect(markup).toContain('href="/records/trend_record_left_0"');
+    expect(markup).toContain("Trend Record 1");
+    expect(markup).toContain("Average · degree");
+  });
+
+  it("renders a fixed compatibility-series selector when multiple series exist", () => {
+    const markup = renderToStaticMarkup(
+      <MemoryRouter>
+        <MetricSummaryTrendSection
+          isError={false}
+          isLoading={false}
+          onRetry={() => undefined}
+          trends={[createTrend(2, "left"), createTrend(2, "right")]}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(markup).toContain("Metric series");
+    expect(markup).toContain("knee_flexion — squat / left — degree");
+    expect(markup).toContain("knee_flexion — squat / right — degree");
   });
 });

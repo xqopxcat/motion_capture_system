@@ -150,6 +150,198 @@
   margin: 0;
 }
 
+.trendHeader {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.trendHeader > div {
+  min-width: 0;
+}
+
+.trendHeader h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.trendHeader > div > p:last-child {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+
+.trendSelector {
+  display: grid;
+  flex: 0 1 380px;
+  gap: 6px;
+  min-width: 240px;
+}
+
+.trendSelector span {
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.trendSelector select {
+  background: #ffffff;
+  border: 1px solid #aeb8c6;
+  border-radius: 8px;
+  color: #20242a;
+  font: inherit;
+  min-width: 0;
+  padding: 10px 36px 10px 12px;
+  width: 100%;
+}
+
+.trendPanel,
+.trendLoading,
+.singleTrendPoint {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.trendPanel {
+  padding: 18px;
+}
+
+.trendMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.trendMeta span {
+  background: #eef2f7;
+  border-radius: 999px;
+  color: #374151;
+  font-size: 0.78rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 5px 8px;
+}
+
+.trendChart {
+  color: #244f9e;
+  display: block;
+  height: auto;
+  max-height: 360px;
+  overflow: visible;
+  width: 100%;
+}
+
+.trendGridLine {
+  stroke: #d8dee8;
+  stroke-width: 1;
+}
+
+.trendAxisLabel {
+  fill: #5b6572;
+  font-size: 12px;
+}
+
+.trendLine {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.trendPoint {
+  fill: #ffffff;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
+.trendPoint:hover,
+.trendPoint:focus,
+.trendChart a:focus .trendPoint {
+  fill: #244f9e;
+}
+
+.trendHint {
+  color: #5b6572;
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+.singleTrendPoint {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr) auto;
+  padding: 20px;
+}
+
+.singleTrendPoint p {
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.singleTrendValue {
+  color: #20242a !important;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.singleTrendValue span {
+  color: #5b6572;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.singleTrendPoint a {
+  background: #172033;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 10px 12px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.singleTrendPoint a:hover,
+.singleTrendPoint a:focus-visible {
+  background: #24324f;
+}
+
+.trendLoading {
+  display: grid;
+  gap: 18px;
+  min-height: 300px;
+  padding: 20px;
+}
+
+.trendLoadingLabel,
+.trendLoadingChart {
+  animation: pulse 1.4s ease-in-out infinite;
+  background: #e7ebf1;
+  border-radius: 6px;
+  display: block;
+}
+
+.trendLoadingLabel {
+  height: 20px;
+  width: 42%;
+}
+
+.trendLoadingChart {
+  height: 230px;
+  width: 100%;
+}
+
 .quickAction,
 .primaryQuickAction,
 .viewAllLink,
@@ -446,6 +638,26 @@
   .recordMeta {
     grid-column: 1 / -1;
   }
+
+  .trendHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .trendSelector {
+    flex: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .singleTrendPoint {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .singleTrendPoint > p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 @media (max-width: 560px) {
@@ -494,11 +706,34 @@
   .recordAction span {
     width: 100%;
   }
+
+  .trendPanel {
+    padding: 12px 8px;
+  }
+
+  .trendAxisLabel {
+    font-size: 11px;
+  }
+
+  .singleTrendPoint {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .singleTrendPoint > p {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .singleTrendPoint a {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .loadingBar,
-  .summaryCardSkeleton span {
+  .summaryCardSkeleton span,
+  .trendLoadingLabel,
+  .trendLoadingChart {
     animation: none;
   }
 }

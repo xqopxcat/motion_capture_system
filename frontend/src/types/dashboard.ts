@@ -9,6 +9,7 @@ export type DashboardCounts = {
 export type DashboardMetricTrendPoint = {
   recordId: string;
   recordTitle: string;
+  status: "Ready";
   createdAt: string;
   value: number;
 };

@@ -29,6 +29,7 @@ describe("dashboardApi", () => {
             {
               recordId: "record_1",
               recordTitle: "Session 1",
+              status: "Ready",
               createdAt: "2026-07-17T00:00:00Z",
               value: 75,
             },

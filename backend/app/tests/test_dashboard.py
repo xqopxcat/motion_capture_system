@@ -77,6 +77,7 @@ def test_dashboard_service_groups_only_fully_compatible_ready_summaries() -> Non
     assert trend.activityType == "squat"
     assert trend.side == "left"
     assert trend.statistic == "average"
+    assert all(point.status == "Ready" for point in trend.points)
     assert [point.value for point in trend.points] == [70, 80]
 
 

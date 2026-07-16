@@ -14,6 +14,7 @@ class DashboardCounts(BaseModel):
 class DashboardMetricTrendPoint(BaseModel):
     recordId: str
     recordTitle: str
+    status: Literal["Ready"]
     createdAt: str
     value: float
 

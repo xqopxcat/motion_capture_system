@@ -84,6 +84,7 @@ class DashboardService:
                     DashboardMetricTrendPoint(
                         recordId=record.record_id,
                         recordTitle=record.title,
+                        status="Ready",
                         createdAt=record.created_at.isoformat(),
                         value=item.average,
                     ),

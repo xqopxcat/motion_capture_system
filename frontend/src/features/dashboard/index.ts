@@ -9,3 +9,15 @@ export {
   deriveDashboardRecordSummary,
 } from "./dashboardRecordSummary";
 export type { DashboardRecordSummary } from "./dashboardRecordSummary";
+export {
+  buildDashboardTrendChartModel,
+  buildDashboardTrendSeriesKey,
+  findDashboardTrendSeries,
+  formatDashboardTrendSeriesLabel,
+  formatTrendDate,
+  formatTrendValue,
+} from "./dashboardMetricTrend";
+export type {
+  DashboardTrendChartModel,
+  DashboardTrendChartPoint,
+} from "./dashboardMetricTrend";

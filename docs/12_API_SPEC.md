@@ -636,6 +636,7 @@ Response：
         {
           "recordId": "record_123",
           "recordTitle": "Squat Practice",
+          "status": "Ready",
           "createdAt": "2026-06-26T10:00:00Z",
           "value": 75
         }
