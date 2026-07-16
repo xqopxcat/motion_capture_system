@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import {
   DASHBOARD_QUICK_ACTIONS,
+  deriveDashboardRecordSummary,
   getRecentRecordPresentation,
   selectRecentRecords,
+  type DashboardRecordSummary,
 } from "../../features/dashboard";
 import {
   formatRecordDate,
@@ -15,6 +17,9 @@ import styles from "./DashboardPage.module.css";
 export function DashboardPage() {
   const { data, isError, isLoading, refetch } = useGetRecordsQuery();
   const recentRecords = selectRecentRecords(data?.items ?? []);
+  const summary = data
+    ? deriveDashboardRecordSummary(data.items, Date.now())
+    : null;
 
   return (
     <DashboardContent
@@ -22,6 +27,7 @@ export function DashboardPage() {
       isLoading={isLoading}
       onRetry={() => void refetch()}
       records={recentRecords}
+      summary={summary}
     />
   );
 }
@@ -31,6 +37,7 @@ export type DashboardContentProps = {
   isLoading: boolean;
   onRetry: () => void;
   records: RecordListItem[];
+  summary: DashboardRecordSummary | null;
 };
 
 export function DashboardContent({
@@ -38,6 +45,7 @@ export function DashboardContent({
   isLoading,
   onRetry,
   records,
+  summary,
 }: DashboardContentProps) {
   return (
     <main className={styles.dashboardPage}>
@@ -49,6 +57,7 @@ export function DashboardContent({
         </header>
 
         <QuickActions />
+        <SummaryCards isError={isError} isLoading={isLoading} summary={summary} />
         <RecentRecordsSection
           isError={isError}
           isLoading={isLoading}
@@ -57,6 +66,85 @@ export function DashboardContent({
         />
       </div>
     </main>
+  );
+}
+
+export type SummaryCardsProps = {
+  isError: boolean;
+  isLoading: boolean;
+  summary: DashboardRecordSummary | null;
+};
+
+export function SummaryCards({ isError, isLoading, summary }: SummaryCardsProps) {
+  return (
+    <section className={styles.section} aria-labelledby="summary-cards-title">
+      <div className={styles.sectionHeader}>
+        <div>
+          <p className={styles.sectionLabel}>Summary</p>
+          <h2 id="summary-cards-title">Record overview</h2>
+        </div>
+      </div>
+
+      {isLoading && <SummaryCardsLoading />}
+      {!isLoading && isError && (
+        <div className={styles.summaryError} role="status">
+          <p>Record summary is unavailable while records cannot load.</p>
+        </div>
+      )}
+      {!isLoading && !isError && summary && (
+        <div className={styles.summaryGrid}>
+          <SummaryCard label="Total Records" value={summary.totalRecords} />
+          <SummaryCard
+            context="Status: Ready"
+            label="Ready Records"
+            value={summary.readyRecords}
+          />
+          <SummaryCard
+            context="Status: Failed"
+            label="Failed Records"
+            value={summary.failedRecords}
+          />
+          <SummaryCard
+            context={`Last ${summary.recentActivityWindowDays} days`}
+            label="Recent Activity"
+            value={summary.recentActivityCount}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function SummaryCard({
+  context,
+  label,
+  value,
+}: {
+  context?: string;
+  label: string;
+  value: number;
+}) {
+  return (
+    <article className={styles.summaryCard}>
+      <h3>{label}</h3>
+      <p className={styles.summaryValue}>{value}</p>
+      {context && <p className={styles.summaryContext}>{context}</p>}
+    </article>
+  );
+}
+
+export function SummaryCardsLoading() {
+  return (
+    <div className={styles.summaryGrid} aria-busy="true" aria-live="polite">
+      {Array.from({ length: 4 }, (_, index) => (
+        <div className={styles.summaryCardSkeleton} key={index} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      ))}
+      <span className={styles.srOnly}>Loading record summary</span>
+    </div>
   );
 }
 
@@ -89,7 +177,7 @@ export function RecentRecordsSection({
   isLoading,
   onRetry,
   records,
-}: DashboardContentProps) {
+}: Omit<DashboardContentProps, "summary">) {
   return (
     <section className={styles.section} aria-labelledby="recent-records-title">
       <div className={styles.sectionHeader}>

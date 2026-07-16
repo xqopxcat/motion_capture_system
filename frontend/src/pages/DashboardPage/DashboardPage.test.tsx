@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { deriveDashboardRecordSummary } from "../../features/dashboard";
 import type { RecordListItem } from "../../types";
 import {
   DashboardContent,
@@ -13,13 +14,19 @@ function renderDashboard(props: {
   isLoading?: boolean;
   records?: RecordListItem[];
 }) {
+  const records = props.records ?? [];
+  const summary = props.isError || props.isLoading
+    ? null
+    : deriveDashboardRecordSummary(records, Date.parse("2026-07-17T12:00:00Z"));
+
   return renderToStaticMarkup(
     <MemoryRouter>
       <DashboardContent
         isError={props.isError ?? false}
         isLoading={props.isLoading ?? false}
         onRetry={() => undefined}
-        records={props.records ?? []}
+        records={records}
+        summary={summary}
       />
     </MemoryRouter>,
   );
@@ -46,6 +53,8 @@ describe("DashboardPage Task 54 states", () => {
     expect(markup).toContain('href="/records"');
     expect(markup).toContain('href="/compare"');
     expect(markup).toContain("Loading recent records");
+    expect(markup).toContain("Loading record summary");
+    expect(markup).not.toContain("summaryValue");
     expect(markup).not.toContain("No records yet");
   });
 
@@ -55,6 +64,11 @@ describe("DashboardPage Task 54 states", () => {
     expect(markup).toContain("No records yet");
     expect(markup).toContain("Start Capture");
     expect(markup).toContain('href="/capture"');
+    expect(markup).toContain("Total Records");
+    expect(markup).toContain("Ready Records");
+    expect(markup).toContain("Failed Records");
+    expect(markup).toContain("Recent Activity");
+    expect(markup.match(/>0<\/p>/g)).toHaveLength(4);
   });
 
   it("renders a section-level error and retry without hiding Quick Actions", () => {
@@ -63,6 +77,8 @@ describe("DashboardPage Task 54 states", () => {
     expect(markup).toContain("Recent records cannot load");
     expect(markup).toContain("Retry");
     expect(markup).toContain("Open Compare");
+    expect(markup).toContain("Record summary is unavailable");
+    expect(markup).not.toContain("summaryValue");
   });
 
   it("wires retry to the supplied refetch callback", () => {
@@ -89,6 +105,22 @@ describe("DashboardPage Task 54 states", () => {
     expect(readyMarkup).toContain('href="/records/record%20with%20space"');
     expect(readyMarkup).toContain("Open Viewer");
     expect(uploadingMarkup).toContain("View Record");
+  });
+
+  it("renders the four derived Summary Card labels and values", () => {
+    const markup = renderDashboard({
+      records: [
+        createRecord("Ready"),
+        { ...createRecord("Failed"), recordId: "record_failed" },
+        { ...createRecord("Uploading"), recordId: "record_uploading" },
+      ],
+    });
+
+    expect(markup).toContain("Total Records");
+    expect(markup).toContain(">3</p>");
+    expect(markup).toContain("Ready Records");
+    expect(markup).toContain("Failed Records");
+    expect(markup).toContain("Last 30 days");
   });
 
   it("does not render Metric Summary or runtime controls", () => {

@@ -4,3 +4,8 @@ export {
   getRecentRecordPresentation,
   selectRecentRecords,
 } from "./dashboardRecentRecords";
+export {
+  RECENT_ACTIVITY_WINDOW_DAYS,
+  deriveDashboardRecordSummary,
+} from "./dashboardRecordSummary";
+export type { DashboardRecordSummary } from "./dashboardRecordSummary";
