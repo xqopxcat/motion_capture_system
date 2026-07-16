@@ -41,6 +41,10 @@ export type ArtifactCompleteResponse = {
 
 export type MetricSummary = {
   metricId: string;
+  unit?: string | null;
+  metricDefinitionVersion?: string | null;
+  activityType?: string | null;
+  side?: string | null;
   min: number;
   max: number;
   average: number;

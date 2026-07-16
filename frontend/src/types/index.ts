@@ -37,6 +37,12 @@ export type {
   CompareSelectionSide,
 } from "./compare";
 export type {
+  DashboardCounts,
+  DashboardMetricTrend,
+  DashboardMetricTrendPoint,
+  DashboardSummaryResponse,
+} from "./dashboard";
+export type {
   PoseDataset,
   PoseDatasetFrame,
   PoseDatasetLandmark,

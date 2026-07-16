@@ -136,6 +136,10 @@ class UploadService:
             items=[
                 MetricSummaryItemRecord(
                     metric_id=item.metricId,
+                    unit=item.unit,
+                    metric_definition_version=item.metricDefinitionVersion,
+                    activity_type=item.activityType,
+                    side=item.side,
                     min=item.min,
                     max=item.max,
                     average=item.average,

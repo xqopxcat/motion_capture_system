@@ -127,6 +127,10 @@ class RecordService:
                 summary=[
                     RecordDetailMetricSummary(
                         metricId=item.metric_id,
+                        unit=item.unit,
+                        metricDefinitionVersion=item.metric_definition_version,
+                        activityType=item.activity_type,
+                        side=item.side,
                         min=item.min,
                         max=item.max,
                         average=item.average,

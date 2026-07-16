@@ -48,6 +48,10 @@ class PoseUploadCompleteRequest(BaseModel):
 
 class MetricSummary(BaseModel):
     metricId: str = Field(min_length=1)
+    unit: str | None = Field(default=None, min_length=1)
+    metricDefinitionVersion: str | None = Field(default=None, min_length=1)
+    activityType: str | None = Field(default=None, min_length=1)
+    side: str | None = Field(default=None, min_length=1)
     min: float
     max: float
     average: float

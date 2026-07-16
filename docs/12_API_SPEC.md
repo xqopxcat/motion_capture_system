@@ -617,11 +617,43 @@ Response：
 
 ```json
 {
-  "totalRecords": 24,
-  "recentRecords": [],
-  "metricTrends": []
+  "counts": {
+    "totalRecords": 24,
+    "readyRecords": 20,
+    "failedRecords": 1,
+    "recentActivityCount": 6,
+    "recentActivityWindowDays": 30
+  },
+  "metricTrends": [
+    {
+      "metricId": "knee_flexion",
+      "unit": "degree",
+      "metricDefinitionVersion": "knee-flexion.v1",
+      "activityType": "squat",
+      "side": "left",
+      "statistic": "average",
+      "points": [
+        {
+          "recordId": "record_123",
+          "recordTitle": "Squat Practice",
+          "createdAt": "2026-06-26T10:00:00Z",
+          "value": 75
+        }
+      ]
+    }
+  ]
 }
 ```
+
+Rules：
+
+* The endpoint requires authentication and returns only data derived from Records owned by the current user.
+* Trend points use Metric Summary only and never expose Video, Pose Dataset, Metric Series, or signed runtime URLs.
+* Trend compatibility requires an exact match of `metricId`, `unit`, `metricDefinitionVersion`, `activityType`, and `side`.
+* A Metric Summary item missing any compatibility field is excluded from cross-Record trends.
+* Only `Ready` Records contribute trend points.
+* MVP trend statistic is `average`.
+* Points are ordered by `createdAt` ascending.
 
 ---
 
@@ -944,4 +976,3 @@ API route：
 ```
 
 Frontend maps `left/right` to API `recordA/recordB`.
-

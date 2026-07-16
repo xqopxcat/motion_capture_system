@@ -33,6 +33,10 @@ export type RecordDetailPose = {
 
 export type RecordDetailMetricSummary = {
   metricId: string;
+  unit: string | null;
+  metricDefinitionVersion: string | null;
+  activityType: string | null;
+  side: string | null;
   min: number;
   max: number;
   average: number;

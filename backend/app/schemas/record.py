@@ -35,6 +35,10 @@ class RecordDetailPose(BaseModel):
 
 class RecordDetailMetricSummary(BaseModel):
     metricId: str
+    unit: str | None = None
+    metricDefinitionVersion: str | None = None
+    activityType: str | None = None
+    side: str | None = None
     min: float
     max: float
     average: float

@@ -5,6 +5,10 @@ from datetime import UTC, datetime
 @dataclass(frozen=True)
 class MetricSummaryItemRecord:
     metric_id: str
+    unit: str | None
+    metric_definition_version: str | None
+    activity_type: str | None
+    side: str | None
     min: float
     max: float
     average: float
@@ -39,3 +43,10 @@ class MetricSummaryRepository:
 
     def get_summary(self, record_id: str) -> MetricSummaryRecord | None:
         return self._summaries.get(record_id)
+
+    def get_summaries(self, record_ids: list[str]) -> dict[str, MetricSummaryRecord]:
+        return {
+            record_id: summary
+            for record_id in record_ids
+            if (summary := self._summaries.get(record_id)) is not None
+        }

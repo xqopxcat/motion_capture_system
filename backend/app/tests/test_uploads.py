@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.repositories.runtime_repositories import metric_summary_repository
 
 
 def test_request_video_upload_url_returns_backend_storage_path() -> None:
@@ -147,6 +148,42 @@ def test_complete_metrics_upload_persists_metric_summary() -> None:
     assert response.json()["artifactType"] == "metrics"
     assert response.json()["status"] == "Complete"
     assert response.json()["summaryPersisted"] is True
+
+
+def test_complete_metrics_upload_persists_trend_compatibility_metadata() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": record_id,
+            "storagePath": f"metrics/{record_id}/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [
+                {
+                    "metricId": "knee_flexion",
+                    "unit": "degree",
+                    "metricDefinitionVersion": "knee-flexion.v1",
+                    "activityType": "squat",
+                    "side": "left",
+                    "min": 30,
+                    "max": 120,
+                    "average": 75,
+                    "rangeOfMotion": 90,
+                },
+            ],
+        },
+    )
+    persisted = metric_summary_repository.get_summary(record_id)
+
+    assert response.status_code == 200
+    assert persisted is not None
+    assert persisted.items[0].unit == "degree"
+    assert persisted.items[0].metric_definition_version == "knee-flexion.v1"
+    assert persisted.items[0].activity_type == "squat"
+    assert persisted.items[0].side == "left"
 
 
 def test_complete_thumbnail_upload_returns_complete_status() -> None:

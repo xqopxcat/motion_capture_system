@@ -24,16 +24,21 @@ describe("uploadsApi", () => {
       version: "1.0",
       summary: [
         {
+          activityType: "squat",
           average: 75,
           max: 120,
+          metricDefinitionVersion: "knee-flexion.v1",
           metricId: "knee_flexion",
           min: 30,
           rangeOfMotion: 90,
+          side: "left",
+          unit: "degree",
         },
       ],
     };
 
     expect(body.summary[0].metricId).toBe("knee_flexion");
     expect(body.summary[0].rangeOfMotion).toBe(90);
+    expect(body.summary[0].metricDefinitionVersion).toBe("knee-flexion.v1");
   });
 });
