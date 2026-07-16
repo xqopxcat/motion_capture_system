@@ -1,0 +1,411 @@
+.dashboardPage {
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: 40px;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 1060px;
+  min-width: 0;
+}
+
+.pageHeader {
+  margin-bottom: 32px;
+  max-width: 720px;
+}
+
+.kicker,
+.sectionLabel {
+  color: #5b6572;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.pageHeader h1 {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.pageHeader > p:last-child,
+.recordDescription,
+.statePanel p {
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.section + .section {
+  margin-top: 32px;
+}
+
+.sectionHeader {
+  align-items: end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.sectionHeader > div {
+  min-width: 0;
+}
+
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.quickActions {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.quickAction,
+.primaryQuickAction,
+.viewAllLink,
+.primaryStateAction,
+.retryButton,
+.recordAction a,
+.recordAction span {
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+
+.quickAction,
+.primaryQuickAction {
+  align-items: center;
+  border: 1px solid #c9d2df;
+  display: flex;
+  justify-content: center;
+  min-height: 52px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 12px 16px;
+}
+
+.quickAction {
+  background: #ffffff;
+  color: #263249;
+}
+
+.primaryQuickAction {
+  background: #172033;
+  border-color: #172033;
+  color: #ffffff;
+}
+
+.quickAction:hover,
+.quickAction:focus-visible {
+  background: #eef2f7;
+}
+
+.primaryQuickAction:hover,
+.primaryQuickAction:focus-visible,
+.recordAction a:hover,
+.recordAction a:focus-visible,
+.primaryStateAction:hover,
+.primaryStateAction:focus-visible {
+  background: #24324f;
+}
+
+.viewAllLink {
+  color: #244f9e;
+  flex: 0 0 auto;
+  padding: 8px 0;
+}
+
+.recordList,
+.loadingPanel,
+.statePanel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+}
+
+.recordList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recordItem {
+  align-items: center;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px) auto;
+  min-width: 0;
+  padding: 18px;
+}
+
+.recordItem + .recordItem {
+  border-top: 1px solid #e7ebf1;
+}
+
+.recordMain,
+.recordTitleRow {
+  min-width: 0;
+}
+
+.recordTitleRow {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.recordTitleRow h3 {
+  font-size: 1rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.recordDescription {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  color: #374151;
+  flex: 0 1 auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  max-width: 45%;
+  overflow-wrap: anywhere;
+  padding: 6px 9px;
+}
+
+.statusBadge[data-tone="ready"] {
+  background: #e8f7ef;
+  border-color: #9bd4b2;
+  color: #17623a;
+}
+
+.statusBadge[data-tone="processing"] {
+  background: #eef4ff;
+  border-color: #a9c5f8;
+  color: #244f9e;
+}
+
+.statusBadge[data-tone="failed"] {
+  background: #fff0f0;
+  border-color: #efb0b0;
+  color: #a52828;
+}
+
+.statusBadge[data-tone="neutral"] {
+  background: #f7f8fa;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.tagList span {
+  background: #eef2f7;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  color: #374151;
+  font-size: 0.78rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 4px 8px;
+}
+
+.recordMeta {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+}
+
+.recordMeta div {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.recordMeta dt {
+  color: #5b6572;
+  flex: 0 0 auto;
+}
+
+.recordMeta dd {
+  font-weight: 700;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.recordAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.recordAction a,
+.recordAction span {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 104px;
+  padding: 10px 12px;
+}
+
+.recordAction a,
+.primaryStateAction {
+  background: #172033;
+  color: #ffffff;
+}
+
+.recordAction span {
+  background: #eef2f7;
+  color: #6b7280;
+}
+
+.loadingPanel {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.loadingBar {
+  animation: pulse 1.4s ease-in-out infinite;
+  background: #e7ebf1;
+  border-radius: 6px;
+  display: block;
+  height: 54px;
+}
+
+.statePanel {
+  padding: 24px;
+}
+
+.statePanel h3 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.statePanel p {
+  margin: 0;
+}
+
+.primaryStateAction,
+.retryButton {
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  margin-top: 16px;
+  padding: 10px 14px;
+}
+
+.retryButton {
+  background: #eef2f7;
+  color: #263249;
+}
+
+.retryButton:hover,
+.retryButton:focus-visible {
+  background: #dfe5ed;
+}
+
+.srOnly {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 820px) {
+  .quickActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recordItem {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .recordMeta {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboardPage {
+    padding: 24px 18px;
+  }
+
+  .pageHeader h1 {
+    font-size: 1.9rem;
+  }
+
+  .sectionHeader {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quickActions,
+  .recordItem {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recordMeta {
+    grid-column: auto;
+  }
+
+  .recordMeta div {
+    align-items: start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .recordMeta dd {
+    text-align: left;
+  }
+
+  .recordAction {
+    justify-content: flex-start;
+  }
+
+  .recordAction a,
+  .recordAction span {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingBar {
+    animation: none;
+  }
+}
