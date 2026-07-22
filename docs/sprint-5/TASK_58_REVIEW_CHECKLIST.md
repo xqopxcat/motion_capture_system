@@ -9,7 +9,7 @@
 - [x] Fake upload/download URL generation and canonical path helpers were inspected.
 - [x] Frontend Viewer, Pose, Metric Series, Thumbnail, Annotation, Compare, Capture, and upload fallbacks/placeholders were included.
 - [x] Dashboard summary generation and compatibility grouping were traced.
-- [x] Development seed-data search was performed; no approved seed system exists.
+- [x] Development seed-data search was performed; no seed system currently exists, and guarded local/test-only CLI fixtures are now approved as the sole seed mechanism.
 - [x] Test-only fixtures were distinguished from application-reachable fixtures and module-global runtime state.
 - [x] Environment variables, Compose services, dependency manifests, and missing fail-fast boundaries were reviewed.
 
@@ -29,10 +29,11 @@
 - [x] Local development, automated test, production-like local, and production behavior is defined.
 - [x] Production mock rejection and startup fail-fast requirements are documented.
 - [x] In-memory repositories are restricted to injected unit-test use.
-- [x] Test factories/fixtures are allowed while demo/manual-QA/production seeds are prohibited.
+- [x] Test factories and explicit local/test-only CLI fixtures/seeds are allowed; runtime/demo/production seeds and UI data buttons are prohibited.
 - [x] Browser analysis and backend processing/finalization boundaries are locked.
 - [x] Sprint 5 non-goals are explicit, including no worker, queue, backend Metrics Engine, Kubernetes, or UI redesign.
 - [x] Task 65 backup/restore is limited to an MVP smoke test.
+- [x] Task 65 is formally approved as the Sprint 5 release-validation gate, including Record deletion and GCS cleanup validation.
 
 ## Gap assignment
 
@@ -54,12 +55,14 @@
 - [x] No API contract was changed.
 - [x] Only the five Task 58 documents were created.
 
-## Reviewer decisions required before acceptance
+## Reviewer decisions
 
-- [ ] Approve Production MVP scope and Definition of Done.
-- [ ] Approve environment matrix and local adapter policy.
-- [ ] Confirm production object-store choice and credential owner.
+- [x] Production MVP scope and Definition of Done approved.
+- [x] Environment matrix approved, including explicit environment-guarded local/test-only CLI fixture/seed policy.
+- [x] Production object-store choice locked to private GCS; no alternative production provider is permitted without a new scope decision.
+- [ ] Supply/confirm the GCS project, bucket, region, service identity, credential owner, and retention settings before Task 62 acceptance.
 - [ ] Confirm Google OAuth domains/redirects and credential owner.
-- [ ] Decide whether Record deletion/retention belongs in Production MVP.
+- [x] Record deletion is included in Production MVP and must clean up PostgreSQL relationships and all four GCS artifacts with observable retryable failure handling.
 - [ ] Approve Task 63 synchronous/observable Processing and Failed retry semantics before implementation.
-- [ ] Confirm recommended execution order: 59 → 60 → 61 and 62 (parallel after foundations) → 63 → 64 → 65.
+- [x] Task 65 Production MVP End-to-End Validation is formally approved.
+- [x] Recommended execution order approved: 59 → 60 → 61 and 62 (parallel after foundations) → 63 → 64 → 65.

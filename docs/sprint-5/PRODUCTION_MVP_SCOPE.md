@@ -28,7 +28,8 @@ Browser analysis remains authoritative for Pose Dataset and Metric Series produc
 - Metric Summary items and compatibility dimensions: metric ID, unit, metric definition/calculation version, activity type, and side.
 - Annotations and author/Record ownership.
 - PostgreSQL schema, constraints, migrations, clean bootstrap, rollback verification, repositories, transactions, and test isolation.
-- Private production object storage, signed upload/download URLs, existence/integrity checks, expiration, deletion, and partial-upload cleanup.
+- Private Google Cloud Storage (GCS), signed upload/download URLs, existence/integrity checks, expiration, deletion, and partial-upload cleanup.
+- Owned Record deletion, including its PostgreSQL relationships, GCS objects, idempotency, authorization, failure handling, and auditable cleanup outcome.
 - Real Google OAuth for production; isolated test identities and explicitly enabled local development authentication.
 - Server-authoritative lifecycle: `Uploading → Processing → Ready` or `Failed`.
 - Full frontend wiring from Capture through Dashboard with visible, retryable error states and no silent mock fallback.
@@ -37,13 +38,13 @@ Browser analysis remains authoritative for Pose Dataset and Metric Series produc
 ## 4. Locked Runtime Rules
 
 1. Production and production-like runtime use PostgreSQL; `database_url` may not be ignored.
-2. Production uses the Task 62 private object-storage adapter. `mock-storage.local` is forbidden.
+2. Production storage is formally locked to private Google Cloud Storage (GCS), implemented by Task 62. Alternative production object-storage providers are out of scope. `mock-storage.local` is forbidden.
 3. Production uses real Google OAuth and durable/revocable sessions. `/auth/mock-login` and provider `dev` are unavailable.
 4. In-memory repositories, fake signed URLs, local Viewer fixtures, hard-coded users, and fake uploads are test dependencies only unless an explicitly selected local adapter is allowed by `ENVIRONMENT_BOUNDARIES.md`.
 5. No fallback is silent. A missing or contradictory production configuration fails application startup.
 6. Ownership is constrained in repository queries and storage authorization, not only filtered after loading.
 7. Existing API shapes are preserved where they can express the production behavior. Necessary extensions are additive and owned by a later task.
-8. No Dashboard demo seed, manual-QA fake records, production seed, or UI test-data button is permitted.
+8. Explicit CLI fixtures/seeds are allowed only under `local` or `test`, must require an environment guard, and must never run automatically at application startup. Dashboard demo seed, runtime seed, production seed, and UI test-data buttons are forbidden.
 
 ## 5. Architectural Principles
 
@@ -59,7 +60,7 @@ Browser analysis remains authoritative for Pose Dataset and Metric Series produc
 ## 6. Assumptions
 
 - PostgreSQL 16 remains the target database already present in `docker-compose.yml`.
-- GCS is the preferred production object store unless Task 62 records an explicitly approved equivalent.
+- GCS is the locked production object store. Task 62 must not substitute another production provider without a new approved scope decision.
 - Current `pose.v1` and Metric Series artifact formats remain unchanged.
 - Metric Summary calculation remains in the browser; the backend validates and persists the submitted summary and compatibility metadata.
 - Current Record status strings remain canonical.
@@ -71,7 +72,7 @@ Browser analysis remains authoritative for Pose Dataset and Metric Series produc
 - Kubernetes, multi-region disaster recovery, PITR automation, CDN optimization, or advanced analytics pipelines.
 - Multi-tenant organizations, billing/subscriptions, admin console, real-time collaborative annotations, or mobile apps.
 - Unrelated UI redesign, new product features, new Record statuses, or a second artifact schema.
-- Dashboard demo data, production seed data, automatic backup scheduling, or a full disaster-recovery platform.
+- Runtime/demo/production seed data, automatic backup scheduling, or a full disaster-recovery platform. Explicit guarded local/test-only CLI fixtures remain permitted.
 
 ## 8. Compatibility Expectations
 
@@ -84,7 +85,7 @@ The following are compatibility targets: API route families, camelCase JSON fiel
 - Users, sessions, Records, Artifacts, Metric Summaries/items, and Annotations have constrained durable models.
 - Compatibility metadata, failure metadata, lifecycle timestamps, `createdAt`/`updatedAt`, uniqueness, and delete policies are explicit.
 - Migrations bootstrap a clean database and have a tested rollback path.
-- Test factories/fixtures exist without demo or production seeds.
+- Test factories/fixtures and guarded local/test-only CLI fixture commands exist without runtime, demo, or production seeds.
 
 ### Task 60 — Persistent Repositories
 
@@ -102,8 +103,9 @@ The following are compatibility targets: API route families, camelCase JSON fiel
 
 ### Task 62 — Production Artifact Storage
 
-- Private storage supports all four artifacts with real signed upload/download URLs.
+- Private GCS supports all four artifacts with real signed upload/download URLs.
 - Content type, size, checksum/integrity, existence, ownership, expiry, deletion, partial cleanup, and error mapping are enforced.
+- Record deletion removes or deterministically schedules cleanup of all four owned GCS objects without exposing cross-user object paths; partial cleanup is observable and retryable.
 - No production request can return `mock-storage.local` or silently use a local fixture.
 
 ### Task 63 — Processing & Record Lifecycle
@@ -111,6 +113,7 @@ The following are compatibility targets: API route families, camelCase JSON fiel
 - Required artifacts and Metric Summary compatibility are validated transactionally.
 - Valid/invalid transitions, idempotent completion/finalize, duplicate requests, timeout, retry, rollback, partial failure, and failure reason are defined and tested.
 - Browser analysis/backend finalization boundary is preserved; no worker or queue is introduced.
+- Owned Record deletion has an explicit lifecycle/transaction-compensation policy across PostgreSQL and GCS and is idempotent.
 
 ### Task 64 — Frontend Production Wiring
 
@@ -118,10 +121,13 @@ The following are compatibility targets: API route families, camelCase JSON fiel
 - Viewer, Annotation, Compare, and Dashboard consume real persisted data and signed URLs.
 - Production runtime mocks, hard-coded data, and silent fallbacks are removed; test doubles remain isolated.
 - Invalid production configuration fails fast and upload/lifecycle failures are visible and retryable.
+- Records UI exposes confirmed owned Record deletion and reports partial/failed cleanup without optimistic false success.
 
 ### Task 65 — Production MVP End-to-End Validation
 
+- Task 65 is formally approved as the Sprint 5 release-validation gate.
 - Validate the full user journey, second-user isolation, logout/login, backend/database restart persistence, URL expiry, clean migration, builds, startup, and release checklist.
+- Validate owned Record deletion, cross-user deletion denial, PostgreSQL relationship cleanup, GCS object cleanup, and retry/observability of partial cleanup.
 - Perform only an MVP PostgreSQL dump/restore smoke test with documented commands and basic integrity checks; do not build a DR platform.
 
 ## 10. Sprint 5 Definition of Done

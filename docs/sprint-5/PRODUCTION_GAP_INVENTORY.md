@@ -30,6 +30,8 @@ Runtime locations below were inspected directly. “Removal” means removal fro
 | Canonical paths | Server helper covers all four artifact types | `storage/storage_paths.py` | returned `storagePath`; completion path validation | No user namespace, collision/provider policy, or path-to-object verification | 62 | High | upload path tests | Harden in 62 while preserving returned-path ownership |
 | Upload completion | Trusts client path and immediately records Complete | `upload_service.py` | `/uploads/*/complete` | Does not HEAD object, validate size/type/checksum, handle duplicate/partial upload | 62/63 | Critical | upload/finalize tests | 62–63 |
 | Download authorization | Record ownership checked before URL creation | `record_service.py` | owned Record detail/list | Fake URL; no storage IAM, expiry refresh, object existence, cleanup | 62 | High | records/viewer/compare | 62 |
+| GCS provider | No cloud storage dependency or adapter exists | `requirements.txt`, `backend/app/storage/*` | signed URL and canonical path abstractions | Production provider is now locked to private GCS but is not implemented/configured | 62 | Critical | storage contract, startup, production-like smoke | 62 |
+| Record object cleanup | No Record delete API and no object deletion behavior | Records API/service and storage layer | none | Required Production MVP deletion cannot remove Video/Pose/Metrics/Thumbnail or report partial failure | 59/60/62/63/64 | Critical | delete authorization, FK/GCS cleanup, UI/E2E | 59–64 |
 
 ## Record lifecycle
 
@@ -107,4 +109,4 @@ Runtime locations below were inspected directly. “Removal” means removal fro
 
 ## No Seed-data Finding
 
-No database seed script, Dashboard demo seed, production seed, or UI test-data button was found. The fixed demo/dev identities and Viewer local fixture are runtime mocks, not an acceptable seed strategy. They must not be repackaged as production or manual-QA seed data.
+No database seed script, Dashboard demo seed, production seed, or UI test-data button was found. The fixed demo/dev identities and Viewer local fixture are runtime mocks, not an acceptable seed strategy. Sprint 5 permits a new, explicit CLI fixture/seed only when it is environment-guarded to `local` or `test`, deliberately invoked, deterministic where tests require it, and unable to run against production or production-like configuration. Runtime/demo/production seed and UI test-data controls remain forbidden.

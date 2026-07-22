@@ -15,6 +15,7 @@
 | Owned-resource denial | Preserve non-disclosing 404 | Apply in DB/storage queries; Tasks 60 and 62 |
 | RTK Query endpoint responsibilities | Preserve where present | Task 64 orchestrates them instead of redesigning them |
 | Artifact types and canonical format names | Preserve Video/Pose/Metrics/Thumbnail and `pose.v1`/Metric Series conventions | Task 62 may harden path namespace without changing public artifact type |
+| Production storage provider | Lock to private Google Cloud Storage (GCS) | Task 62 implements GCS; another production provider requires a new scope decision |
 
 ## 2. Minimal Extensions Likely Required
 
@@ -26,7 +27,7 @@
 | No refresh/re-sign contract exists for expired download URLs | Prefer re-fetching Record Detail to obtain new URLs; add a dedicated endpoint only if provider constraints prove it necessary | Record detail signer/cache policy | loaders retry via Record Detail, not stale URL | signed-expiry tests | 62/64 |
 | Session cookie has no expiry/CSRF contract | Preserve cookie-auth semantics; define server-side expiry/revocation and architecture-appropriate CSRF protection | auth schemas/routes/session repository/security config | OAuth redirect/login UI and CSRF header only if selected design requires it | session migration and security tests | 61 |
 | OAuth start/callback routes do not exist | Add minimal Google start and callback routes; production removes/404s mock-login | auth router/service/config | replace mock mutation with redirect/callback handling | auth integration tests | 61/64 |
-| Record has no delete API despite artifact cleanup requirement | Decide whether deletion is required for current MVP acceptance; if yes, add one owned delete route with explicit object/DB cleanup policy | records route/service/repos/storage | optional Records action | FK/object cleanup tests | 58 blocker → 62/63 |
+| Record has no delete API despite deletion now being required | Add one owned Record delete route with non-disclosing authorization, idempotency, and explicit PostgreSQL/GCS cleanup outcome; avoid a broader Record-management redesign | records route/service/repos/GCS adapter | confirmed Records action with destructive confirmation and accurate result | schema/FK, GCS cleanup, partial-failure and cross-user tests | 59/60/62/63/64 |
 | No status refresh orchestration | Reuse Record Detail/list refetch first; add no WebSocket | no API change expected | bounded polling/refetch in Task 64 | lifecycle UI tests | 63/64 |
 
 ## 3. Ambiguities Locked for Later-task Resolution
@@ -35,7 +36,7 @@
 - **Failure retry:** decide whether retry returns a Failed Record to `Uploading` or creates a new Record. No transition may be invented in the frontend.
 - **Session storage:** PostgreSQL-backed opaque sessions are the default recommendation. Task 61 may propose another durable server-side store only with approval; stateless bearer auth is not an assumed redesign.
 - **CSRF:** choose protection after OAuth/session cookie topology is fixed. SameSite alone must be justified; a decorative unused token is not acceptable.
-- **Object deletion:** define ordering and compensation between object cleanup and DB deletion; avoid pretending cross-system atomicity.
+- **Object deletion implementation:** Record deletion is approved and required. Task 62/63 must define ordering, idempotency, observability, and compensation between GCS cleanup and PostgreSQL deletion without pretending cross-system atomicity.
 - **Checksum:** select one supported browser/provider algorithm and define encoding, signed-header behavior, and mismatch response.
 - **Canonical object path:** preserve type semantics but include an ownership-safe namespace if necessary; clients must use returned `storagePath` and never invent it.
 - **Metric version naming:** current field is `metricDefinitionVersion`; Task 59 must confirm it represents calculation definition/version and avoid adding a duplicate concept unless required.
@@ -50,13 +51,12 @@
 
 ## 5. Unresolved Blockers Requiring Human Approval
 
-1. Production object-store choice and cloud project/bucket/credential ownership (Task 62).
+1. GCS is locked, but the Google Cloud project, private bucket, region, service identity, credential owner, and retention settings remain to be supplied (Task 62).
 2. Approved Google OAuth origins, redirect URIs, consent-screen ownership, and secret delivery (Task 61).
 3. Deployment public origins/domains that determine CORS and cookie policy (Task 61).
-4. Whether Record deletion is required in Production MVP and its retention policy (Task 62/63).
-5. Synchronous versus observable short-lived Processing and Failed retry semantics (Task 63).
+4. Synchronous versus observable short-lived Processing and Failed retry semantics (Task 63).
 
-These blockers do not prevent Tasks 59–60 from beginning after Task 58 review, but they must be resolved before their owning task is accepted.
+The GCS provider choice, Record deletion scope, guarded local/test CLI fixture policy, and Task 65 validation gate are no longer blockers; they are approved decisions. The remaining deployment inputs do not prevent Tasks 59–60 from beginning, but must be resolved before their owning task is accepted.
 
 ## 6. Compatibility Rules
 
