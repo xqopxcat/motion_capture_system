@@ -1,0 +1,2 @@
+Task 59 Alembic migration history. Use `alembic upgrade head`; do not use ORM
+`create_all` for production schema management.
