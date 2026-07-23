@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from secrets import token_urlsafe
 
 
 @dataclass(frozen=True)
@@ -13,15 +13,16 @@ class StoredSession:
 
 
 class SessionRepository:
-    def __init__(self) -> None:
+    def __init__(self, lifetime: timedelta = timedelta(hours=24)) -> None:
         self._sessions: dict[str, StoredSession] = {}
+        self.lifetime = lifetime
 
     def create_for_user(self, user_id: str) -> StoredSession:
         session = StoredSession(
-            session_id=f"session_{uuid4().hex}",
+            session_id=f"session_{token_urlsafe(32)}",
             user_id=user_id,
             created_at=datetime.now(UTC),
-            expires_at=datetime.now(UTC) + timedelta(hours=24),
+            expires_at=datetime.now(UTC) + self.lifetime,
         )
         self._sessions[session.session_id] = session
 

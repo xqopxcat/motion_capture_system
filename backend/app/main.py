@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
+from app.auth.csrf import OriginCsrfMiddleware
 from app.core.config import settings
 from app.db.engine import check_database_readiness
 from app.db.runtime import get_runtime_engine
@@ -34,10 +35,16 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=settings.auth_allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Accept", "Content-Type", "X-Request-ID"],
+    )
+    app.add_middleware(
+        OriginCsrfMiddleware,
+        cookie_name=settings.session_cookie_name,
+        allowed_origins=set(settings.csrf_allowed_origins),
+        enabled=settings.csrf_mode == "origin",
     )
 
     app.include_router(api_router, prefix="/api")

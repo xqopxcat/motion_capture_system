@@ -57,11 +57,26 @@ def test_safe_test_database_target_gets_unique_schema() -> None:
 
 @pytest.mark.parametrize("environment", ["local", "production_like", "production"])
 def test_database_bound_environments_select_postgresql(environment: str) -> None:
+    production_auth = {}
+    if environment != "local":
+        production_auth = {
+            "google_client_id": "placeholder.apps.googleusercontent.com",
+            "google_client_secret": "placeholder",
+            "google_oauth_redirect_uri": "https://api.example.com/api/auth/google/callback",
+            "google_oauth_allowed_redirect_uris": ["https://api.example.com/api/auth/google/callback"],
+            "frontend_origin": "https://app.example.com",
+            "auth_allowed_origins": ["https://app.example.com"],
+            "csrf_allowed_origins": ["https://app.example.com"],
+            "session_cookie_secure": True,
+            "csrf_mode": "origin",
+        }
     settings = Settings(
         app_env=environment,
         database_url="postgresql+psycopg://user:pass@db/app",
         migration_policy="require_head" if environment != "local" else "warn",
         repository_adapter="postgresql",
+        auth_adapter="google",
+        **production_auth,
     )
     assert settings.repository_adapter == "postgresql"
 
@@ -74,4 +89,5 @@ def test_database_bound_environments_reject_in_memory(environment: str) -> None:
             database_url="postgresql+psycopg://user:pass@db/app",
             migration_policy="require_head" if environment != "local" else "warn",
             repository_adapter="in_memory",
+            auth_adapter="google",
         )

@@ -15,6 +15,7 @@ from app.repositories.postgresql import (
     PostgreSQLArtifactRepository,
     PostgreSQLDashboardRepository,
     PostgreSQLMetricSummaryRepository,
+    PostgreSQLOAuthAttemptRepository,
     PostgreSQLRecordRepository,
     PostgreSQLSessionRepository,
     PostgreSQLUserRepository,
@@ -80,6 +81,20 @@ def test_resources_persist_across_sqlalchemy_session_recreation(pg_session: Sess
         assert PostgreSQLAnnotationRepository(recreated).get_for_owned_record(annotation.annotation_id, record_id, user.user_id) is not None
     finally:
         recreated.close()
+
+
+def test_oauth_state_is_hashed_durable_and_single_use(pg_session: Session) -> None:
+    repository = PostgreSQLOAuthAttemptRepository(pg_session)
+    state, _ = repository.create(code_verifier="verifier", nonce="nonce", return_path="/dashboard")
+    pg_session.flush()
+    from app.models import OAuthLoginAttempt
+
+    stored = pg_session.scalar(select(OAuthLoginAttempt))
+    assert stored is not None
+    assert stored.state_hash != state
+    assert state not in stored.state_hash
+    assert repository.consume(state) is not None
+    assert repository.consume(state) is None
 
 
 def test_owner_scoped_queries_and_dashboard_never_include_other_user(pg_session: Session) -> None:

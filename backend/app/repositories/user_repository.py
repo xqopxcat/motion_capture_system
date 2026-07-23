@@ -15,24 +15,22 @@ class StoredUser:
 class UserRepository:
     def __init__(self) -> None:
         self._users: dict[str, StoredUser] = {}
+        self._provider_identities: dict[tuple[str, str], str] = {}
 
     def get(self, user_id: str) -> StoredUser | None:
         return self._users.get(user_id)
 
     def get_by_provider_identity(self, provider: str, provider_subject: str) -> StoredUser | None:
-        return next(
-            (
-                user
-                for user in self._users.values()
-                if user.provider == provider and user.user_id == provider_subject
-            ),
-            None,
-        )
+        user_id = self._provider_identities.get((provider, provider_subject))
+        return None if user_id is None else self._users.get(user_id)
 
     def create(self, user: StoredUser, *, provider_subject: str) -> StoredUser:
         if user.user_id in self._users:
             raise ValueError("User already exists.")
+        if (user.provider, provider_subject) in self._provider_identities:
+            raise ValueError("Provider identity already exists.")
         self._users[user.user_id] = user
+        self._provider_identities[(user.provider, provider_subject)] = user.user_id
         return user
 
     def update_profile(
@@ -71,5 +69,6 @@ class UserRepository:
             provider=provider,
         )
         self._users[user.user_id] = user
+        self._provider_identities[(provider, f"task61-test-{provider}")] = user.user_id
 
         return user

@@ -18,6 +18,7 @@ EXPECTED_TABLES = {
     "auth_sessions",
     "metric_summaries",
     "metric_summary_items",
+    "oauth_login_attempts",
     "records",
     "users",
 }

@@ -4,6 +4,7 @@ from typing import cast
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auth.google_provider import GoogleIdentityProvider, GoogleIdentityProviderContract
 from app.core.config import settings
 from app.db.runtime import get_runtime_session_factory
 from app.repositories.contracts import (
@@ -11,6 +12,7 @@ from app.repositories.contracts import (
     ArtifactRepositoryContract,
     DashboardRepositoryContract,
     MetricSummaryRepositoryContract,
+    OAuthAttemptRepositoryContract,
     RecordRepositoryContract,
     SessionRepositoryContract,
     UserRepositoryContract,
@@ -22,6 +24,7 @@ from app.services.auth_service import AuthService
 from app.services.dashboard_service import DashboardService
 from app.services.record_service import RecordService
 from app.services.upload_service import UploadService
+from app.services.oauth_service import OAuthService
 
 
 def get_db_session() -> Iterator[Session]:
@@ -44,6 +47,36 @@ def get_auth_service(bundle: RepositoryBundle = Depends(get_repository_bundle)) 
     return AuthService(
         cast(UserRepositoryContract, bundle.users),
         cast(SessionRepositoryContract, bundle.sessions),
+    )
+
+
+def get_google_identity_provider() -> GoogleIdentityProviderContract:
+    if not settings.google_client_id or not settings.google_client_secret or not settings.google_oauth_redirect_uri:
+        if settings.auth_adapter != "google":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")
+        raise RuntimeError("Google OAuth is not configured.")
+    return GoogleIdentityProvider(
+        client_id=settings.google_client_id,
+        client_secret=settings.google_client_secret,
+        redirect_uri=settings.google_oauth_redirect_uri,
+    )
+
+
+def get_oauth_service(
+    bundle: RepositoryBundle = Depends(get_repository_bundle),
+    provider: GoogleIdentityProviderContract = Depends(get_google_identity_provider),
+) -> OAuthService:
+    if bundle.oauth_attempts is None or not settings.google_client_id or not settings.google_oauth_redirect_uri:
+        if settings.auth_adapter != "google":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")
+        raise RuntimeError("Google OAuth is not configured.")
+    return OAuthService(
+        cast(OAuthAttemptRepositoryContract, bundle.oauth_attempts),
+        cast(UserRepositoryContract, bundle.users),
+        cast(SessionRepositoryContract, bundle.sessions),
+        provider,
+        client_id=settings.google_client_id,
+        redirect_uri=settings.google_oauth_redirect_uri,
     )
 
 

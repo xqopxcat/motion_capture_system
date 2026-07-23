@@ -2,18 +2,20 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
+from secrets import token_urlsafe
 from uuid import uuid4
 
 from sqlalchemy import and_, case, delete, distinct, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Annotation, Artifact, AuthSession, MetricSummary, MetricSummaryItem, Record, User
+from app.models import Annotation, Artifact, AuthSession, MetricSummary, MetricSummaryItem, OAuthLoginAttempt, Record, User
 from app.repositories.annotation_repository import StoredAnnotation
 from app.repositories.artifact_repository import ArtifactCompletionRecord, ArtifactType
 from app.repositories.dashboard_repository import DashboardSnapshot, DashboardTrendRow
 from app.repositories.errors import DuplicateResourceError, ReferencedResourceMissingError
 from app.repositories.metric_summary_repository import MetricSummaryItemRecord, MetricSummaryRecord
+from app.repositories.oauth_attempt_repository import StoredOAuthAttempt
 from app.repositories.record_repository import StoredRecord
 from app.repositories.session_repository import StoredSession
 from app.repositories.user_repository import StoredUser
@@ -51,9 +53,10 @@ class PostgreSQLUserRepository:
             display_name=user.display_name,
             avatar_url=user.avatar_url,
         )
-        self.session.add(model)
         try:
-            self.session.flush()
+            with self.session.begin_nested():
+                self.session.add(model)
+                self.session.flush()
         except IntegrityError as error:
             raise _integrity_error(error, "User provider identity already exists.") from error
         return self._stored(model)  # type: ignore[return-value]
@@ -105,21 +108,24 @@ class PostgreSQLSessionRepository:
         return sha256(raw.encode("utf-8")).hexdigest()
 
     def create_for_user(self, user_id: str) -> StoredSession:
-        raw = f"session_{uuid4().hex}"
         now = datetime.now(UTC)
-        model = AuthSession(
-            id=f"auth_session_{uuid4().hex}",
-            token_hash=self._hash(raw),
-            user_id=user_id,
-            expires_at=now + self.lifetime,
-            last_used_at=now,
-        )
-        self.session.add(model)
-        try:
-            self.session.flush()
-        except IntegrityError as error:
-            raise _integrity_error(error, "Session token already exists or user is missing.") from error
-        return StoredSession(session_id=raw, user_id=user_id, created_at=now)
+        for _ in range(3):
+            raw = f"session_{token_urlsafe(32)}"
+            model = AuthSession(
+                id=f"auth_session_{uuid4().hex}",
+                token_hash=self._hash(raw),
+                user_id=user_id,
+                expires_at=now + self.lifetime,
+                last_used_at=now,
+            )
+            try:
+                with self.session.begin_nested():
+                    self.session.add(model)
+                    self.session.flush()
+                return StoredSession(session_id=raw, user_id=user_id, created_at=now, expires_at=model.expires_at)
+            except IntegrityError:
+                continue
+        raise DuplicateResourceError("Unable to allocate a unique session token.")
 
     def get(self, session_id: str) -> StoredSession | None:
         model = self.session.scalar(select(AuthSession).where(AuthSession.token_hash == self._hash(session_id)))
@@ -134,7 +140,9 @@ class PostgreSQLSessionRepository:
                 AuthSession.expires_at > reference,
             ),
         )
-        if model is not None:
+        if model is not None and (
+            model.last_used_at is None or model.last_used_at <= reference - timedelta(minutes=5)
+        ):
             model.last_used_at = reference
             self.session.flush()
         return self._stored(model, session_id)
@@ -164,7 +172,77 @@ class PostgreSQLSessionRepository:
     def _stored(model: AuthSession | None, raw: str) -> StoredSession | None:
         if model is None:
             return None
-        return StoredSession(session_id=raw, user_id=model.user_id, created_at=model.created_at)
+        return StoredSession(
+            session_id=raw,
+            user_id=model.user_id,
+            created_at=model.created_at,
+            expires_at=model.expires_at,
+            revoked_at=model.revoked_at,
+        )
+
+
+class PostgreSQLOAuthAttemptRepository:
+    def __init__(self, session: Session, lifetime: timedelta = timedelta(minutes=10)) -> None:
+        self.session = session
+        self.lifetime = lifetime
+
+    @staticmethod
+    def _hash(state: str) -> str:
+        return sha256(state.encode("utf-8")).hexdigest()
+
+    def create(self, *, code_verifier: str, nonce: str, return_path: str) -> tuple[str, StoredOAuthAttempt]:
+        now = datetime.now(UTC)
+        state = token_urlsafe(32)
+        model = OAuthLoginAttempt(
+            id=f"oauth_attempt_{uuid4().hex}",
+            state_hash=self._hash(state),
+            code_verifier=code_verifier,
+            nonce=nonce,
+            return_path=return_path,
+            expires_at=now + self.lifetime,
+        )
+        self.session.add(model)
+        try:
+            self.session.flush()
+        except IntegrityError as error:
+            raise _integrity_error(error, "OAuth state collision.") from error
+        return state, self._stored(model)
+
+    def consume(self, state: str, *, now: datetime | None = None) -> StoredOAuthAttempt | None:
+        reference = now or datetime.now(UTC)
+        model = self.session.scalar(
+            select(OAuthLoginAttempt)
+            .where(
+                OAuthLoginAttempt.state_hash == self._hash(state),
+                OAuthLoginAttempt.consumed_at.is_(None),
+                OAuthLoginAttempt.expires_at > reference,
+            )
+            .with_for_update(),
+        )
+        if model is None:
+            return None
+        model.consumed_at = reference
+        self.session.flush()
+        return self._stored(model)
+
+    def delete_expired(self, *, now: datetime | None = None) -> int:
+        reference = now or datetime.now(UTC)
+        result = self.session.execute(
+            delete(OAuthLoginAttempt).where(
+                (OAuthLoginAttempt.expires_at <= reference) | OAuthLoginAttempt.consumed_at.is_not(None),
+            ),
+        )
+        self.session.flush()
+        return result.rowcount or 0
+
+    @staticmethod
+    def _stored(model: OAuthLoginAttempt) -> StoredOAuthAttempt:
+        return StoredOAuthAttempt(
+            code_verifier=model.code_verifier,
+            nonce=model.nonce,
+            return_path=model.return_path,
+            expires_at=model.expires_at,
+        )
 
 
 class PostgreSQLRecordRepository:

@@ -1,26 +1,26 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getSafeRedirectTo } from "../../features/auth";
-import { useMockLoginMutation } from "../../services/authApi";
-import type { AuthProvider } from "../../types";
+import { useDevLoginMutation } from "../../services/authApi";
 import styles from "./LoginPage.module.css";
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const devAuthEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH_ENABLED === "true";
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [mockLogin, { error, isLoading }] = useMockLoginMutation();
-  const [selectedAction, setSelectedAction] = useState<AuthProvider | null>(null);
+  const [devLogin, { error, isLoading }] = useDevLoginMutation();
   const redirectTo = useMemo(() => getSafeRedirectTo(searchParams), [searchParams]);
   const nextPath = redirectTo ?? "/dashboard";
+  const googleLoginUrl = `${apiBaseUrl}/auth/google/start?returnTo=${encodeURIComponent(nextPath)}`;
 
-  async function handleLogin(provider: AuthProvider) {
-    setSelectedAction(provider);
-
+  async function handleDevLogin() {
     try {
-      await mockLogin({ provider }).unwrap();
+      await devLogin({ provider: "dev" }).unwrap();
       navigate(nextPath, { replace: true });
     } catch {
-      // RTK Query exposes the error state for rendering below.
+      // RTK Query error state is rendered below.
     }
   }
 
@@ -28,31 +28,25 @@ export function LoginPage() {
     <main className={styles.loginPage}>
       <section className={styles.loginPanel} aria-labelledby="login-title">
         <div className={styles.header}>
-          <p className={styles.kicker}>Authentication MVP</p>
+          <p className={styles.kicker}>Secure authentication</p>
           <h1 id="login-title">Sign in to Motion Capture Platform</h1>
-          <p>
-            Use a Google account or the development login entry point to continue into the
-            protected workspace.
-          </p>
+          <p>Continue with Google to access your protected workspace.</p>
         </div>
 
         <div className={styles.actionStack} aria-label="Login actions">
-          <button
-            className={styles.primaryAction}
-            disabled={isLoading}
-            type="button"
-            onClick={() => void handleLogin("google")}
-          >
-            {isLoading && selectedAction === "google" ? "Connecting to Google" : "Continue with Google"}
-          </button>
-          <button
-            className={styles.secondaryAction}
-            disabled={isLoading}
-            type="button"
-            onClick={() => void handleLogin("dev")}
-          >
-            {isLoading && selectedAction === "dev" ? "Starting Dev Login" : "Continue with Dev Login"}
-          </button>
+          <a className={styles.primaryAction} href={googleLoginUrl}>
+            Continue with Google
+          </a>
+          {devAuthEnabled && (
+            <button
+              className={styles.secondaryAction}
+              disabled={isLoading}
+              type="button"
+              onClick={() => void handleDevLogin()}
+            >
+              {isLoading ? "Starting local development login" : "Local development login"}
+            </button>
+          )}
         </div>
 
         <section className={styles.intentPanel} aria-label="Login intent">
@@ -60,27 +54,13 @@ export function LoginPage() {
             <span>Next destination</span>
             <strong>{nextPath}</strong>
           </div>
-          <p>
-            The selected destination is used after the mock authentication contract succeeds.
-            External redirect targets are ignored.
-          </p>
+          <p>The backend validates this destination before completing authentication.</p>
         </section>
 
-        {isLoading && selectedAction && (
-          <section className={styles.statusPanel} aria-live="polite">
-            <h2>
-              {selectedAction === "google" ? "Google sign-in mock flow" : "Dev login mock flow"}
-            </h2>
-            <p>
-              Creating a backend-owned mock session cookie. No real Google APIs are called.
-            </p>
-          </section>
-        )}
-
-        {error && (
+        {(error || searchParams.get("error")) && (
           <section className={styles.errorPanel} role="alert">
             <h2>Login failed</h2>
-            <p>The mock authentication contract did not complete. Try again.</p>
+            <p>Authentication did not complete. Please try again.</p>
           </section>
         )}
       </section>

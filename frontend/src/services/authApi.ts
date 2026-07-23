@@ -19,7 +19,7 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["CurrentUser"],
     }),
-    mockLogin: builder.mutation<MockLoginResponse, MockLoginRequest>({
+    devLogin: builder.mutation<MockLoginResponse, MockLoginRequest>({
       query: (body) => ({
         body,
         method: "POST",
@@ -33,5 +33,5 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useGetCurrentUserQuery,
   useLogoutMutation,
-  useMockLoginMutation,
+  useDevLoginMutation,
 } = authApi;
