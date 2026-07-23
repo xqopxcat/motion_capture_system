@@ -5,9 +5,9 @@ from app.core.config import Settings
 from app.db.testing import validate_test_database_target
 
 
-def test_local_import_does_not_require_database_url() -> None:
-    settings = Settings(app_env="local", database_url=None)
-    assert settings.database_url is None
+def test_local_postgresql_runtime_requires_database_url() -> None:
+    with pytest.raises(ValidationError, match="DATABASE_URL"):
+        Settings(app_env="local", database_url=None, repository_adapter="postgresql")
 
 
 def test_production_requires_postgresql_and_migration_head() -> None:
@@ -53,3 +53,25 @@ def test_safe_test_database_target_gets_unique_schema() -> None:
         database_url="postgresql+psycopg://user:pass@localhost/motion_capture_test",
     )
     assert target.schema_name.startswith("test_")
+
+
+@pytest.mark.parametrize("environment", ["local", "production_like", "production"])
+def test_database_bound_environments_select_postgresql(environment: str) -> None:
+    settings = Settings(
+        app_env=environment,
+        database_url="postgresql+psycopg://user:pass@db/app",
+        migration_policy="require_head" if environment != "local" else "warn",
+        repository_adapter="postgresql",
+    )
+    assert settings.repository_adapter == "postgresql"
+
+
+@pytest.mark.parametrize("environment", ["local", "production_like", "production"])
+def test_database_bound_environments_reject_in_memory(environment: str) -> None:
+    with pytest.raises(ValidationError, match="In-memory|REPOSITORY_ADAPTER"):
+        Settings(
+            app_env=environment,
+            database_url="postgresql+psycopg://user:pass@db/app",
+            migration_policy="require_head" if environment != "local" else "warn",
+            repository_adapter="in_memory",
+        )

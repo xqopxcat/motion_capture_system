@@ -1,8 +1,7 @@
 from fastapi import HTTPException, status
 
-from app.repositories.annotation_repository import AnnotationRepository, StoredAnnotation
-from app.repositories.record_repository import RecordRepository
-from app.repositories.runtime_repositories import annotation_repository, record_repository
+from app.repositories.annotation_repository import StoredAnnotation
+from app.repositories.contracts import AnnotationRepositoryContract, RecordRepositoryContract
 from app.schemas.annotation import (
     AnnotationResponse,
     CreateAnnotationRequest,
@@ -15,17 +14,17 @@ from app.schemas.auth import CurrentUser
 class AnnotationService:
     def __init__(
         self,
-        annotations: AnnotationRepository | None = None,
-        records: RecordRepository | None = None,
+        annotations: AnnotationRepositoryContract,
+        records: RecordRepositoryContract,
     ) -> None:
-        self.annotations = annotations or annotation_repository
-        self.records = records or record_repository
+        self.annotations = annotations
+        self.records = records
 
     def list_annotations(self, record_id: str, user: CurrentUser) -> ListAnnotationsResponse:
         self._require_owned_record(record_id, user)
         items = [
             self._to_response(annotation)
-            for annotation in self.annotations.list_for_record(record_id)
+            for annotation in self.annotations.list_for_owned_record(record_id, user.userId)
         ]
 
         return ListAnnotationsResponse(items=items, total=len(items))
@@ -63,7 +62,7 @@ class AnnotationService:
         user: CurrentUser,
     ) -> AnnotationResponse:
         self._require_owned_record(record_id, user)
-        annotation = self._require_record_annotation(record_id, annotation_id)
+        annotation = self._require_record_annotation(record_id, annotation_id, user.userId)
 
         if request.title is not None and not request.title.strip():
             raise HTTPException(
@@ -85,7 +84,7 @@ class AnnotationService:
         user: CurrentUser,
     ) -> None:
         self._require_owned_record(record_id, user)
-        annotation = self._require_record_annotation(record_id, annotation_id)
+        annotation = self._require_record_annotation(record_id, annotation_id, user.userId)
         self.annotations.delete(annotation.annotation_id)
 
     def _require_owned_record(self, record_id: str, user: CurrentUser) -> None:
@@ -103,9 +102,14 @@ class AnnotationService:
         self,
         record_id: str,
         annotation_id: str,
+        owner_user_id: str,
     ) -> StoredAnnotation:
-        annotation = self.annotations.get(annotation_id)
-        if annotation is None or annotation.record_id != record_id:
+        annotation = self.annotations.get_for_owned_record(
+            annotation_id,
+            record_id,
+            owner_user_id,
+        )
+        if annotation is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={

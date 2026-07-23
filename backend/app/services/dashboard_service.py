@@ -1,11 +1,11 @@
 from datetime import UTC, datetime, timedelta
 
-from app.repositories.metric_summary_repository import MetricSummaryRepository
-from app.repositories.record_repository import RecordRepository, StoredRecord
-from app.repositories.runtime_repositories import (
-    metric_summary_repository,
-    record_repository,
+from app.repositories.contracts import (
+    DashboardRepositoryContract,
+    MetricSummaryRepositoryContract,
+    RecordRepositoryContract,
 )
+from app.repositories.record_repository import StoredRecord
 from app.schemas.auth import CurrentUser
 from app.schemas.dashboard import (
     DashboardCounts,
@@ -23,11 +23,13 @@ TrendKey = tuple[str, str, str, str, str]
 class DashboardService:
     def __init__(
         self,
-        records: RecordRepository | None = None,
-        metric_summaries: MetricSummaryRepository | None = None,
+        records: RecordRepositoryContract,
+        metric_summaries: MetricSummaryRepositoryContract,
+        dashboard: DashboardRepositoryContract | None = None,
     ) -> None:
-        self.records = records or record_repository
-        self.metric_summaries = metric_summaries or metric_summary_repository
+        self.records = records
+        self.metric_summaries = metric_summaries
+        self.dashboard = dashboard
 
     def get_summary(
         self,
@@ -36,6 +38,8 @@ class DashboardService:
         reference_time: datetime | None = None,
     ) -> DashboardSummaryResponse:
         now = reference_time or datetime.now(UTC)
+        if self.dashboard is not None:
+            return self._from_snapshot(user.userId, now)
         owned_records = self.records.list_owned(user.userId)
         metric_trends, trend_availability = self._build_metric_trends(owned_records)
 
@@ -43,6 +47,49 @@ class DashboardService:
             counts=self._build_counts(owned_records, now),
             metricTrends=metric_trends,
             trendAvailability=trend_availability,
+        )
+
+    def _from_snapshot(self, owner_user_id: str, reference_time: datetime) -> DashboardSummaryResponse:
+        snapshot = self.dashboard.get_snapshot(owner_user_id, reference_time)
+        grouped: dict[TrendKey, list[DashboardMetricTrendPoint]] = {}
+        for row in snapshot.trend_rows:
+            key = (
+                row.metric_id,
+                row.unit,
+                row.metric_definition_version,
+                row.activity_type,
+                row.side,
+            )
+            grouped.setdefault(key, []).append(
+                DashboardMetricTrendPoint(
+                    recordId=row.record_id,
+                    recordTitle=row.record_title,
+                    status="Ready",
+                    createdAt=row.created_at.isoformat(),
+                    value=row.average,
+                ),
+            )
+        trends = [
+            DashboardMetricTrend(
+                metricId=key[0], unit=key[1], metricDefinitionVersion=key[2],
+                activityType=key[3], side=key[4], statistic="average", points=points,
+            )
+            for key, points in sorted(grouped.items())
+        ]
+        return DashboardSummaryResponse(
+            counts=DashboardCounts(
+                totalRecords=snapshot.total_records,
+                readyRecords=snapshot.ready_records,
+                failedRecords=snapshot.failed_records,
+                recentActivityCount=snapshot.recent_activity_count,
+                recentActivityWindowDays=RECENT_ACTIVITY_WINDOW_DAYS,
+            ),
+            metricTrends=trends,
+            trendAvailability=DashboardTrendAvailability(
+                readyRecords=snapshot.ready_records,
+                recordsWithMetricSummary=snapshot.records_with_summary,
+                recordsWithCompatibleMetricSummary=snapshot.records_with_compatible_summary,
+            ),
         )
 
     def _build_counts(

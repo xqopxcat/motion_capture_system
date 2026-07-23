@@ -59,8 +59,22 @@ class AnnotationRepository:
             key=lambda annotation: (annotation.frame_index, annotation.created_at),
         )
 
+    def list_for_owned_record(self, record_id: str, owner_user_id: str) -> list[StoredAnnotation]:
+        return self.list_for_record(record_id)
+
     def get(self, annotation_id: str) -> StoredAnnotation | None:
         return self._annotations.get(annotation_id)
+
+    def get_for_owned_record(
+        self,
+        annotation_id: str,
+        record_id: str,
+        owner_user_id: str,
+    ) -> StoredAnnotation | None:
+        annotation = self.get(annotation_id)
+        if annotation is None or annotation.record_id != record_id:
+            return None
+        return annotation
 
     def update(self, annotation_id: str, request: UpdateAnnotationRequest) -> StoredAnnotation:
         current = self._annotations.get(annotation_id)

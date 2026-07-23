@@ -1,12 +1,10 @@
 from fastapi import HTTPException, status
 
-from app.repositories.artifact_repository import ArtifactRepository, ArtifactType
-from app.repositories.metric_summary_repository import MetricSummaryRepository
-from app.repositories.record_repository import RecordRepository
-from app.repositories.runtime_repositories import (
-    artifact_repository,
-    metric_summary_repository,
-    record_repository,
+from app.repositories.artifact_repository import ArtifactType
+from app.repositories.contracts import (
+    ArtifactRepositoryContract,
+    MetricSummaryRepositoryContract,
+    RecordRepositoryContract,
 )
 from app.schemas.auth import CurrentUser
 from app.schemas.record import CreateRecordRequest, CreateRecordResponse, FinalizeRecordResponse
@@ -28,26 +26,28 @@ REQUIRED_ARTIFACTS: tuple[ArtifactType, ...] = ("video", "pose", "metrics", "thu
 class RecordService:
     def __init__(
         self,
-        repository: RecordRepository | None = None,
-        artifacts: ArtifactRepository | None = None,
-        metric_summaries: MetricSummaryRepository | None = None,
+        repository: RecordRepositoryContract,
+        artifacts: ArtifactRepositoryContract,
+        metric_summaries: MetricSummaryRepositoryContract,
         signed_url_service: SignedUrlService | None = None,
     ) -> None:
-        self.repository = repository or record_repository
-        self.artifacts = artifacts or artifact_repository
-        self.metric_summaries = metric_summaries or metric_summary_repository
+        self.repository = repository
+        self.artifacts = artifacts
+        self.metric_summaries = metric_summaries
         self.signed_url_service = signed_url_service or SignedUrlService()
 
     def create_record(self, request: CreateRecordRequest, user: CurrentUser) -> CreateRecordResponse:
         return self.repository.create(request, owner_user_id=user.userId)
 
     def list_records(self, user: CurrentUser) -> ListRecordsResponse:
+        owned_records = self.repository.list_owned(user.userId)
+        thumbnails = self.artifacts.get_completed_for_records(
+            [record.record_id for record in owned_records],
+            "thumbnail",
+        )
         items = []
-        for record in self.repository.list_owned(user.userId):
-            thumbnail = self.artifacts.get_completed(
-                record_id=record.record_id,
-                artifact_type="thumbnail",
-            )
+        for record in owned_records:
+            thumbnail = thumbnails.get(record.record_id)
             items.append(
                 RecordListItem(
                     recordId=record.record_id,

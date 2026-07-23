@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from app.repositories.runtime_repositories import session_repository, user_repository
-from app.repositories.session_repository import SessionRepository
+from app.repositories.contracts import SessionRepositoryContract, UserRepositoryContract
 from app.repositories.user_repository import StoredUser, UserRepository
 from app.schemas.auth import AuthProvider, CurrentUser, MockLoginResponse
 
@@ -15,11 +14,11 @@ class MockLoginResult:
 class AuthService:
     def __init__(
         self,
-        users: UserRepository | None = None,
-        sessions: SessionRepository | None = None,
+        users: UserRepositoryContract,
+        sessions: SessionRepositoryContract,
     ) -> None:
-        self.users = users or user_repository
-        self.sessions = sessions or session_repository
+        self.users = users
+        self.sessions = sessions
 
     def mock_login(self, provider: AuthProvider) -> MockLoginResult:
         user = self.users.get_or_create_demo_user(provider)
@@ -36,7 +35,7 @@ class AuthService:
         if session_id is None:
             return None
 
-        session = self.sessions.get(session_id)
+        session = self.sessions.get_active(session_id)
         if session is None:
             return None
 

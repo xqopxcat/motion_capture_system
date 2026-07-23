@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories.runtime_repositories import metric_summary_repository
+from app.repositories.runtime_repositories import RepositoryBundle
 
 
 def test_request_video_upload_url_returns_backend_storage_path() -> None:
@@ -150,7 +150,9 @@ def test_complete_metrics_upload_persists_metric_summary() -> None:
     assert response.json()["summaryPersisted"] is True
 
 
-def test_complete_metrics_upload_persists_trend_compatibility_metadata() -> None:
+def test_complete_metrics_upload_persists_trend_compatibility_metadata(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
     client = TestClient(app)
     _login(client)
     record_id = _create_record(client)
@@ -176,7 +178,7 @@ def test_complete_metrics_upload_persists_trend_compatibility_metadata() -> None
             ],
         },
     )
-    persisted = metric_summary_repository.get_summary(record_id)
+    persisted = explicit_unit_repository_bundle.metric_summaries.get_summary(record_id)
 
     assert response.status_code == 200
     assert persisted is not None

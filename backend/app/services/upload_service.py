@@ -1,13 +1,12 @@
 from fastapi import HTTPException, status
 
-from app.repositories.artifact_repository import ArtifactRepository, ArtifactType
-from app.repositories.metric_summary_repository import MetricSummaryItemRecord, MetricSummaryRepository
-from app.repositories.record_repository import RecordRepository
-from app.repositories.runtime_repositories import (
-    artifact_repository as default_artifact_repository,
-    metric_summary_repository as default_metric_summary_repository,
-    record_repository as default_record_repository,
+from app.repositories.artifact_repository import ArtifactType
+from app.repositories.contracts import (
+    ArtifactRepositoryContract,
+    MetricSummaryRepositoryContract,
+    RecordRepositoryContract,
 )
+from app.repositories.metric_summary_repository import MetricSummaryItemRecord
 from app.schemas.auth import CurrentUser
 from app.schemas.upload import (
     ArtifactCompleteResponse,
@@ -38,15 +37,15 @@ from app.storage.storage_paths import (
 class UploadService:
     def __init__(
         self,
+        artifact_repository: ArtifactRepositoryContract,
+        metric_summary_repository: MetricSummaryRepositoryContract,
+        record_repository: RecordRepositoryContract,
         signed_url_service: SignedUrlService | None = None,
-        artifact_repository: ArtifactRepository | None = None,
-        metric_summary_repository: MetricSummaryRepository | None = None,
-        record_repository: RecordRepository | None = None,
     ) -> None:
         self.signed_url_service = signed_url_service or SignedUrlService()
-        self.artifact_repository = artifact_repository or default_artifact_repository
-        self.metric_summary_repository = metric_summary_repository or default_metric_summary_repository
-        self.record_repository = record_repository or default_record_repository
+        self.artifact_repository = artifact_repository
+        self.metric_summary_repository = metric_summary_repository
+        self.record_repository = record_repository
 
     def request_video_upload_url(
         self,

@@ -67,3 +67,31 @@ class ArtifactRepository:
                 return record
 
         return None
+
+    def get_completed_owned(
+        self,
+        *,
+        record_id: str,
+        artifact_type: ArtifactType,
+        owner_user_id: str,
+    ) -> ArtifactCompletionRecord | None:
+        return self.get_completed(record_id=record_id, artifact_type=artifact_type)
+
+    def get_completed_for_records(
+        self,
+        record_ids: list[str],
+        artifact_type: ArtifactType,
+    ) -> dict[str, ArtifactCompletionRecord]:
+        requested = set(record_ids)
+        result: dict[str, ArtifactCompletionRecord] = {}
+        for record in self._completed_artifacts:
+            if (
+                record.record_id in requested
+                and record.artifact_type == artifact_type
+                and record.status == "Complete"
+            ):
+                result[record.record_id] = record
+        return result
+
+    def list_for_record(self, record_id: str) -> list[ArtifactCompletionRecord]:
+        return [item for item in self._completed_artifacts if item.record_id == record_id]

@@ -44,6 +44,9 @@ class MetricSummaryRepository:
     def get_summary(self, record_id: str) -> MetricSummaryRecord | None:
         return self._summaries.get(record_id)
 
+    def get_summary_owned(self, record_id: str, owner_user_id: str) -> MetricSummaryRecord | None:
+        return self.get_summary(record_id)
+
     def get_summaries(self, record_ids: list[str]) -> dict[str, MetricSummaryRecord]:
         return {
             record_id: summary

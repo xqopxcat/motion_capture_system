@@ -89,3 +89,9 @@ class RecordRepository:
             key=lambda record: record.created_at,
             reverse=True,
         )
+
+    def delete_owned(self, record_id: str, owner_user_id: str) -> bool:
+        if not self.is_owned_by(record_id, owner_user_id):
+            return False
+        del self._records[record_id]
+        return True

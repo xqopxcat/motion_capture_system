@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories.runtime_repositories import artifact_repository, record_repository
+from app.repositories.runtime_repositories import RepositoryBundle
 
 
 def test_create_record_returns_uploading_status() -> None:
@@ -39,7 +39,9 @@ def test_create_record_requires_authenticated_user() -> None:
     assert response.status_code == 401
 
 
-def test_create_record_assigns_owner_from_current_user_and_ignores_request_owner() -> None:
+def test_create_record_assigns_owner_from_current_user_and_ignores_request_owner(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
     client = TestClient(app)
     _login(client, provider="google")
 
@@ -53,7 +55,7 @@ def test_create_record_assigns_owner_from_current_user_and_ignores_request_owner
         },
     )
     body = response.json()
-    stored_record = record_repository.get(body["recordId"])
+    stored_record = explicit_unit_repository_bundle.records.get(body["recordId"])
 
     assert response.status_code == 201
     assert stored_record is not None
@@ -232,11 +234,14 @@ def test_finalize_record_fails_when_thumbnail_artifact_is_missing() -> None:
     assert "thumbnail" in response.json()["detail"]["missingRequirements"]
 
 
-def test_finalize_record_fails_when_metric_summary_is_missing() -> None:
+def test_finalize_record_fails_when_metric_summary_is_missing(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
     client = TestClient(app)
     _login(client)
     record_id = _create_record(client)
 
+    artifact_repository = explicit_unit_repository_bundle.artifacts
     artifact_repository.mark_complete(
         record_id=record_id,
         artifact_type="video",
