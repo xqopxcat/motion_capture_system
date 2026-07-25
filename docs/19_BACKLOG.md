@@ -125,6 +125,9 @@ Definition of Done：
 | Angle Overlay    | P1       | Todo   |
 | Recording Timer  | P1       | Todo   |
 | Upload Progress  | P1       | Todo   |
+| Capture Quality Optimization (accuracy, jitter, latency, smoothness, UI) | P1 | Approved follow-up |
+| Hand tracking product decision | P2 | Scope required |
+| Face landmark product decision | P2 | Scope required |
 
 ---
 
@@ -509,4 +512,3 @@ Sprint 0 is done when：
 ## AI Sprint Boundary Rule
 
 Codex / Claude / Gemini must not start Capture / Viewer / Compare feature implementation before Sprint 0 DoD passes.
-

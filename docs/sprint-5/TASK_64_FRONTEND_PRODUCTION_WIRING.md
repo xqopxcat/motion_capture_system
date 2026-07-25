@@ -90,3 +90,18 @@ are user-visible failures.
 - Camera permission/physical recording is intentionally a user-driven browser
   action and is included in Task 65 end-to-end release validation.
 
+## Capture quality follow-up
+
+Physical-camera review confirmed that production wiring completion is not the
+same as final Capture quality. Landmark jitter, precision, rendering smoothness,
+recording/pose synchronization, Capture UI, and perceived latency require a
+dedicated optimization pass.
+
+MediaPipe Pose provides only coarse hand and face reference landmarks. Task 64
+does not claim complete finger tracking, face mesh, facial analysis, or
+professional-grade biomechanical accuracy.
+
+The approved follow-up scope, product boundaries, and required measurement
+categories are recorded in
+`docs/CAPTURE_QUALITY_OPTIMIZATION_BACKLOG.md`. This is a post-MVP quality item
+and does not reopen the Task 64 production-storage or runtime-wiring decision.
