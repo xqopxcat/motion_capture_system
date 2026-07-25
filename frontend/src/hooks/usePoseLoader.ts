@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { validatePoseDatasetV1 } from "../features/capture/poseDatasetV1";
-import { LOCAL_VIEWER_ARTIFACT_FIXTURE } from "../features/viewer/viewerArtifactFixtures";
 import type { PoseDataset } from "../types";
 
 type PoseLoaderState = {
@@ -72,18 +71,10 @@ export function usePoseLoader(poseUrl?: string | null): PoseLoaderState {
 }
 
 async function loadPoseDatasetFromUrl(poseUrl: string): Promise<PoseDataset> {
-  if (isMockPoseDownloadUrl(poseUrl)) {
-    return LOCAL_VIEWER_ARTIFACT_FIXTURE;
-  }
-
   const response = await fetch(poseUrl);
   if (!response.ok) {
     throw new Error("Pose Dataset request failed.");
   }
 
   return (await response.json()) as PoseDataset;
-}
-
-function isMockPoseDownloadUrl(url: string) {
-  return url.includes("mock-storage.local/download/") && url.includes("poses%2F");
 }

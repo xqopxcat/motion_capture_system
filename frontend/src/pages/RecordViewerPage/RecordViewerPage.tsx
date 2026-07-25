@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   AnnotationDrawer,
   MetricPanel,
@@ -8,7 +8,7 @@ import {
   Timeline,
   VideoPlayer,
 } from "../../components";
-import { createViewerRenderContext, useViewerArtifactLoader } from "../../features/viewer";
+import { createViewerRenderContext } from "../../features/viewer";
 import { useMetricSeriesLoader, usePlaybackController, usePoseLoader } from "../../hooks";
 import {
   useCreateAnnotationMutation,
@@ -26,59 +26,39 @@ import type {
 } from "../../types";
 import styles from "./RecordViewerPage.module.css";
 
-const LOCAL_DEMO_RECORD_ID = "local-demo";
-
 export function RecordViewerPage() {
   const { recordId } = useParams();
-  const [searchParams] = useSearchParams();
   const [isAnnotationDrawerOpen, setIsAnnotationDrawerOpen] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [selectedJointId, setSelectedJointId] = useState<number | null>(null);
-  const [localCreatedAnnotations, setLocalCreatedAnnotations] = useState<AnnotationMarker[]>([]);
-  const [localDeletedAnnotationIds, setLocalDeletedAnnotationIds] = useState<string[]>([]);
-  const [localUpdatedAnnotations, setLocalUpdatedAnnotations] = useState<
-    Record<string, AnnotationMarker>
-  >({});
   const [createAnnotationError, setCreateAnnotationError] = useState<string | null>(null);
   const [deleteAnnotationError, setDeleteAnnotationError] = useState<string | null>(null);
   const [editAnnotationError, setEditAnnotationError] = useState<string | null>(null);
-  const shouldUseLocalFallback =
-    recordId === LOCAL_DEMO_RECORD_ID || searchParams.get("poseFixture") === LOCAL_DEMO_RECORD_ID;
-  const localArtifactState = useViewerArtifactLoader(recordId, searchParams);
   const {
     data: recordDetail,
     isError: isRecordError,
     isLoading: isRecordLoading,
   } = useGetRecordDetailQuery(recordId ?? "", {
-    skip: !recordId || shouldUseLocalFallback,
+    skip: !recordId,
   });
   const { data: annotationsResponse } = useGetAnnotationsQuery(recordId ?? "", {
-    skip: !recordId || shouldUseLocalFallback,
+    skip: !recordId,
   });
   const [createAnnotation, createAnnotationState] = useCreateAnnotationMutation();
   const [deleteAnnotation, deleteAnnotationState] = useDeleteAnnotationMutation();
   const [updateAnnotation, updateAnnotationState] = useUpdateAnnotationMutation();
-  const poseLoader = usePoseLoader(
-    !shouldUseLocalFallback && recordDetail?.status === "Ready" ? recordDetail.pose?.url : null,
-  );
+  const poseLoader = usePoseLoader(recordDetail?.status === "Ready" ? recordDetail.pose?.url : null);
   const metricSeriesLoader = useMetricSeriesLoader(
-    !shouldUseLocalFallback && recordDetail?.status === "Ready"
+    recordDetail?.status === "Ready"
       ? recordDetail.metrics?.seriesUrl
       : null,
   );
-  const poseDataset = shouldUseLocalFallback
-    ? localArtifactState.poseDataset
-    : poseLoader.poseDataset;
-  const videoSrc = shouldUseLocalFallback
-    ? localArtifactState.videoSrc
-    : recordDetail?.video?.url ?? null;
-  const metrics = shouldUseLocalFallback
-    ? localArtifactState.metrics
-    : mapMetricSummaryToDisplayValues(recordDetail?.metrics?.summary ?? []);
+  const poseDataset = poseLoader.poseDataset;
+  const videoSrc = recordDetail?.video?.url ?? null;
+  const metrics = mapMetricSummaryToDisplayValues(recordDetail?.metrics?.summary ?? []);
   const artifactState = resolveViewerState({
     isRecordError,
     isRecordLoading,
-    localArtifactState,
     metricErrorMessage: metricSeriesLoader.errorMessage,
     metricSeriesLoading: metricSeriesLoader.isMetricSeriesLoading,
     poseDataset,
@@ -86,7 +66,6 @@ export function RecordViewerPage() {
     poseLoading: poseLoader.isPoseLoading,
     recordDetail,
     recordId,
-    shouldUseLocalFallback,
     videoSrc,
   });
   const {
@@ -114,18 +93,7 @@ export function RecordViewerPage() {
     poseDataset,
     selectedJointId,
   });
-  const localFixtureAnnotations = useMemo(
-    () =>
-      shouldUseLocalFallback && poseDataset
-        ? createLocalAnnotationFixtures(poseDataset.frameCount, poseDataset.fps)
-        : [],
-    [poseDataset, shouldUseLocalFallback],
-  );
-  const annotationMarkers = shouldUseLocalFallback
-    ? [...localFixtureAnnotations, ...localCreatedAnnotations]
-        .filter((annotation) => !localDeletedAnnotationIds.includes(annotation.annotationId))
-        .map((annotation) => localUpdatedAnnotations[annotation.annotationId] ?? annotation)
-    : annotationsResponse?.items ?? [];
+  const annotationMarkers = annotationsResponse?.items ?? [];
   const jumpToAnnotationFrame = (annotation: AnnotationMarker) => {
     setSelectedAnnotationId(annotation.annotationId);
     setSelectedJointId(typeof annotation.jointId === "number" ? annotation.jointId : null);
@@ -284,20 +252,6 @@ export function RecordViewerPage() {
                 onCreateAnnotation={async (draft) => {
                   setCreateAnnotationError(null);
 
-                  if (shouldUseLocalFallback) {
-                    const annotation: AnnotationMarker = {
-                      annotationId: `local_annotation_${Date.now()}`,
-                      frameIndex: frameState.currentFrame,
-                      jointId: selectedJointId,
-                      note: draft.note,
-                      timestamp: playbackState.currentTime,
-                      title: draft.title,
-                    };
-                    setLocalCreatedAnnotations((annotations) => [...annotations, annotation]);
-                    setSelectedAnnotationId(annotation.annotationId);
-                    return;
-                  }
-
                   if (!recordId) {
                     setCreateAnnotationError("Record id is missing.");
                     return;
@@ -321,15 +275,6 @@ export function RecordViewerPage() {
                 onDeleteAnnotation={async (annotation) => {
                   setDeleteAnnotationError(null);
 
-                  if (shouldUseLocalFallback) {
-                    setLocalDeletedAnnotationIds((annotationIds) => [
-                      ...annotationIds,
-                      annotation.annotationId,
-                    ]);
-                    setSelectedAnnotationId(null);
-                    return;
-                  }
-
                   if (!recordId) {
                     setDeleteAnnotationError("Record id is missing.");
                     return;
@@ -349,18 +294,6 @@ export function RecordViewerPage() {
                 onSelectAnnotation={selectAnnotation}
                 onUpdateAnnotation={async (annotation, draft) => {
                   setEditAnnotationError(null);
-
-                  if (shouldUseLocalFallback) {
-                    setLocalUpdatedAnnotations((annotations) => ({
-                      ...annotations,
-                      [annotation.annotationId]: {
-                        ...annotation,
-                        note: draft.note,
-                        title: draft.title,
-                      },
-                    }));
-                    return;
-                  }
 
                   if (!recordId) {
                     setEditAnnotationError("Record id is missing.");
@@ -388,31 +321,9 @@ export function RecordViewerPage() {
   );
 }
 
-function createLocalAnnotationFixtures(frameCount: number, fps: number): AnnotationMarker[] {
-  if (!Number.isFinite(frameCount) || frameCount <= 1) {
-    return [];
-  }
-
-  const maxFrame = Math.max(0, frameCount - 1);
-  const safeFps = Number.isFinite(fps) && fps > 0 ? fps : 30;
-  const frameIndexes = [
-    Math.round(maxFrame * 0.25),
-    Math.round(maxFrame * 0.5),
-    Math.round(maxFrame * 0.75),
-  ];
-
-  return frameIndexes.map((frameIndex, index) => ({
-    annotationId: `local_fixture_annotation_${index + 1}`,
-    frameIndex,
-    timestamp: frameIndex / safeFps,
-    title: `Fixture marker ${index + 1}`,
-  }));
-}
-
 type RecordViewerStateInput = {
   isRecordError: boolean;
   isRecordLoading: boolean;
-  localArtifactState: ReturnType<typeof useViewerArtifactLoader>;
   metricErrorMessage: string | null;
   metricSeriesLoading: boolean;
   poseDataset: PoseDataset | null;
@@ -420,14 +331,12 @@ type RecordViewerStateInput = {
   poseLoading: boolean;
   recordDetail?: RecordDetail;
   recordId?: string;
-  shouldUseLocalFallback: boolean;
   videoSrc: string | null;
 };
 
 function resolveViewerState({
   isRecordError,
   isRecordLoading,
-  localArtifactState,
   metricErrorMessage,
   metricSeriesLoading,
   poseDataset,
@@ -435,13 +344,8 @@ function resolveViewerState({
   poseLoading,
   recordDetail,
   recordId,
-  shouldUseLocalFallback,
   videoSrc,
 }: RecordViewerStateInput) {
-  if (shouldUseLocalFallback) {
-    return localArtifactState;
-  }
-
   if (!recordId) {
     return {
       errorMessage: "Viewer route is missing a record id.",

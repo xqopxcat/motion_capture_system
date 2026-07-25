@@ -308,3 +308,25 @@
     max-width: 340px;
   }
 }
+.publishPanel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border, #d7dde5);
+  border-radius: 0.75rem;
+}
+
+.publishLabel {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.publishLabel input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-border, #c8d0da);
+  border-radius: 0.5rem;
+  font: inherit;
+}

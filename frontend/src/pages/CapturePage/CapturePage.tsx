@@ -1,5 +1,15 @@
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CameraPreview } from "../../components";
-import { CaptureSkeletonOverlay, RecordedPosePreview } from "../../features/capture";
+import {
+  CaptureSkeletonOverlay,
+  RecordedPosePreview,
+  publishCaptureRecord,
+} from "../../features/capture";
+import type {
+  CapturePublishProgress,
+  CapturePublishResumeState,
+} from "../../features/capture";
 import { useCapturePipeline } from "../../hooks";
 import styles from "./CapturePage.module.css";
 
@@ -13,6 +23,14 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
+  const navigate = useNavigate();
+  const [recordTitle, setRecordTitle] = useState("");
+  const [publishProgress, setPublishProgress] = useState<CapturePublishProgress | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const publishResumeRef = useRef<CapturePublishResumeState>({
+    completedArtifacts: new Set(),
+  });
   const {
     cameraPreview,
     captureViewState,
@@ -34,6 +52,40 @@ export function CapturePage() {
             ? "Pose unavailable"
             : "Pose idle";
   const poseDatasetFrameCount = poseDatasetDraft?.metadata.frameCount ?? 0;
+  const canPublish = Boolean(
+    localRecording.recordedBlob &&
+    poseDatasetDraft &&
+    poseDatasetFrameCount > 0 &&
+    !isPublishing,
+  );
+
+  const publishRecording = async () => {
+    if (!localRecording.recordedBlob || !poseDatasetDraft || !canPublish) return;
+    setIsPublishing(true);
+    setPublishError(null);
+    try {
+      const result = await publishCaptureRecord({
+        title: recordTitle,
+        description: "Captured and analyzed in the browser.",
+        videoBlob: localRecording.recordedBlob,
+        poseDraft: poseDatasetDraft,
+        resume: publishResumeRef.current,
+        onProgress: setPublishProgress,
+      });
+      navigate(`/records/${encodeURIComponent(result.recordId)}`);
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : "Record publishing failed.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const resetCapture = () => {
+    localRecording.resetRecordingResult();
+    publishResumeRef.current = { completedArtifacts: new Set() };
+    setPublishProgress(null);
+    setPublishError(null);
+  };
 
   return (
     <main className={styles.capturePage}>
@@ -142,7 +194,8 @@ export function CapturePage() {
               <button
                 className={styles.secondaryAction}
                 type="button"
-                onClick={localRecording.resetRecordingResult}
+                onClick={resetCapture}
+                disabled={isPublishing}
               >
                 Clear Preview
               </button>
@@ -151,6 +204,39 @@ export function CapturePage() {
               poseDatasetDraft={poseDatasetDraft}
               videoUrl={localRecording.recordedVideoUrl}
             />
+            <section className={styles.publishPanel} aria-label="Save production Record">
+              <label className={styles.publishLabel}>
+                Record title
+                <input
+                  value={recordTitle}
+                  onChange={(event) => setRecordTitle(event.target.value)}
+                  placeholder="Motion capture session"
+                  disabled={isPublishing}
+                />
+              </label>
+              <button
+                className={styles.recordAction}
+                type="button"
+                onClick={() => void publishRecording()}
+                disabled={!canPublish}
+              >
+                {publishResumeRef.current.recordId && publishError
+                  ? "Retry Save"
+                  : isPublishing
+                    ? "Saving…"
+                    : "Save Record"}
+              </button>
+              {publishProgress && (
+                <p className={styles.statusText} role="status">
+                  {publishProgress.message}
+                </p>
+              )}
+              {publishError && (
+                <p className={styles.error} role="alert">
+                  {publishError} Your persistent Record remains available for retry.
+                </p>
+              )}
+            </section>
           </section>
         )}
       </section>

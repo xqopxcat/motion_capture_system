@@ -63,18 +63,10 @@ export function useMetricSeriesLoader(seriesUrl?: string | null): MetricSeriesLo
 }
 
 async function loadMetricSeriesFromUrl(seriesUrl: string): Promise<unknown | null> {
-  if (isMockMetricsDownloadUrl(seriesUrl)) {
-    return null;
-  }
-
   const response = await fetch(seriesUrl);
   if (!response.ok) {
     throw new Error("Metric Series request failed.");
   }
 
   return response.json();
-}
-
-function isMockMetricsDownloadUrl(url: string) {
-  return url.includes("mock-storage.local/download/") && url.includes("metrics%2F");
 }

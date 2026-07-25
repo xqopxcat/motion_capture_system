@@ -1,5 +1,3 @@
-export { resolveViewerArtifactSource } from "./resolveViewerArtifactSource";
-export { useViewerArtifactLoader } from "./useViewerArtifactLoader";
 export {
   createViewerRenderContext,
   selectPoseFrameByIndex,

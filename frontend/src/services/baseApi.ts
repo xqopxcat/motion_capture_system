@@ -9,5 +9,6 @@ export const baseApi = createApi({
     baseUrl: apiBaseUrl,
     credentials: "include",
   }),
+  refetchOnMountOrArgChange: true,
   endpoints: () => ({}),
 });

@@ -19,3 +19,12 @@ export { usePoseFrameCollection } from "./usePoseFrameCollection";
 export type { CapturePoseFrame } from "./usePoseFrameCollection";
 export { usePosePipeline } from "./usePosePipeline";
 export type { CapturePosePipelineState } from "./usePosePipeline";
+export {
+  publishCaptureRecord,
+  sha256Hex,
+} from "./publishCaptureRecord";
+export type {
+  CapturePublishProgress,
+  CapturePublishResumeState,
+  CapturePublishStage,
+} from "./publishCaptureRecord";

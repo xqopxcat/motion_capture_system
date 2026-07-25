@@ -1,5 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useGetRecordsQuery } from "../../services/recordsApi";
+import {
+  useDeleteRecordMutation,
+  useFinalizeRecordMutation,
+  useGetRecordsQuery,
+  useRetryRecordMutation,
+} from "../../services/recordsApi";
 import type { RecordListItem } from "../../types";
 import {
   buildRecordViewerPath,
@@ -10,7 +16,40 @@ import {
 import styles from "./RecordsPage.module.css";
 
 export function RecordsPage() {
-  const { data, isError, isLoading } = useGetRecordsQuery();
+  const { data, isError, isLoading, refetch } = useGetRecordsQuery();
+  const [deleteRecord, deleteState] = useDeleteRecordMutation();
+  const [retryRecord, retryState] = useRetryRecordMutation();
+  const [finalizeRecord, finalizeState] = useFinalizeRecordMutation();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const actionBusy = deleteState.isLoading || retryState.isLoading || finalizeState.isLoading;
+
+  async function handleDelete(record: RecordListItem) {
+    if (!window.confirm(`Delete “${record.title}” and all of its private artifacts?`)) return;
+    setActionError(null);
+    try {
+      const result = await deleteRecord(record.recordId).unwrap();
+      if (result.status === "CleanupFailed") {
+        setActionError(result.failureMessage ?? "Storage cleanup failed. The Record was retained.");
+      }
+      await refetch();
+    } catch {
+      setActionError("Record deletion failed. The Record was retained; retry is safe.");
+    }
+  }
+
+  async function handleRetry(record: RecordListItem) {
+    setActionError(null);
+    try {
+      await retryRecord(record.recordId).unwrap();
+      const result = await finalizeRecord({ recordId: record.recordId }).unwrap();
+      if (result.status === "Failed") {
+        setActionError(result.failureMessage ?? "Record finalization failed again.");
+      }
+      await refetch();
+    } catch {
+      setActionError("Record retry failed. Refresh and try again.");
+    }
+  }
 
   return (
     <main className={styles.recordsPage}>
@@ -34,6 +73,12 @@ export function RecordsPage() {
             <p>Record List data could not be loaded from the backend.</p>
           </section>
         )}
+        {actionError && (
+          <section className={styles.statePanel} role="alert">
+            <h2>Record action needs attention</h2>
+            <p>{actionError}</p>
+          </section>
+        )}
 
         {!isLoading && !isError && data?.total === 0 && (
           <section className={styles.statePanel}>
@@ -49,7 +94,13 @@ export function RecordsPage() {
             </div>
             <ul className={styles.recordList}>
               {data.items.map((record) => (
-                <RecordCard key={record.recordId} record={record} />
+                <RecordCard
+                  key={record.recordId}
+                  record={record}
+                  disabled={actionBusy}
+                  onDelete={handleDelete}
+                  onRetry={handleRetry}
+                />
               ))}
             </ul>
           </section>
@@ -59,17 +110,25 @@ export function RecordsPage() {
   );
 }
 
-function RecordCard({ record }: { record: RecordListItem }) {
+function RecordCard({
+  record,
+  disabled,
+  onDelete,
+  onRetry,
+}: {
+  record: RecordListItem;
+  disabled: boolean;
+  onDelete: (record: RecordListItem) => Promise<void>;
+  onRetry: (record: RecordListItem) => Promise<void>;
+}) {
   const status = getRecordStatusMeta(record.status);
   const viewerPath = buildRecordViewerPath(record.recordId);
 
   return (
     <li className={styles.recordCard}>
       <div className={styles.thumbnailFrame} aria-label="Record thumbnail">
-        {record.thumbnailUrl && shouldRenderThumbnailImage(record.thumbnailUrl) ? (
+        {record.thumbnailUrl ? (
           <img src={record.thumbnailUrl} alt="" loading="lazy" />
-        ) : record.thumbnailUrl ? (
-          <span>Thumbnail ready</span>
         ) : (
           <span>No thumbnail</span>
         )}
@@ -108,11 +167,15 @@ function RecordCard({ record }: { record: RecordListItem }) {
         ) : (
           <span className={styles.disabledOpen}>Unavailable</span>
         )}
+        {record.status === "Failed" && record.retryable && (
+          <button type="button" disabled={disabled} onClick={() => void onRetry(record)}>
+            Retry
+          </button>
+        )}
+        <button type="button" disabled={disabled} onClick={() => void onDelete(record)}>
+          Delete
+        </button>
       </div>
     </li>
   );
-}
-
-function shouldRenderThumbnailImage(url: string) {
-  return !url.includes("mock-storage.local/");
 }
