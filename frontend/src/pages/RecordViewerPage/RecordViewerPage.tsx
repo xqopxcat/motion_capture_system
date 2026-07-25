@@ -34,6 +34,7 @@ export function RecordViewerPage() {
   const [createAnnotationError, setCreateAnnotationError] = useState<string | null>(null);
   const [deleteAnnotationError, setDeleteAnnotationError] = useState<string | null>(null);
   const [editAnnotationError, setEditAnnotationError] = useState<string | null>(null);
+  const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
   const {
     data: recordDetail,
     isError: isRecordError,
@@ -110,9 +111,14 @@ export function RecordViewerPage() {
     setPlaybackBounds({
       duration: poseDataset?.duration ?? 0,
       fps: poseDataset?.fps ?? 30,
+      frameTimestamps: poseDataset?.frames.map((frame) => frame.timestamp) ?? [],
       totalFrames: poseDataset?.frameCount ?? 0,
     });
   }, [poseDataset, setPlaybackBounds]);
+
+  useEffect(() => {
+    setVideoAspectRatio(16 / 9);
+  }, [videoSrc]);
 
   useEffect(() => {
     if (
@@ -159,13 +165,19 @@ export function RecordViewerPage() {
         {artifactState.status === "ready" && (
           <section className={styles.viewerWorkspace} aria-label="Viewer workspace">
             <div className={styles.mediaColumn}>
-              <div className={styles.viewerStage}>
+              <div
+                className={styles.viewerStage}
+                style={{ aspectRatio: videoAspectRatio }}
+              >
                 <VideoPlayer
                   playback={playbackState}
                   src={videoSrc ?? undefined}
                   onDurationChange={handleVideoDurationChange}
                   onEnded={handleVideoEnded}
                   onTimeChange={handleVideoTimeUpdate}
+                  onVideoDimensionsChange={(width, height) =>
+                    setVideoAspectRatio(width / height)
+                  }
                 />
                 <SkeletonCanvas
                   renderContext={renderContext}

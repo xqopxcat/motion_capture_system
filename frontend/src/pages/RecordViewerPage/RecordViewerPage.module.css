@@ -69,19 +69,43 @@
   background: #101820;
   border-radius: 8px;
   display: grid;
-  min-height: 420px;
   overflow: hidden;
   position: relative;
+  width: 100%;
 }
 
 .viewerStage > * {
   grid-area: 1 / 1;
 }
 
+.viewerStage > section {
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.viewerStage video {
+  aspect-ratio: inherit;
+  height: 100%;
+  object-fit: contain;
+}
+
+.viewerStage section > p {
+  background: rgb(16 24 32 / 72%);
+  bottom: 8px;
+  color: #ffffff;
+  left: 8px;
+  padding: 4px 7px;
+  position: absolute;
+}
+
 .viewerStage canvas {
+  background: transparent;
+  border: 0;
   height: 100%;
   pointer-events: auto;
   width: 100%;
+  z-index: 2;
 }
 
 .sidePanel {
@@ -171,7 +195,4 @@
     grid-template-columns: 1fr;
   }
 
-  .viewerStage {
-    min-height: 300px;
-  }
 }

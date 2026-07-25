@@ -24,14 +24,19 @@ export function usePoseFrameCollection() {
   const framesRef = useRef<CapturePoseFrame[]>([]);
   const collectedResultKeysRef = useRef(new Set<number>());
   const firstPoseTimestampMsRef = useRef<number | null>(null);
+  const recordingStartTimestampMsRef = useRef<number | null>(null);
   const nextFrameIndexRef = useRef(0);
   const isCollectingRef = useRef(false);
   const [collectedPoseFrameCount, setCollectedPoseFrameCount] = useState(0);
 
-  const startPoseFrameCollection = useCallback(() => {
+  const startPoseFrameCollection = useCallback((recordingStartTimestampMs?: number) => {
     framesRef.current = [];
     collectedResultKeysRef.current = new Set<number>();
     firstPoseTimestampMsRef.current = null;
+    recordingStartTimestampMsRef.current =
+      recordingStartTimestampMs !== undefined && Number.isFinite(recordingStartTimestampMs)
+        ? recordingStartTimestampMs
+        : null;
     nextFrameIndexRef.current = 0;
     isCollectingRef.current = true;
     setCollectedPoseFrameCount(0);
@@ -43,6 +48,15 @@ export function usePoseFrameCollection() {
 
   const collectPoseFrame = useCallback((poseResult: PoseDetectionResult | null) => {
     if (!isCollectingRef.current || !poseResult || poseResult.landmarks2D.length === 0) {
+      return;
+    }
+
+    const recordingStartTimestampMs = recordingStartTimestampMsRef.current;
+
+    if (
+      recordingStartTimestampMs !== null &&
+      poseResult.timestampMs < recordingStartTimestampMs
+    ) {
       return;
     }
 
@@ -60,7 +74,11 @@ export function usePoseFrameCollection() {
 
     const frame: CapturePoseFrame = {
       frameIndex: nextFrameIndexRef.current,
-      timestampMs: Math.max(0, poseResult.timestampMs - firstPoseTimestampMsRef.current),
+      timestampMs: Math.max(
+        0,
+        poseResult.timestampMs -
+          (recordingStartTimestampMs ?? firstPoseTimestampMsRef.current),
+      ),
       landmarks2D: copyLandmarks2D(poseResult.landmarks2D),
       landmarks3D: copyLandmarks3D(poseResult.landmarks3D),
     };

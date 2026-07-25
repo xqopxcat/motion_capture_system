@@ -3,6 +3,8 @@ import {
   clampFrameIndex,
   clampTime,
   frameIndexToTime,
+  frameTimestamp,
+  timestampToFrameIndex,
   getMaxFrameIndex,
   timeToFrameIndex,
 } from "./playbackFrameMath";
@@ -29,5 +31,14 @@ describe("playbackFrameMath", () => {
     expect(clampTime(-1, 4)).toBe(0);
     expect(clampTime(5, 4)).toBe(4);
     expect(clampTime(Number.NaN, 4)).toBe(0);
+  });
+
+  it("selects the nearest irregularly-timed pose frame", () => {
+    const timestamps = [0, 0.041, 0.115, 0.198];
+
+    expect(timestampToFrameIndex(0.03, timestamps)).toBe(1);
+    expect(timestampToFrameIndex(0.08, timestamps)).toBe(2);
+    expect(timestampToFrameIndex(0.19, timestamps)).toBe(3);
+    expect(frameTimestamp(2, timestamps)).toBe(0.115);
   });
 });

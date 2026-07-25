@@ -1,8 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   clampFrameIndex,
   clampTime,
+  frameTimestamp,
   frameIndexToTime,
+  timestampToFrameIndex,
   timeToFrameIndex,
 } from "../features/viewer/playbackFrameMath";
 import type { FrameState, PlaybackState } from "../types";
@@ -23,6 +25,7 @@ const initialFrameState: FrameState = {
 export type PlaybackControllerInitialState = Partial<PlaybackState & FrameState>;
 
 export function usePlaybackController(initialState: PlaybackControllerInitialState = {}) {
+  const frameTimestampsRef = useRef<number[]>([]);
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
     ...initialPlaybackState,
     ...initialState,
@@ -31,6 +34,18 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
     ...initialFrameState,
     ...initialState,
   });
+
+  const timeToCurrentFrame = useCallback((time: number, fps: number, totalFrames: number) => {
+    return frameTimestampsRef.current.length > 0
+      ? timestampToFrameIndex(time, frameTimestampsRef.current)
+      : timeToFrameIndex(time, fps, totalFrames);
+  }, []);
+
+  const currentFrameToTime = useCallback((frameIndex: number, fps: number, totalFrames: number) => {
+    return frameTimestampsRef.current.length > 0
+      ? frameTimestamp(frameIndex, frameTimestampsRef.current)
+      : frameIndexToTime(frameIndex, fps, totalFrames);
+  }, []);
 
   const requestPlay = useCallback(() => {
     setPlaybackState((state) => ({ ...state, isPlaying: true }));
@@ -50,7 +65,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
 
       setFrameState((frame) => ({
         ...frame,
-        currentFrame: timeToFrameIndex(currentTime, frame.fps, frame.totalFrames),
+        currentFrame: timeToCurrentFrame(currentTime, frame.fps, frame.totalFrames),
       }));
 
       return {
@@ -58,7 +73,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         currentTime,
       };
     });
-  }, []);
+  }, [timeToCurrentFrame]);
 
   const requestSeekFrame = useCallback((requestedFrame: number) => {
     setFrameState((frame) => {
@@ -67,7 +82,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
       setPlaybackState((playback) => ({
         ...playback,
         currentTime: clampTime(
-          frameIndexToTime(currentFrame, frame.fps, frame.totalFrames),
+          currentFrameToTime(currentFrame, frame.fps, frame.totalFrames),
           playback.duration,
         ),
       }));
@@ -77,7 +92,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         currentFrame,
       };
     });
-  }, []);
+  }, [currentFrameToTime]);
 
   const requestNextFrame = useCallback(() => {
     setFrameState((frame) => {
@@ -86,7 +101,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
       setPlaybackState((playback) => ({
         ...playback,
         currentTime: clampTime(
-          frameIndexToTime(currentFrame, frame.fps, frame.totalFrames),
+          currentFrameToTime(currentFrame, frame.fps, frame.totalFrames),
           playback.duration,
         ),
       }));
@@ -96,7 +111,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         currentFrame,
       };
     });
-  }, []);
+  }, [currentFrameToTime]);
 
   const requestPreviousFrame = useCallback(() => {
     setFrameState((frame) => {
@@ -105,7 +120,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
       setPlaybackState((playback) => ({
         ...playback,
         currentTime: clampTime(
-          frameIndexToTime(currentFrame, frame.fps, frame.totalFrames),
+          currentFrameToTime(currentFrame, frame.fps, frame.totalFrames),
           playback.duration,
         ),
       }));
@@ -115,7 +130,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         currentFrame,
       };
     });
-  }, []);
+  }, [currentFrameToTime]);
 
   const requestPlaybackSpeed = useCallback((playbackSpeed: number) => {
     if (!Number.isFinite(playbackSpeed) || playbackSpeed <= 0) {
@@ -131,7 +146,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
 
       setFrameState((frame) => ({
         ...frame,
-        currentFrame: timeToFrameIndex(currentTime, frame.fps, frame.totalFrames),
+        currentFrame: timeToCurrentFrame(currentTime, frame.fps, frame.totalFrames),
       }));
 
       return {
@@ -139,7 +154,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         currentTime,
       };
     });
-  }, []);
+  }, [timeToCurrentFrame]);
 
   const handleVideoDurationChange = useCallback((duration: number) => {
     setPlaybackState((playback) => {
@@ -148,7 +163,7 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
 
       setFrameState((frame) => ({
         ...frame,
-        currentFrame: timeToFrameIndex(currentTime, frame.fps, frame.totalFrames),
+        currentFrame: timeToCurrentFrame(currentTime, frame.fps, frame.totalFrames),
       }));
 
       return {
@@ -157,14 +172,21 @@ export function usePlaybackController(initialState: PlaybackControllerInitialSta
         duration: nextDuration,
       };
     });
-  }, []);
+  }, [timeToCurrentFrame]);
 
   const handleVideoEnded = useCallback(() => {
     setPlaybackState((state) => ({ ...state, isPlaying: false }));
   }, []);
 
   const setPlaybackBounds = useCallback(
-    (bounds: Partial<FrameState & Pick<PlaybackState, "duration">>) => {
+    (
+      bounds: Partial<FrameState & Pick<PlaybackState, "duration">> & {
+        frameTimestamps?: number[];
+      },
+    ) => {
+      if (bounds.frameTimestamps) {
+        frameTimestampsRef.current = bounds.frameTimestamps;
+      }
       setFrameState((frame) => {
         const fps = bounds.fps ?? frame.fps;
         const totalFrames = bounds.totalFrames ?? frame.totalFrames;

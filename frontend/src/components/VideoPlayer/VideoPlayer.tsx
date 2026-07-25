@@ -7,6 +7,7 @@ export type VideoPlayerProps = {
   src?: string;
   title?: string;
   onDurationChange?: (duration: number) => void;
+  onVideoDimensionsChange?: (width: number, height: number) => void;
   onEnded?: () => void;
   onFrameChange?: (frameIndex: number) => void;
   onTimeChange?: (currentTime: number) => void;
@@ -17,6 +18,7 @@ export function VideoPlayer({
   src,
   title = "Video player",
   onDurationChange,
+  onVideoDimensionsChange,
   onEnded,
   onTimeChange,
 }: VideoPlayerProps) {
@@ -57,6 +59,24 @@ export function VideoPlayer({
     video.pause();
   }, [playback.isPlaying]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video || typeof video.requestVideoFrameCallback !== "function") {
+      return;
+    }
+
+    let callbackId = 0;
+    const handlePresentedFrame: VideoFrameRequestCallback = (_now, metadata) => {
+      onTimeChange?.(metadata.mediaTime);
+      callbackId = video.requestVideoFrameCallback(handlePresentedFrame);
+    };
+
+    callbackId = video.requestVideoFrameCallback(handlePresentedFrame);
+
+    return () => video.cancelVideoFrameCallback(callbackId);
+  }, [onTimeChange, src]);
+
   return (
     <section className={styles.videoPlayer} aria-label={title}>
       <video
@@ -66,6 +86,13 @@ export function VideoPlayer({
         controls={false}
         muted
         onDurationChange={(event) => onDurationChange?.(event.currentTarget.duration)}
+        onLoadedMetadata={(event) => {
+          const { videoHeight, videoWidth } = event.currentTarget;
+
+          if (videoWidth > 0 && videoHeight > 0) {
+            onVideoDimensionsChange?.(videoWidth, videoHeight);
+          }
+        }}
         onEnded={onEnded}
         onTimeUpdate={(event) => onTimeChange?.(event.currentTarget.currentTime)}
       />

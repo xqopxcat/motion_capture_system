@@ -13,6 +13,18 @@ const initialCaptureRuntimeState: CaptureRuntimeState = {
   status: "idle",
 };
 
+function getCaptureTimestampMs(videoElement: HTMLVideoElement | null) {
+  if (
+    videoElement &&
+    Number.isFinite(videoElement.currentTime) &&
+    videoElement.currentTime > 0
+  ) {
+    return Math.floor(videoElement.currentTime * 1000);
+  }
+
+  return Math.floor(performance.now());
+}
+
 function getPrimaryStatusText(
   cameraStatus: ReturnType<typeof useCameraStream>["status"],
   recordingStatus: ReturnType<typeof useMediaRecorder>["status"],
@@ -109,7 +121,7 @@ export function useCapturePipeline() {
   useEffect(() => {
     if (isRecording) {
       setPoseDatasetDraft(null);
-      startPoseFrameCollection();
+      startPoseFrameCollection(getCaptureTimestampMs(previewVideoElement));
       wasRecordingRef.current = true;
       return;
     }
@@ -120,7 +132,13 @@ export function useCapturePipeline() {
       setPoseDatasetDraft(buildPoseDatasetDraft(getCollectedPoseFrames()));
       wasRecordingRef.current = false;
     }
-  }, [getCollectedPoseFrames, isRecording, startPoseFrameCollection, stopPoseFrameCollection]);
+  }, [
+    getCollectedPoseFrames,
+    isRecording,
+    previewVideoElement,
+    startPoseFrameCollection,
+    stopPoseFrameCollection,
+  ]);
 
   useEffect(() => {
     if (!isRecording) {

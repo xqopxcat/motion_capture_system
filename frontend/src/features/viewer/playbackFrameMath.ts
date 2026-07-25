@@ -37,3 +37,38 @@ export function frameIndexToTime(frameIndex: number, fps: number, frameCount: nu
 
   return clampFrameIndex(frameIndex, frameCount) / fps;
 }
+
+export function timestampToFrameIndex(currentTime: number, timestamps: number[]) {
+  if (timestamps.length === 0) {
+    return 0;
+  }
+
+  const time = Math.max(0, Number.isFinite(currentTime) ? currentTime : 0);
+  let low = 0;
+  let high = timestamps.length - 1;
+
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+
+    if (timestamps[middle] < time) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  if (low === 0) {
+    return 0;
+  }
+
+  const previous = low - 1;
+  return time - timestamps[previous] <= timestamps[low] - time ? previous : low;
+}
+
+export function frameTimestamp(frameIndex: number, timestamps: number[]) {
+  if (timestamps.length === 0) {
+    return 0;
+  }
+
+  return timestamps[clampFrameIndex(frameIndex, timestamps.length)] ?? 0;
+}
