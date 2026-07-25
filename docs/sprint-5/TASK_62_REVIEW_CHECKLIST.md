@@ -11,7 +11,7 @@
 - [x] Exact-path partial-upload and record-object cleanup primitives exist.
 - [x] Local/production configuration fails fast when GCS identifiers are missing.
 - [x] Unit suite passes with explicit fake storage.
-- [ ] Reviewer decision: private dev bucket configuration verified live.
-- [ ] Reviewer decision: live signed upload/download/expiry/delete smoke test passed.
+- [x] Reviewer decision: private dev bucket configuration verified live.
+- [x] Reviewer decision: live signed upload/download/expiry/delete smoke test passed.
 
-Reviewer decision: **Task 62 remains conditionally pending only on the two live GCS checks above.**
+Reviewer decision: **Task 62 approved on 2026-07-26.**

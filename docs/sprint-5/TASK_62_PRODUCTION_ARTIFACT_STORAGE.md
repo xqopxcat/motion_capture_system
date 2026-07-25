@@ -1,6 +1,6 @@
 # Task 62 — Production Artifact Storage
 
-Status: backend implementation complete; live GCS resource validation pending.
+Status: **Accepted — backend implementation and live GCS validation complete.**
 
 ## Locked decisions
 
@@ -47,4 +47,16 @@ Legacy zero-checksum defaults and legacy paths exist only in explicitly injected
 
 ## Live validation record
 
-Not yet approved as passed. The Google Cloud Console page timed out during automation on 2026-07-24; no bucket or IAM resource was created. Complete the private dev bucket checklist before marking Task 62 accepted.
+Passed on 2026-07-26 against:
+
+- Project: `motion-detection-system-474713`
+- Bucket: `motion-capture-platform-dev-474713`
+- Location/class: `asia-east1` / `Standard`
+- Access: Uniform bucket-level access, Public Access Prevention enforced, not public
+- Runtime identity: `motion-capture-storage-backend@motion-detection-system-474713.iam.gserviceaccount.com`
+- Bucket-scoped role: `roles/storage.objectAdmin`
+- CORS: exact localhost frontend origin with `GET`, `HEAD`, and `PUT`
+
+The live smoke test passed V4 signed upload, Content-Type/size/SHA-256/generation
+metadata validation, signed download, URL expiry rejection, generation-bound
+delete, and post-delete absence. The test object was removed.

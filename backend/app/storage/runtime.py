@@ -15,6 +15,7 @@ def get_storage_adapter() -> StorageAdapterContract:
     return GcsStorageAdapter(
         project_id=settings.gcs_project_id or "",
         bucket_name=settings.gcs_bucket_name or "",
+        credentials_file=settings.gcs_credentials_file,
         upload_ttl_seconds=settings.storage_upload_ttl_seconds,
         download_ttl_seconds=settings.storage_download_ttl_seconds,
     )

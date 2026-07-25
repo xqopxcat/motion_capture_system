@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     storage_adapter: StorageAdapter = "gcs"
     gcs_project_id: str | None = None
     gcs_bucket_name: str | None = None
+    gcs_credentials_file: str | None = None
     storage_upload_ttl_seconds: int = 600
     storage_download_ttl_seconds: int = 600
     storage_max_video_bytes: int = 1_073_741_824

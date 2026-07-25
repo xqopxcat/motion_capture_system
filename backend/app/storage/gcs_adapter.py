@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from google.api_core.exceptions import GoogleAPIError, NotFound, PreconditionFailed
 from google.cloud import storage
+from google.oauth2 import service_account
 
 from app.storage.contracts import SignedStorageUrl, StoredObjectMetadata
 from app.storage.errors import StorageProviderError
@@ -13,10 +14,16 @@ class GcsStorageAdapter:
         *,
         project_id: str,
         bucket_name: str,
+        credentials_file: str | None = None,
         upload_ttl_seconds: int = 600,
         download_ttl_seconds: int = 600,
     ) -> None:
-        self.client = storage.Client(project=project_id)
+        credentials = (
+            service_account.Credentials.from_service_account_file(credentials_file)
+            if credentials_file
+            else None
+        )
+        self.client = storage.Client(project=project_id, credentials=credentials)
         self.bucket = self.client.bucket(bucket_name)
         self.upload_ttl_seconds = upload_ttl_seconds
         self.download_ttl_seconds = download_ttl_seconds
@@ -76,4 +83,3 @@ class GcsStorageAdapter:
             raise StorageProviderError("GCS object generation changed before deletion.") from error
         except GoogleAPIError as error:
             raise StorageProviderError("Unable to delete GCS object.") from error
-
