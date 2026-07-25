@@ -4,6 +4,8 @@ export type CreateRecordRequest = {
   title: string;
   description: string;
   tags: string[];
+  duration?: number;
+  fps?: number;
 };
 
 export type CreateRecordResponse = {

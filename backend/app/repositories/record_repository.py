@@ -26,6 +26,8 @@ class StoredRecord:
     failure_message: str | None = None
     retryable: bool | None = None
     retry_count: int = 0
+    duration: float | None = None
+    fps: float | None = None
 
 
 class RecordRepository:
@@ -43,6 +45,8 @@ class RecordRepository:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
             uploading_at=datetime.now(UTC),
+            duration=request.duration,
+            fps=request.fps,
         )
         self._records[record.record_id] = record
 

@@ -18,4 +18,6 @@
 - [x] Frontend tests and production build pass.
 - [x] Backend regression suite passes.
 
-Reviewer decision: **Task 64 implementation approved. Full physical-camera E2E remains Task 65’s release gate.**
+Reviewer decision: **Task 64 implementation approved. Task 65 physical-camera
+E2E completed, including real GCS upload, Viewer navigation, persisted
+duration/FPS, downstream consumers, and owned deletion cleanup.**

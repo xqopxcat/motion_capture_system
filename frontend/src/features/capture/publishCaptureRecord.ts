@@ -47,11 +47,11 @@ type PreparedArtifact = {
 };
 
 export async function publishCaptureRecord(input: PublishInput): Promise<FinalizeRecordResponse> {
-  const recordId = input.resume.recordId ?? await createRecord(input);
+  const poseDataset = buildPoseDatasetV1(input.poseDraft);
+  const recordId = input.resume.recordId ?? await createRecord(input, poseDataset);
   input.resume.recordId = recordId;
   input.onProgress({ stage: "preparing", message: "Preparing browser analysis artifacts…" });
 
-  const poseDataset = buildPoseDatasetV1(input.poseDraft);
   const pose = await prepareJsonArtifact(poseDataset);
   const metricsPayload = buildKneeMetricSeries(poseDataset);
   const metrics = await prepareJsonArtifact(metricsPayload.series);
@@ -136,12 +136,17 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
   return finalized;
 }
 
-async function createRecord(input: PublishInput) {
+async function createRecord(
+  input: PublishInput,
+  poseDataset: { duration: number; fps: number },
+) {
   input.onProgress({ stage: "creating", message: "Creating persistent Record…" });
   const response = await apiJson<CreateRecordResponse>("/records", {
     title: input.title.trim() || `Motion Capture ${new Date().toLocaleString()}`,
     description: input.description?.trim() ?? "",
     tags: ["capture"],
+    duration: poseDataset.duration,
+    fps: poseDataset.fps,
   }, "POST");
   return response.recordId;
 }

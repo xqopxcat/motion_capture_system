@@ -45,7 +45,12 @@
 - [x] Frontend authentication suite and TypeScript/Vite build pass.
 - [x] Live Google OAuth start, account consent, callback, `/dashboard`, durable User/Session and logout were validated locally on 2026-07-24.
 - [x] The setup-time Client Secret was rotated; the replacement was revalidated through a second live login and the original secret was disabled and deleted.
-- [ ] Before Task 65 release validation, add and validate the guarded authentication cleanup CLI and deployment scheduler described in the runbook.
+- [x] Guarded authentication cleanup CLI supports dry-run, bounded execution,
+  configurable retention, exact `APP_ENV` confirmation, and active-session
+  preservation. Manual local PostgreSQL validation completed in Task 65.
+- [ ] Configure the deployment platform's native daily cleanup scheduler after
+  the production platform is selected; automatic application-startup cleanup
+  remains forbidden.
 
 ## Scope
 

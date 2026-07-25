@@ -258,6 +258,8 @@ class PostgreSQLRecordRepository:
             tags=list(request.tags),
             status="Uploading",
             uploading_at=datetime.now(UTC),
+            duration=request.duration,
+            fps=request.fps,
         )
         self.session.add(model)
         try:
@@ -392,6 +394,8 @@ class PostgreSQLRecordRepository:
             failure_message=model.failure_message,
             retryable=model.retryable,
             retry_count=model.retry_count,
+            duration=model.duration,
+            fps=model.fps,
         )
 
 

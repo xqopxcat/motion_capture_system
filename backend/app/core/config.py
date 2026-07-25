@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     session_cookie_path: str = "/"
     session_lifetime_seconds: int = 86400
     oauth_attempt_lifetime_seconds: int = 600
+    oauth_attempt_cleanup_retention_hours: int = 24
+    auth_session_cleanup_retention_days: int = 30
     dev_auth_enabled: bool = False
     dev_auth_allowed_origins: list[str] = ["http://localhost:5173"]
     csrf_mode: CsrfMode = "origin"
@@ -71,6 +73,10 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_LIFETIME_SECONDS must be positive.")
         if self.oauth_attempt_lifetime_seconds <= 0:
             raise ValueError("OAUTH_ATTEMPT_LIFETIME_SECONDS must be positive.")
+        if self.oauth_attempt_cleanup_retention_hours <= 0:
+            raise ValueError("OAUTH_ATTEMPT_CLEANUP_RETENTION_HOURS must be positive.")
+        if self.auth_session_cleanup_retention_days <= 0:
+            raise ValueError("AUTH_SESSION_CLEANUP_RETENTION_DAYS must be positive.")
         if self.storage_upload_ttl_seconds <= 0 or self.storage_download_ttl_seconds <= 0:
             raise ValueError("Storage signed URL lifetimes must be positive.")
         if min(self.storage_max_video_bytes, self.storage_max_json_bytes, self.storage_max_thumbnail_bytes) <= 0:

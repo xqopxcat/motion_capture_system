@@ -24,6 +24,30 @@ def test_create_record_returns_uploading_status() -> None:
     assert body["status"] == "Uploading"
 
 
+def test_create_record_persists_capture_duration_and_fps(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
+    client = TestClient(app)
+    _login(client)
+
+    response = client.post(
+        "/api/records",
+        json={
+            "title": "Timed Capture",
+            "description": "",
+            "tags": ["capture"],
+            "duration": 26.447,
+            "fps": 30,
+        },
+    )
+    stored = explicit_unit_repository_bundle.records.get(response.json()["recordId"])
+
+    assert response.status_code == 201
+    assert stored is not None
+    assert stored.duration == 26.447
+    assert stored.fps == 30
+
+
 def test_create_record_requires_authenticated_user() -> None:
     client = TestClient(app)
 

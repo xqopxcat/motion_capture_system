@@ -1,5 +1,5 @@
 import os
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
@@ -7,7 +7,16 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.db.engine import build_engine, check_database_readiness
-from app.models import Annotation, Artifact, MetricSummary, MetricSummaryItem, Record, User
+from app.models import (
+    Annotation,
+    Artifact,
+    AuthSession,
+    MetricSummary,
+    MetricSummaryItem,
+    OAuthLoginAttempt,
+    Record,
+    User,
+)
 from app.repositories.errors import DuplicateResourceError
 from app.repositories.metric_summary_repository import MetricSummaryItemRecord
 from app.repositories.postgresql import (
@@ -23,6 +32,7 @@ from app.repositories.postgresql import (
 from app.repositories.user_repository import StoredUser
 from app.schemas.annotation import CreateAnnotationRequest
 from app.schemas.record import CreateRecordRequest
+from app.services.auth_cleanup_service import cleanup_auth_data
 
 
 pytestmark = pytest.mark.skipif(
@@ -97,6 +107,62 @@ def test_oauth_state_is_hashed_durable_and_single_use(pg_session: Session) -> No
     assert repository.consume(state) is None
 
 
+def test_auth_cleanup_retains_active_rows_and_deletes_only_retained_history(
+    pg_session: Session,
+) -> None:
+    suffix = os.urandom(6).hex()
+    now = datetime.now(UTC)
+    user = PostgreSQLUserRepository(pg_session).create(
+        _user(suffix),
+        provider_subject=f"cleanup-subject-{suffix}",
+    )
+    active_session = PostgreSQLSessionRepository(pg_session).create_for_user(user.user_id)
+    expired_session = AuthSession(
+        id=f"expired-{suffix}",
+        token_hash=f"expired-token-{suffix}",
+        user_id=user.user_id,
+        created_at=now - timedelta(days=90),
+        updated_at=now - timedelta(days=90),
+        expires_at=now - timedelta(days=60),
+    )
+    active_attempt = OAuthLoginAttempt(
+        id=f"active-{suffix}",
+        state_hash=("a" * 52) + suffix,
+        code_verifier="verifier",
+        nonce="nonce",
+        return_path="/",
+        created_at=now,
+        updated_at=now,
+        expires_at=now + timedelta(minutes=10),
+    )
+    expired_attempt = OAuthLoginAttempt(
+        id=f"expired-{suffix}",
+        state_hash=("b" * 52) + suffix,
+        code_verifier="verifier",
+        nonce="nonce",
+        return_path="/",
+        created_at=now - timedelta(days=3),
+        updated_at=now - timedelta(days=3),
+        expires_at=now - timedelta(days=2),
+    )
+    pg_session.add_all([expired_session, active_attempt, expired_attempt])
+    pg_session.flush()
+
+    dry_run = cleanup_auth_data(pg_session, now=now)
+    assert dry_run.oauth_attempts >= 1
+    assert dry_run.auth_sessions >= 1
+    assert pg_session.get(AuthSession, expired_session.id) is not None
+
+    executed = cleanup_auth_data(pg_session, now=now, execute=True)
+    pg_session.flush()
+    assert executed.oauth_attempts >= 1
+    assert executed.auth_sessions >= 1
+    assert PostgreSQLSessionRepository(pg_session).get_active(active_session.session_id, now=now) is not None
+    assert pg_session.get(AuthSession, expired_session.id) is None
+    assert pg_session.get(OAuthLoginAttempt, active_attempt.id) is not None
+    assert pg_session.get(OAuthLoginAttempt, expired_attempt.id) is None
+
+
 def test_owner_scoped_queries_and_dashboard_never_include_other_user(pg_session: Session) -> None:
     suffix = os.urandom(6).hex()
     users = PostgreSQLUserRepository(pg_session)
@@ -132,7 +198,15 @@ def test_metric_summary_duplicate_rolls_back_entire_operation(pg_session: Sessio
     pg_session.rollback()
 
     assert pg_session.scalar(select(func.count()).select_from(MetricSummary).where(MetricSummary.record_id == record_id)) == 0
-    assert pg_session.scalar(select(func.count()).select_from(MetricSummaryItem)) == 0
+    assert (
+        pg_session.scalar(
+            select(func.count())
+            .select_from(MetricSummaryItem)
+            .join(MetricSummary)
+            .where(MetricSummary.record_id == record_id),
+        )
+        == 0
+    )
 
 
 def test_record_database_delete_cascades_all_child_metadata(pg_session: Session) -> None:

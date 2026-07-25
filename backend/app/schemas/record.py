@@ -10,6 +10,8 @@ class CreateRecordRequest(BaseModel):
     title: str = Field(min_length=1)
     description: str = ""
     tags: list[str] = Field(default_factory=list)
+    duration: float | None = Field(default=None, gt=0)
+    fps: float | None = Field(default=None, gt=0)
 
 
 class CreateRecordResponse(BaseModel):

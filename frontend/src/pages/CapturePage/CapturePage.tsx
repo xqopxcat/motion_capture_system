@@ -72,7 +72,7 @@ export function CapturePage() {
         resume: publishResumeRef.current,
         onProgress: setPublishProgress,
       });
-      navigate(`/records/${encodeURIComponent(result.recordId)}`);
+      navigate(`/records/${encodeURIComponent(result.recordId)}`, { replace: true });
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : "Record publishing failed.");
     } finally {

@@ -134,7 +134,7 @@ class RecordService:
                 recordId=record.record_id, title=record.title, description=record.description,
                 thumbnailUrl=self.storage.create_download_url(storage_path=thumbnail.storage_path).url
                 if thumbnail else None,
-                duration=None, status=record.status, tags=list(record.tags),
+                duration=record.duration, status=record.status, tags=list(record.tags),
                 createdAt=record.created_at.isoformat(), updatedAt=record.updated_at.isoformat(),
                 failureCode=record.failure_code, failureMessage=record.failure_message,
                 retryable=record.retryable,
@@ -163,7 +163,11 @@ class RecordService:
         summary = self.metric_summaries.get_summary(record_id)
         return RecordDetailResponse(
             **fields,
-            video=RecordDetailVideo(url=self.storage.create_download_url(storage_path=video.storage_path).url)
+            video=RecordDetailVideo(
+                url=self.storage.create_download_url(storage_path=video.storage_path).url,
+                duration=record.duration,
+                fps=record.fps,
+            )
             if video else None,
             pose=RecordDetailPose(
                 url=self.storage.create_download_url(storage_path=pose.storage_path).url,
