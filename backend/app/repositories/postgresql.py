@@ -279,8 +279,69 @@ class PostgreSQLRecordRepository:
         if model is None:
             raise KeyError(f"Record does not exist: {record_id}")
         model.status = status
+        now = datetime.now(UTC)
+        if status == "Processing":
+            model.processing_started_at = now
+        elif status == "Ready":
+            model.ready_at = now
         self.session.flush()
         return CreateRecordResponse(recordId=model.id, status=status)
+
+    def transition(self, *, record_id: str, expected_statuses: tuple[RecordStatus, ...],
+                   status: RecordStatus) -> StoredRecord:
+        model = self.session.scalar(
+            select(Record).where(Record.id == record_id).with_for_update()
+        )
+        if model is None:
+            raise KeyError(f"Record does not exist: {record_id}")
+        if model.status not in expected_statuses:
+            raise ValueError(f"Invalid transition: {model.status} -> {status}")
+        now = datetime.now(UTC)
+        model.status = status
+        if status == "Processing":
+            model.processing_started_at = now
+        elif status == "Ready":
+            model.ready_at = now
+        self.session.flush()
+        return self._stored(model)  # type: ignore[return-value]
+
+    def mark_failed(self, *, record_id: str, stage: str, code: str, message: str,
+                    retryable: bool) -> StoredRecord:
+        model = self.session.scalar(
+            select(Record).where(Record.id == record_id).with_for_update()
+        )
+        if model is None:
+            raise KeyError(f"Record does not exist: {record_id}")
+        now = datetime.now(UTC)
+        model.status = "Failed"
+        model.failed_at = now
+        model.failure_stage = stage
+        model.failure_code = code
+        model.failure_message = message
+        model.retryable = retryable
+        self.session.flush()
+        return self._stored(model)  # type: ignore[return-value]
+
+    def retry_failed(self, *, record_id: str) -> StoredRecord:
+        model = self.session.scalar(
+            select(Record).where(Record.id == record_id).with_for_update()
+        )
+        if model is None:
+            raise KeyError(f"Record does not exist: {record_id}")
+        if model.status != "Failed" or not model.retryable:
+            raise ValueError("Record failure is not retryable.")
+        model.status = "Uploading"
+        model.uploading_at = datetime.now(UTC)
+        model.processing_started_at = None
+        model.ready_at = None
+        model.failed_at = None
+        model.failure_stage = None
+        model.failure_code = None
+        model.failure_message = None
+        model.retryable = None
+        model.retry_count += 1
+        self.session.flush()
+        return self._stored(model)  # type: ignore[return-value]
 
     def get(self, record_id: str) -> StoredRecord | None:
         return self._stored(self.session.get(Record, record_id))
@@ -321,6 +382,16 @@ class PostgreSQLRecordRepository:
             tags=tuple(model.tags),
             status=model.status,  # type: ignore[arg-type]
             created_at=model.created_at,
+            updated_at=model.updated_at,
+            uploading_at=model.uploading_at,
+            processing_started_at=model.processing_started_at,
+            ready_at=model.ready_at,
+            failed_at=model.failed_at,
+            failure_stage=model.failure_stage,
+            failure_code=model.failure_code,
+            failure_message=model.failure_message,
+            retryable=model.retryable,
+            retry_count=model.retry_count,
         )
 
 

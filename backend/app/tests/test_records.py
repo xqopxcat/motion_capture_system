@@ -283,6 +283,97 @@ def test_get_record_detail_returns_404_for_another_users_record() -> None:
     response = other_client.get(f"/api/records/{record_id}")
 
     assert response.status_code == 404
+
+
+def test_finalize_ready_record_is_idempotent() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    _complete_all_artifacts(client, record_id)
+
+    first = client.post(f"/api/records/{record_id}/complete")
+    second = client.post(f"/api/records/{record_id}/complete")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json() == {"recordId": record_id, "status": "Ready"}
+
+
+def test_retryable_failed_record_returns_to_uploading(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    explicit_unit_repository_bundle.records.mark_failed(
+        record_id=record_id,
+        stage="finalization",
+        code="PROCESSING_TIMEOUT",
+        message="Timed out.",
+        retryable=True,
+    )
+
+    response = client.post(f"/api/records/{record_id}/retry")
+    detail = client.get(f"/api/records/{record_id}").json()
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "recordId": record_id,
+        "status": "Uploading",
+        "retryCount": 1,
+    }
+    assert detail["failureCode"] is None
+    assert detail["retryCount"] == 1
+
+
+def test_nonretryable_failed_record_rejects_retry(
+    explicit_unit_repository_bundle: RepositoryBundle,
+) -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+    explicit_unit_repository_bundle.records.mark_failed(
+        record_id=record_id,
+        stage="finalization",
+        code="INVALID_SCHEMA",
+        message="Invalid schema.",
+        retryable=False,
+    )
+
+    response = client.post(f"/api/records/{record_id}/retry")
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "RECORD_NOT_RETRYABLE"
+
+
+def test_delete_owned_record_is_idempotent_at_storage_boundary() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+
+    response = client.delete(f"/api/records/{record_id}")
+    missing = client.get(f"/api/records/{record_id}")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "recordId": record_id,
+        "status": "Deleted",
+        "deletedArtifacts": 0,
+    }
+    assert missing.status_code == 404
+
+
+def test_delete_record_does_not_disclose_another_users_record() -> None:
+    owner = TestClient(app)
+    _login(owner, provider="google")
+    record_id = _create_record(owner)
+    other = TestClient(app)
+    _login(other, provider="dev")
+
+    response = other.delete(f"/api/records/{record_id}")
+
+    assert response.status_code == 404
+    assert owner.get(f"/api/records/{record_id}").status_code == 200
     assert response.json()["detail"]["code"] == "RECORD_NOT_FOUND"
 
 

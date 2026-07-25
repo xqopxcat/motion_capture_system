@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     storage_max_video_bytes: int = 1_073_741_824
     storage_max_json_bytes: int = 104_857_600
     storage_max_thumbnail_bytes: int = 10_485_760
+    record_processing_timeout_seconds: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -74,6 +75,8 @@ class Settings(BaseSettings):
             raise ValueError("Storage signed URL lifetimes must be positive.")
         if min(self.storage_max_video_bytes, self.storage_max_json_bytes, self.storage_max_thumbnail_bytes) <= 0:
             raise ValueError("Storage size limits must be positive.")
+        if self.record_processing_timeout_seconds <= 0:
+            raise ValueError("RECORD_PROCESSING_TIMEOUT_SECONDS must be positive.")
         if not self.session_cookie_name or not self.session_cookie_path:
             raise ValueError("Session cookie name and path must be non-empty.")
         if "*" in self.cors_origins or "*" in self.auth_allowed_origins or "*" in self.csrf_allowed_origins:

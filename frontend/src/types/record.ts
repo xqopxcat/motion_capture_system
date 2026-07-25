@@ -17,7 +17,25 @@ export type FinalizeRecordRequest = {
 
 export type FinalizeRecordResponse = {
   recordId: string;
-  status: "Ready";
+  status: "Processing" | "Ready" | "Failed";
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  retryable?: boolean | null;
+};
+
+export type RetryRecordResponse = {
+  recordId: string;
+  status: "Uploading";
+  retryCount: number;
+};
+
+export type DeleteRecordResponse = {
+  recordId: string;
+  status: "Deleted" | "CleanupFailed";
+  deletedArtifacts: number;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  retryable?: boolean | null;
 };
 
 export type RecordDetailVideo = {
@@ -58,6 +76,16 @@ export type RecordDetail = {
   metrics: RecordDetailMetrics | null;
   tags: string[];
   createdAt: string;
+  updatedAt?: string | null;
+  uploadingAt?: string | null;
+  processingStartedAt?: string | null;
+  readyAt?: string | null;
+  failedAt?: string | null;
+  failureStage?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  retryable?: boolean | null;
+  retryCount?: number;
 };
 
 export type RecordListItem = {
@@ -69,6 +97,10 @@ export type RecordListItem = {
   status: RecordStatus;
   tags: string[];
   createdAt: string;
+  updatedAt?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  retryable?: boolean | null;
 };
 
 export type ListRecordsResponse = {

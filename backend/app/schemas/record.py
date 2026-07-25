@@ -19,7 +19,25 @@ class CreateRecordResponse(BaseModel):
 
 class FinalizeRecordResponse(BaseModel):
     recordId: str
-    status: Literal["Ready"]
+    status: Literal["Processing", "Ready", "Failed"]
+    failureCode: str | None = None
+    failureMessage: str | None = None
+    retryable: bool | None = None
+
+
+class RetryRecordResponse(BaseModel):
+    recordId: str
+    status: Literal["Uploading"]
+    retryCount: int
+
+
+class DeleteRecordResponse(BaseModel):
+    recordId: str
+    status: Literal["Deleted", "CleanupFailed"]
+    deletedArtifacts: int
+    failureCode: str | None = None
+    failureMessage: str | None = None
+    retryable: bool | None = None
 
 
 class RecordDetailVideo(BaseModel):
@@ -60,6 +78,16 @@ class RecordDetailResponse(BaseModel):
     metrics: RecordDetailMetrics | None = None
     tags: list[str] = Field(default_factory=list)
     createdAt: str
+    updatedAt: str | None = None
+    uploadingAt: str | None = None
+    processingStartedAt: str | None = None
+    readyAt: str | None = None
+    failedAt: str | None = None
+    failureStage: str | None = None
+    failureCode: str | None = None
+    failureMessage: str | None = None
+    retryable: bool | None = None
+    retryCount: int = 0
 
 
 class RecordListItem(BaseModel):
@@ -71,6 +99,10 @@ class RecordListItem(BaseModel):
     status: RecordStatus
     tags: list[str] = Field(default_factory=list)
     createdAt: str
+    updatedAt: str | None = None
+    failureCode: str | None = None
+    failureMessage: str | None = None
+    retryable: bool | None = None
 
 
 class ListRecordsResponse(BaseModel):

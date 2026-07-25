@@ -54,6 +54,8 @@ export type {
   CreateRecordResponse,
   FinalizeRecordRequest,
   FinalizeRecordResponse,
+  RetryRecordResponse,
+  DeleteRecordResponse,
   ListRecordsResponse,
   RecordDetail,
   RecordDetailMetrics,

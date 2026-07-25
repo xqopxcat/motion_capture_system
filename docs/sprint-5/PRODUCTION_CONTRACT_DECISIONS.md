@@ -32,11 +32,11 @@
 
 ## 3. Ambiguities Locked for Later-task Resolution
 
-- **Processing duration:** browser creates Pose and metrics. Task 63 must choose synchronous validation (`Uploading → Processing → Ready` within finalize) or observable short-lived Processing with bounded polling. It must not introduce a worker/queue.
-- **Failure retry:** decide whether retry returns a Failed Record to `Uploading` or creates a new Record. No transition may be invented in the frontend.
+- **Processing duration (resolved by Task 63):** synchronous backend validation/finalization; no worker or queue. A stale `Processing` row is an interrupted request and uses timeout recovery.
+- **Failure retry (resolved by Task 63):** explicit retry returns a retryable Failed Record to `Uploading`, clears failure metadata, and increments `retryCount`.
 - **Session storage:** PostgreSQL-backed opaque sessions are the default recommendation. Task 61 may propose another durable server-side store only with approval; stateless bearer auth is not an assumed redesign.
 - **CSRF:** choose protection after OAuth/session cookie topology is fixed. SameSite alone must be justified; a decorative unused token is not acceptable.
-- **Object deletion implementation:** Record deletion is approved and required. Task 62/63 must define ordering, idempotency, observability, and compensation between GCS cleanup and PostgreSQL deletion without pretending cross-system atomicity.
+- **Object deletion implementation (resolved by Task 63):** generation-bound GCS cleanup precedes PostgreSQL deletion. Partial failure retains an observable retryable Failed Record; missing objects make repeated DELETE safe.
 - **Checksum:** select one supported browser/provider algorithm and define encoding, signed-header behavior, and mismatch response.
 - **Canonical object path:** preserve type semantics but include an ownership-safe namespace if necessary; clients must use returned `storagePath` and never invent it.
 - **Metric version naming:** current field is `metricDefinitionVersion`; Task 59 must confirm it represents calculation definition/version and avoid adding a duplicate concept unless required.

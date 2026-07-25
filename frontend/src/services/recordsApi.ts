@@ -6,6 +6,8 @@ import type {
   FinalizeRecordResponse,
   ListRecordsResponse,
   RecordDetail,
+  RetryRecordResponse,
+  DeleteRecordResponse,
 } from "../types";
 
 export const recordsApi = baseApi.injectEndpoints({
@@ -23,6 +25,18 @@ export const recordsApi = baseApi.injectEndpoints({
         url: `/records/${recordId}/complete`,
       }),
     }),
+    retryRecord: builder.mutation<RetryRecordResponse, string>({
+      query: (recordId) => ({
+        method: "POST",
+        url: `/records/${recordId}/retry`,
+      }),
+    }),
+    deleteRecord: builder.mutation<DeleteRecordResponse, string>({
+      query: (recordId) => ({
+        method: "DELETE",
+        url: `/records/${recordId}`,
+      }),
+    }),
     getRecordDetail: builder.query<RecordDetail, string>({
       query: (recordId) => `/records/${recordId}`,
     }),
@@ -35,6 +49,8 @@ export const recordsApi = baseApi.injectEndpoints({
 export const {
   useCreateRecordMutation,
   useFinalizeRecordMutation,
+  useRetryRecordMutation,
+  useDeleteRecordMutation,
   useGetRecordDetailQuery,
   useGetRecordsQuery,
 } = recordsApi;
