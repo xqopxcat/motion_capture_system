@@ -25,6 +25,8 @@ from app.services.dashboard_service import DashboardService
 from app.services.record_service import RecordService
 from app.services.upload_service import UploadService
 from app.services.oauth_service import OAuthService
+from app.storage.contracts import StorageAdapterContract
+from app.storage.runtime import get_storage_adapter
 
 
 def get_db_session() -> Iterator[Session]:
@@ -85,6 +87,7 @@ def get_record_service(bundle: RepositoryBundle = Depends(get_repository_bundle)
         cast(RecordRepositoryContract, bundle.records),
         cast(ArtifactRepositoryContract, bundle.artifacts),
         cast(MetricSummaryRepositoryContract, bundle.metric_summaries),
+        storage_adapter=get_storage_adapter(),
     )
 
 
@@ -93,6 +96,7 @@ def get_upload_service(bundle: RepositoryBundle = Depends(get_repository_bundle)
         artifact_repository=cast(ArtifactRepositoryContract, bundle.artifacts),
         metric_summary_repository=cast(MetricSummaryRepositoryContract, bundle.metric_summaries),
         record_repository=cast(RecordRepositoryContract, bundle.records),
+        storage_adapter=get_storage_adapter(),
     )
 
 

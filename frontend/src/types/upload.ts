@@ -4,24 +4,32 @@ export type SignedUploadUrlResponse = {
   expiresAt: string;
 };
 
-export type VideoUploadUrlRequest = {
+export type UploadIntegrity = {
+  // Required by the production API path; optional until Task 64 updates callers.
+  checksumAlgorithm?: "sha256";
+  checksum?: string;
+};
+
+export type VideoUploadUrlRequest = UploadIntegrity & {
   recordId: string;
   fileName: string;
   contentType: string;
   fileSize: number;
 };
 
-export type PoseUploadUrlRequest = {
+export type PoseUploadUrlRequest = UploadIntegrity & {
   recordId: string;
   contentType: string;
+  fileSize: number;
 };
 
-export type MetricsUploadUrlRequest = {
+export type MetricsUploadUrlRequest = UploadIntegrity & {
   recordId: string;
   contentType: string;
+  fileSize: number;
 };
 
-export type ThumbnailUploadUrlRequest = {
+export type ThumbnailUploadUrlRequest = UploadIntegrity & {
   recordId: string;
   contentType: string;
   fileSize: number;
@@ -56,25 +64,30 @@ export type MetricsUploadCompleteResponse = ArtifactCompleteResponse & {
   summaryPersisted: boolean;
 };
 
-export type VideoUploadCompleteRequest = {
+export type UploadCompleteIntegrity = UploadIntegrity & {
+  fileSize?: number;
+  objectGeneration?: string;
+};
+
+export type VideoUploadCompleteRequest = UploadCompleteIntegrity & {
   recordId: string;
   storagePath: string;
 };
 
-export type PoseUploadCompleteRequest = {
+export type PoseUploadCompleteRequest = UploadCompleteIntegrity & {
   recordId: string;
   storagePath: string;
   version: string;
 };
 
-export type MetricsUploadCompleteRequest = {
+export type MetricsUploadCompleteRequest = UploadCompleteIntegrity & {
   recordId: string;
   storagePath: string;
   version: string;
   summary: MetricSummary[];
 };
 
-export type ThumbnailUploadCompleteRequest = {
+export type ThumbnailUploadCompleteRequest = UploadCompleteIntegrity & {
   recordId: string;
   storagePath: string;
   generatedFromFrameIndex: number;

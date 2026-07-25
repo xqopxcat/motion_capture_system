@@ -17,7 +17,8 @@ from app.schemas.record import (
     RecordDetailResponse,
     RecordDetailVideo,
 )
-from app.storage.signed_url_service import SignedUrlService
+from app.storage.contracts import StorageAdapterContract
+from app.storage.fake_adapter import FakeStorageAdapter
 
 
 REQUIRED_ARTIFACTS: tuple[ArtifactType, ...] = ("video", "pose", "metrics", "thumbnail")
@@ -29,12 +30,12 @@ class RecordService:
         repository: RecordRepositoryContract,
         artifacts: ArtifactRepositoryContract,
         metric_summaries: MetricSummaryRepositoryContract,
-        signed_url_service: SignedUrlService | None = None,
+        storage_adapter: StorageAdapterContract | None = None,
     ) -> None:
         self.repository = repository
         self.artifacts = artifacts
         self.metric_summaries = metric_summaries
-        self.signed_url_service = signed_url_service or SignedUrlService()
+        self.storage = storage_adapter or FakeStorageAdapter()
 
     def create_record(self, request: CreateRecordRequest, user: CurrentUser) -> CreateRecordResponse:
         return self.repository.create(request, owner_user_id=user.userId)
@@ -53,7 +54,7 @@ class RecordService:
                     recordId=record.record_id,
                     title=record.title,
                     description=record.description,
-                    thumbnailUrl=self.signed_url_service.create_download_url(thumbnail.storage_path)
+                    thumbnailUrl=self.storage.create_download_url(storage_path=thumbnail.storage_path).url
                     if thumbnail is not None
                     else None,
                     duration=None,
@@ -110,18 +111,18 @@ class RecordService:
             description=record.description,
             status=record.status,
             video=RecordDetailVideo(
-                url=self.signed_url_service.create_download_url(video.storage_path),
+                url=self.storage.create_download_url(storage_path=video.storage_path).url,
             )
             if video is not None
             else None,
             pose=RecordDetailPose(
-                url=self.signed_url_service.create_download_url(pose.storage_path),
+                url=self.storage.create_download_url(storage_path=pose.storage_path).url,
                 version=pose.version or "1.0",
             )
             if pose is not None
             else None,
             metrics=RecordDetailMetrics(
-                seriesUrl=self.signed_url_service.create_download_url(metrics.storage_path)
+                seriesUrl=self.storage.create_download_url(storage_path=metrics.storage_path).url
                 if metrics is not None
                 else None,
                 summary=[

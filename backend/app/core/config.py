@@ -10,6 +10,7 @@ RepositoryAdapter = Literal["postgresql", "in_memory"]
 AuthAdapter = Literal["google", "dev", "test"]
 CookieSameSite = Literal["lax", "strict", "none"]
 CsrfMode = Literal["origin", "disabled"]
+StorageAdapter = Literal["gcs", "fake"]
 
 
 class Settings(BaseSettings):
@@ -43,6 +44,14 @@ class Settings(BaseSettings):
     dev_auth_allowed_origins: list[str] = ["http://localhost:5173"]
     csrf_mode: CsrfMode = "origin"
     csrf_allowed_origins: list[str] = ["http://localhost:5173"]
+    storage_adapter: StorageAdapter = "gcs"
+    gcs_project_id: str | None = None
+    gcs_bucket_name: str | None = None
+    storage_upload_ttl_seconds: int = 600
+    storage_download_ttl_seconds: int = 600
+    storage_max_video_bytes: int = 1_073_741_824
+    storage_max_json_bytes: int = 104_857_600
+    storage_max_thumbnail_bytes: int = 10_485_760
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -60,6 +69,10 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_LIFETIME_SECONDS must be positive.")
         if self.oauth_attempt_lifetime_seconds <= 0:
             raise ValueError("OAUTH_ATTEMPT_LIFETIME_SECONDS must be positive.")
+        if self.storage_upload_ttl_seconds <= 0 or self.storage_download_ttl_seconds <= 0:
+            raise ValueError("Storage signed URL lifetimes must be positive.")
+        if min(self.storage_max_video_bytes, self.storage_max_json_bytes, self.storage_max_thumbnail_bytes) <= 0:
+            raise ValueError("Storage size limits must be positive.")
         if not self.session_cookie_name or not self.session_cookie_path:
             raise ValueError("Session cookie name and path must be non-empty.")
         if "*" in self.cors_origins or "*" in self.auth_allowed_origins or "*" in self.csrf_allowed_origins:
@@ -123,6 +136,13 @@ class Settings(BaseSettings):
 
         if self.auth_adapter == "test" and self.app_env != "test":
             raise ValueError("The test authentication adapter is allowed only when APP_ENV=test.")
+
+        if self.storage_adapter == "fake" and self.app_env != "test":
+            raise ValueError("Fake storage is allowed only when APP_ENV=test.")
+        if self.storage_adapter == "gcs" and (not self.gcs_project_id or not self.gcs_bucket_name):
+            raise ValueError("GCS_PROJECT_ID and GCS_BUCKET_NAME are required for GCS storage.")
+        if self.app_env in {"production", "production_like"} and self.storage_adapter != "gcs":
+            raise ValueError("STORAGE_ADAPTER must be 'gcs' in production and production_like.")
 
         return self
 

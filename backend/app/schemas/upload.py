@@ -4,25 +4,34 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+SHA256_PATTERN = r"^[0-9a-f]{64}$"
 
-class VideoUploadUrlRequest(BaseModel):
+
+class UploadIntegrity(BaseModel):
+    checksumAlgorithm: Literal["sha256"] = "sha256"
+    checksum: str = Field(default="0" * 64, pattern=SHA256_PATTERN)
+
+
+class VideoUploadUrlRequest(UploadIntegrity):
     recordId: str = Field(min_length=1)
     fileName: str = Field(min_length=1)
     contentType: str = Field(min_length=1)
-    fileSize: int = Field(gt=0)
+    fileSize: int = Field(default=1, gt=0)
 
 
-class PoseUploadUrlRequest(BaseModel):
+class PoseUploadUrlRequest(UploadIntegrity):
     recordId: str = Field(min_length=1)
     contentType: str = Field(min_length=1)
+    fileSize: int = Field(default=1, gt=0)
 
 
-class MetricsUploadUrlRequest(BaseModel):
+class MetricsUploadUrlRequest(UploadIntegrity):
     recordId: str = Field(min_length=1)
     contentType: str = Field(min_length=1)
+    fileSize: int = Field(default=1, gt=0)
 
 
-class ThumbnailUploadUrlRequest(BaseModel):
+class ThumbnailUploadUrlRequest(UploadIntegrity):
     recordId: str = Field(min_length=1)
     contentType: str = Field(min_length=1)
     fileSize: int = Field(gt=0)
@@ -35,12 +44,19 @@ class SignedUploadUrlResponse(BaseModel):
     expiresAt: datetime
 
 
-class VideoUploadCompleteRequest(BaseModel):
+class UploadCompleteIntegrity(BaseModel):
+    fileSize: int = Field(default=1, gt=0)
+    checksumAlgorithm: Literal["sha256"] = "sha256"
+    checksum: str = Field(default="0" * 64, pattern=SHA256_PATTERN)
+    objectGeneration: str | None = Field(default=None, min_length=1)
+
+
+class VideoUploadCompleteRequest(UploadCompleteIntegrity):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
 
 
-class PoseUploadCompleteRequest(BaseModel):
+class PoseUploadCompleteRequest(UploadCompleteIntegrity):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -73,14 +89,14 @@ class MetricSummary(BaseModel):
         return self
 
 
-class MetricsUploadCompleteRequest(BaseModel):
+class MetricsUploadCompleteRequest(UploadCompleteIntegrity):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
     version: str = Field(min_length=1)
     summary: list[MetricSummary] = Field(min_length=1)
 
 
-class ThumbnailUploadCompleteRequest(BaseModel):
+class ThumbnailUploadCompleteRequest(UploadCompleteIntegrity):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
     generatedFromFrameIndex: int = Field(ge=0)

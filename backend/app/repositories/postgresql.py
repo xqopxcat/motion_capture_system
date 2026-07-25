@@ -328,7 +328,45 @@ class PostgreSQLArtifactRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def mark_complete(self, *, record_id: str, artifact_type: ArtifactType, storage_path: str, version: str | None = None, generated_from_frame_index: int | None = None) -> ArtifactCompletionRecord:
+    def prepare_upload(self, *, record_id: str, artifact_type: ArtifactType, storage_path: str,
+                       content_type: str, expected_file_size: int, checksum_algorithm: str,
+                       expected_checksum: str) -> ArtifactCompletionRecord:
+        model = self.session.scalar(select(Artifact).where(
+            Artifact.record_id == record_id, Artifact.artifact_type == artifact_type
+        ))
+        if model is not None and model.upload_state == "Complete":
+            raise DuplicateResourceError("Artifact is already complete.")
+        if model is None:
+            model = Artifact(id=f"artifact_{uuid4().hex}", record_id=record_id,
+                             artifact_type=artifact_type, storage_path=storage_path,
+                             content_type=content_type, expected_file_size=expected_file_size,
+                             checksum_algorithm=checksum_algorithm, expected_checksum=expected_checksum,
+                             integrity_state="Pending", upload_state="Pending")
+            self.session.add(model)
+        else:
+            model.storage_path = storage_path
+            model.content_type = content_type
+            model.expected_file_size = expected_file_size
+            model.checksum_algorithm = checksum_algorithm
+            model.expected_checksum = expected_checksum
+            model.validated_file_size = None
+            model.validated_checksum = None
+            model.object_generation = None
+            model.integrity_state = "Pending"
+            model.upload_state = "Pending"
+            model.completed_at = None
+        self.session.flush()
+        return self._stored(model)
+
+    def get(self, *, record_id: str, artifact_type: ArtifactType) -> ArtifactCompletionRecord | None:
+        return self._stored_optional(self.session.scalar(select(Artifact).where(
+            Artifact.record_id == record_id, Artifact.artifact_type == artifact_type
+        )))
+
+    def mark_complete(self, *, record_id: str, artifact_type: ArtifactType, storage_path: str,
+                      version: str | None = None, generated_from_frame_index: int | None = None,
+                      validated_file_size: int | None = None, validated_checksum: str | None = None,
+                      object_generation: str | None = None) -> ArtifactCompletionRecord:
         model = self.session.scalar(select(Artifact).where(Artifact.record_id == record_id, Artifact.artifact_type == artifact_type))
         now = datetime.now(UTC)
         if model is None:
@@ -342,6 +380,10 @@ class PostgreSQLArtifactRepository:
             model.storage_path = storage_path
             model.schema_version = version or model.schema_version
             model.upload_state = "Complete"
+            model.integrity_state = "Verified"
+            model.validated_file_size = validated_file_size
+            model.validated_checksum = validated_checksum
+            model.object_generation = object_generation
             model.completed_at = now
         try:
             self.session.flush()
@@ -389,7 +431,16 @@ class PostgreSQLArtifactRepository:
 
     @staticmethod
     def _stored(model: Artifact, generated_from_frame_index: int | None = None) -> ArtifactCompletionRecord:
-        return ArtifactCompletionRecord(record_id=model.record_id, artifact_type=model.artifact_type, storage_path=model.storage_path, status="Complete", completed_at=model.completed_at or model.updated_at, version=model.schema_version, generated_from_frame_index=generated_from_frame_index)  # type: ignore[arg-type]
+        return ArtifactCompletionRecord(
+            record_id=model.record_id, artifact_type=model.artifact_type,
+            storage_path=model.storage_path, status="Complete",
+            completed_at=model.completed_at or model.updated_at, version=model.schema_version,
+            generated_from_frame_index=generated_from_frame_index, content_type=model.content_type,
+            expected_file_size=model.expected_file_size, validated_file_size=model.validated_file_size,
+            checksum_algorithm=model.checksum_algorithm, expected_checksum=model.expected_checksum,
+            validated_checksum=model.validated_checksum, integrity_state=model.integrity_state,
+            upload_state=model.upload_state, object_generation=model.object_generation,
+        )  # type: ignore[arg-type]
 
     def _stored_optional(self, model: Artifact | None) -> ArtifactCompletionRecord | None:
         return None if model is None else self._stored(model)

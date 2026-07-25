@@ -76,6 +76,9 @@ def test_database_bound_environments_select_postgresql(environment: str) -> None
         migration_policy="require_head" if environment != "local" else "warn",
         repository_adapter="postgresql",
         auth_adapter="google",
+        storage_adapter="gcs",
+        gcs_project_id="test-project",
+        gcs_bucket_name="test-private-bucket",
         **production_auth,
     )
     assert settings.repository_adapter == "postgresql"

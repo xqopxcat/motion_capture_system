@@ -6,6 +6,7 @@ os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("REPOSITORY_ADAPTER", "in_memory")
 os.environ.setdefault("AUTH_ADAPTER", "test")
 os.environ.setdefault("CSRF_MODE", "disabled")
+os.environ.setdefault("STORAGE_ADAPTER", "fake")
 
 from app.api.deps import get_repository_bundle
 from app.main import app
