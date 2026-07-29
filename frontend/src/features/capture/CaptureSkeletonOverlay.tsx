@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PoseDetectionResult } from "../../engines/pose";
+import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import styles from "./CaptureSkeletonOverlay.module.css";
 
@@ -9,13 +10,21 @@ export type CaptureSkeletonOverlayProps = {
 };
 
 export function CaptureSkeletonOverlay({ poseResult, videoElement }: CaptureSkeletonOverlayProps) {
+  captureRuntimeInstrumentation.recordReactRender("CaptureSkeletonOverlay");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    const startedAtMs = performance.now();
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
 
     if (!canvas || !context) {
+      captureRuntimeInstrumentation.recordCanvasRender({
+        endedAtMs: performance.now(),
+        poseResult,
+        rendered: false,
+        startedAtMs,
+      });
       return;
     }
 
@@ -30,6 +39,12 @@ export function CaptureSkeletonOverlay({ poseResult, videoElement }: CaptureSkel
           }
         : undefined,
     );
+    captureRuntimeInstrumentation.recordCanvasRender({
+      endedAtMs: performance.now(),
+      poseResult,
+      rendered: true,
+      startedAtMs,
+    });
   }, [poseResult, videoElement]);
 
   return (

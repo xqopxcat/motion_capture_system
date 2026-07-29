@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPoseEngine } from "../../engines/pose";
 import type { PoseDetectionResult, PoseEngine, PoseEngineStatus } from "../../engines/pose";
+import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 
 export type CapturePosePipelineState = {
   status: PoseEngineStatus;
@@ -142,9 +143,22 @@ export function usePosePipeline() {
         }
 
         const now = performance.now();
+        const frameIsReady = isVideoFrameReady(videoElement);
+        const sourceMediaTimestampMs = Number.isFinite(videoElement.currentTime)
+          ? videoElement.currentTime * 1000
+          : 0;
+
+        if (frameIsReady) {
+          captureRuntimeInstrumentation.recordCameraObservation({
+            observedAtMs: now,
+            sourceMediaTimestampMs,
+            videoReadyState: videoElement.readyState,
+          });
+        }
+
         const shouldDetect =
           !isDetectingFrameRef.current &&
-          isVideoFrameReady(videoElement) &&
+          frameIsReady &&
           now - lastDetectStartedAtRef.current >= minimumDetectIntervalMs;
 
         if (shouldDetect) {
@@ -154,6 +168,11 @@ export function usePosePipeline() {
           const sourceTimestampMs = getDetectionTimestampMs(videoElement);
           const timestampMs = Math.max(sourceTimestampMs, lastDetectionTimestampMsRef.current + 1);
           lastDetectionTimestampMsRef.current = timestampMs;
+          const inferenceToken = captureRuntimeInstrumentation.beginInference({
+            sourceFrameObservedAtMs: now,
+            sourceMediaTimestampMs,
+            startedAtMs: now,
+          });
 
           void poseEngine
             .detect({
@@ -162,6 +181,12 @@ export function usePosePipeline() {
               frameIndex: frameIndexRef.current,
             })
             .then((result) => {
+              captureRuntimeInstrumentation.completeInference(
+                inferenceToken,
+                result,
+                performance.now(),
+              );
+
               if (!isMountedRef.current || !isDetectionLoopRunningRef.current) {
                 return;
               }
@@ -169,6 +194,8 @@ export function usePosePipeline() {
               setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);
             })
             .catch((error) => {
+              captureRuntimeInstrumentation.failInference(inferenceToken, performance.now());
+
               if (!isMountedRef.current) {
                 return;
               }
@@ -191,6 +218,8 @@ export function usePosePipeline() {
             .finally(() => {
               isDetectingFrameRef.current = false;
             });
+        } else if (frameIsReady) {
+          captureRuntimeInstrumentation.recordInferenceSkipped();
         }
 
         animationFrameRef.current = requestAnimationFrame(detectNextFrame);

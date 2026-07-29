@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
 import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
+import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import styles from "./RecordedPosePreview.module.css";
 
@@ -53,6 +54,11 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
     const poseFrame = poseDatasetDraft
       ? findNearestPoseDatasetFrame(poseDatasetDraft.frames, currentTimeMs)
       : null;
+    captureRuntimeInstrumentation.recordPreviewSelection({
+      poseFrameIndex: poseFrame?.frameIndex ?? null,
+      poseTimestampMs: poseFrame?.timestampMs ?? null,
+      videoTimestampMs: currentTimeMs,
+    });
 
     if (!poseFrame) {
       clearCaptureSkeleton(canvas, context);

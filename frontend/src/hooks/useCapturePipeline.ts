@@ -5,6 +5,7 @@ import {
   usePosePipeline,
 } from "../features/capture";
 import type { CapturePoseDatasetDraft } from "../features/capture";
+import { captureRuntimeInstrumentation } from "../features/capture/instrumentation/captureRuntimeInstrumentation";
 import type { CaptureRuntimeState } from "../types";
 import { useCameraStream } from "./useCameraStream";
 import { useMediaRecorder } from "./useMediaRecorder";
@@ -61,6 +62,7 @@ function getPrimaryStatusText(
 }
 
 export function useCapturePipeline() {
+  captureRuntimeInstrumentation.recordReactRender("useCapturePipeline");
   const [captureState] = useState<CaptureRuntimeState>(initialCaptureRuntimeState);
   const [previewVideoElement, setPreviewVideoElement] = useState<HTMLVideoElement | null>(null);
   const [poseDatasetDraft, setPoseDatasetDraft] = useState<CapturePoseDatasetDraft | null>(null);

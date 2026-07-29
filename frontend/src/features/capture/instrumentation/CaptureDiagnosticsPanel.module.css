@@ -1,0 +1,86 @@
+.panel {
+  background: #101827;
+  border: 1px solid #34445e;
+  border-radius: 8px;
+  color: #e5edf8;
+  display: grid;
+  font-size: 0.8125rem;
+  gap: 12px;
+  padding: 14px;
+}
+
+.header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.header h2,
+.eyebrow,
+.note,
+.copyStatus {
+  margin: 0;
+}
+
+.header h2 {
+  font-size: 1rem;
+}
+
+.eyebrow {
+  color: #8fb9f4;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions button {
+  background: #1d2a3d;
+  border: 1px solid #52647d;
+  border-radius: 5px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 6px 9px;
+}
+
+.metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.metrics div {
+  background: #172235;
+  border-radius: 5px;
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+}
+
+.metrics dt {
+  color: #9baec7;
+}
+
+.metrics dd {
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.note {
+  color: #aebbd0;
+  line-height: 1.45;
+}
+
+.copyStatus {
+  color: #8fd5ae;
+}
+

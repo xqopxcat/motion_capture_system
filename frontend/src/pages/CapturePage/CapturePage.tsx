@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { CameraPreview } from "../../components";
 import {
   CaptureSkeletonOverlay,
+  CaptureDiagnosticsPanel,
   RecordedPosePreview,
   publishCaptureRecord,
 } from "../../features/capture";
+import { captureRuntimeInstrumentation } from "../../features/capture/instrumentation/captureRuntimeInstrumentation";
 import type {
   CapturePublishProgress,
   CapturePublishResumeState,
@@ -23,6 +25,7 @@ function formatElapsedTime(elapsedSeconds: number) {
 }
 
 export function CapturePage() {
+  captureRuntimeInstrumentation.recordReactRender("CapturePage");
   const navigate = useNavigate();
   const [recordTitle, setRecordTitle] = useState("");
   const [publishProgress, setPublishProgress] = useState<CapturePublishProgress | null>(null);
@@ -98,6 +101,8 @@ export function CapturePage() {
             before continuing.
           </p>
         </header>
+
+        <CaptureDiagnosticsPanel />
 
         <section className={styles.captureWorkspace} aria-label="Capture workspace">
           <div className={styles.livePanel}>

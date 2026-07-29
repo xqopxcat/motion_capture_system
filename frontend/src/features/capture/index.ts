@@ -4,6 +4,7 @@ export type {
   CapturePoseDatasetDraftFrame,
   CapturePoseDatasetSummary,
 } from "./buildPoseDatasetDraft";
+export { CaptureDiagnosticsPanel } from "./instrumentation/CaptureDiagnosticsPanel";
 export { CaptureSkeletonOverlay } from "./CaptureSkeletonOverlay";
 export type { CaptureSkeletonOverlayProps } from "./CaptureSkeletonOverlay";
 export { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";
