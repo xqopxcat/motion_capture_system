@@ -29,6 +29,7 @@ export type CapturePublishResumeState = {
   recordId?: string;
   completedArtifacts: Set<"video" | "pose" | "metrics" | "thumbnail">;
   lifecycleFailed?: boolean;
+  creationOutcomeAmbiguous?: boolean;
 };
 
 type PublishInput = {
@@ -48,8 +49,6 @@ type PreparedArtifact = {
 
 export async function publishCaptureRecord(input: PublishInput): Promise<FinalizeRecordResponse> {
   const poseDataset = buildPoseDatasetV1(input.poseDraft);
-  const recordId = input.resume.recordId ?? await createRecord(input, poseDataset);
-  input.resume.recordId = recordId;
   input.onProgress({ stage: "preparing", message: "Preparing browser analysis artifacts…" });
 
   const pose = await prepareJsonArtifact(poseDataset);
@@ -68,6 +67,8 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     checksum: await sha256Hex(thumbnailBlob),
     contentType: "image/jpeg",
   };
+  const recordId = input.resume.recordId ?? await createRecord(input, poseDataset);
+  input.resume.recordId = recordId;
 
   if (!input.resume.completedArtifacts.has("video")) {
     input.onProgress({ stage: "uploading-video", message: "Uploading video to private storage…" });
@@ -127,7 +128,26 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     await apiJson(`/records/${recordId}/retry`, {});
     input.resume.lifecycleFailed = false;
   }
-  const finalized = await apiJson<FinalizeRecordResponse>(`/records/${recordId}/complete`, {});
+  let finalized: FinalizeRecordResponse;
+  try {
+    finalized = await apiJson<FinalizeRecordResponse>(`/records/${recordId}/complete`, {});
+  } catch (error) {
+    const reconciled = await reconcileRecordAfterFinalizeFailure(recordId).catch(() => null);
+    if (reconciled?.status === "Ready") {
+      input.onProgress({ stage: "ready", message: "Record is ready." });
+      return {
+        recordId,
+        status: "Ready",
+        retryable: false,
+        failureCode: null,
+        failureMessage: null,
+      };
+    }
+    if (reconciled?.status === "Failed" && reconciled.retryable === true) {
+      input.resume.lifecycleFailed = true;
+    }
+    throw error;
+  }
   if (finalized.status !== "Ready") {
     input.resume.lifecycleFailed = finalized.status === "Failed" && finalized.retryable === true;
     throw new Error(finalized.failureMessage ?? `Record finalization returned ${finalized.status}.`);
@@ -136,19 +156,41 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
   return finalized;
 }
 
+async function reconcileRecordAfterFinalizeFailure(recordId: string) {
+  const response = await fetch(`${apiBaseUrl}/records/${recordId}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error(`Record reconciliation failed (${response.status}).`);
+  return response.json() as Promise<{
+    recordId: string;
+    status: "Uploading" | "Processing" | "Ready" | "Failed";
+    retryable?: boolean;
+  }>;
+}
+
 async function createRecord(
   input: PublishInput,
   poseDataset: { duration: number; fps: number },
 ) {
   input.onProgress({ stage: "creating", message: "Creating persistent Record…" });
-  const response = await apiJson<CreateRecordResponse>("/records", {
-    title: input.title.trim() || `Motion Capture ${new Date().toLocaleString()}`,
-    description: input.description?.trim() ?? "",
-    tags: ["capture"],
-    duration: poseDataset.duration,
-    fps: poseDataset.fps,
-  }, "POST");
-  return response.recordId;
+  if (input.resume.creationOutcomeAmbiguous) {
+    throw new Error("Record creation outcome is ambiguous; duplicate creation is blocked.");
+  }
+  try {
+    const response = await apiJson<CreateRecordResponse>("/records", {
+      title: input.title.trim() || `Motion Capture ${new Date().toLocaleString()}`,
+      description: input.description?.trim() ?? "",
+      tags: ["capture"],
+      duration: poseDataset.duration,
+      fps: poseDataset.fps,
+    }, "POST");
+    return response.recordId;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      input.resume.creationOutcomeAmbiguous = true;
+    }
+    throw error;
+  }
 }
 
 async function requestJsonUpload(path: string, recordId: string, artifact: PreparedArtifact) {

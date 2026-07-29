@@ -5,6 +5,29 @@ export type {
   CapturePoseDatasetSummary,
 } from "./buildPoseDatasetDraft";
 export { CaptureDiagnosticsPanel } from "./instrumentation/CaptureDiagnosticsPanel";
+export {
+  buildCapturePresentation,
+  captureStateReducer,
+  createPermissionRequiredState,
+  DEFAULT_CAPTURE_COUNTDOWN_MS,
+} from "./captureStateMachine";
+export type {
+  CaptureEvent,
+  CaptureOperationToken,
+  CapturePresentationModel,
+  CaptureProductState,
+  CaptureReviewSnapshot,
+  CaptureSavingSubstate,
+} from "./captureControllerTypes";
+export {
+  MINIMUM_REVIEW_DURATION_MS,
+  validateCaptureReviewCandidate,
+} from "./captureReviewValidation";
+export {
+  classifySavingFailure,
+  mapPublishProgressToSavingSubstate,
+  useCaptureController,
+} from "./useCaptureController";
 export { CaptureSkeletonOverlay } from "./CaptureSkeletonOverlay";
 export type { CaptureSkeletonOverlayProps } from "./CaptureSkeletonOverlay";
 export { CAPTURE_SKELETON_CONNECTIONS } from "./captureSkeletonConnections";

@@ -8,6 +8,7 @@ export type CameraPreviewProps = {
   errorMessage?: string | null;
   onStart: () => void;
   onStop: () => void;
+  showControls?: boolean;
   onVideoElementChange?: (videoElement: HTMLVideoElement | null) => void;
 };
 
@@ -17,6 +18,7 @@ export function CameraPreview({
   errorMessage,
   onStart,
   onStop,
+  showControls = true,
   onVideoElementChange,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -69,7 +71,7 @@ export function CameraPreview({
         </p>
       )}
 
-      <div className={styles.actions}>
+      {showControls && <div className={styles.actions}>
         <button
           className={styles.primaryAction}
           type="button"
@@ -86,7 +88,7 @@ export function CameraPreview({
         >
           Stop Camera
         </button>
-      </div>
+      </div>}
     </section>
   );
 }

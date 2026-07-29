@@ -13,6 +13,8 @@ type MediaRecordingState = {
   elapsedSeconds: number;
   recordedBlob: Blob | null;
   recordedVideoUrl: string | null;
+  recordedDurationMs: number;
+  operationId: number | null;
   errorMessage: string | null;
 };
 
@@ -21,6 +23,8 @@ const initialMediaRecordingState: MediaRecordingState = {
   elapsedSeconds: 0,
   recordedBlob: null,
   recordedVideoUrl: null,
+  recordedDurationMs: 0,
+  operationId: null,
   errorMessage: null,
 };
 
@@ -70,6 +74,7 @@ export function useMediaRecorder(stream: MediaStream | null) {
       elapsedSeconds: 0,
       recordedBlob: null,
       recordedVideoUrl: null,
+      recordedDurationMs: 0,
       errorMessage: null,
     }));
   }, [revokeRecordedVideoUrl]);
@@ -89,7 +94,7 @@ export function useMediaRecorder(stream: MediaStream | null) {
     recorder.stop();
   }, [clearTimer]);
 
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback((options: { operationId?: number; originMs?: number } = {}) => {
     if (typeof MediaRecorder === "undefined") {
       setRecordingState({
         ...initialMediaRecordingState,
@@ -136,6 +141,8 @@ export function useMediaRecorder(stream: MediaStream | null) {
       };
 
       recorder.onstop = () => {
+        const recordingStartedAtMs = startedAtRef.current;
+        const stoppedAtMs = performance.now();
         clearTimer();
         const recordedBlob = new Blob(chunksRef.current, {
           type: recorder.mimeType || "video/webm",
@@ -160,19 +167,21 @@ export function useMediaRecorder(stream: MediaStream | null) {
           status: "recorded",
           recordedBlob,
           recordedVideoUrl,
+          recordedDurationMs: Math.max(0, stoppedAtMs - (recordingStartedAtMs ?? stoppedAtMs)),
+          operationId: options.operationId ?? null,
           errorMessage: null,
         }));
       };
 
       recorder.start();
-      startedAtRef.current = Date.now();
+      startedAtRef.current = options.originMs ?? performance.now();
       timerRef.current = window.setInterval(() => {
         const startedAt = startedAtRef.current;
 
         if (startedAt !== null) {
           setRecordingState((currentState) => ({
             ...currentState,
-            elapsedSeconds: Math.floor((Date.now() - startedAt) / 1000),
+            elapsedSeconds: Math.floor((performance.now() - startedAt) / 1000),
           }));
         }
       }, 250);
@@ -182,6 +191,8 @@ export function useMediaRecorder(stream: MediaStream | null) {
         elapsedSeconds: 0,
         recordedBlob: null,
         recordedVideoUrl: null,
+        recordedDurationMs: 0,
+        operationId: options.operationId ?? null,
         errorMessage: null,
       });
     } catch (error) {

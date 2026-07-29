@@ -15,10 +15,6 @@ export type FrameState = {
   fps: number;
 };
 
-export type CaptureRuntimeState = {
-  status: "idle" | "recording" | "analyzing" | "uploading" | "completed" | "failed";
-};
-
 export type UploadRuntimeState = {
   status: "idle" | "requesting" | "uploading" | "completed" | "failed";
   progress: number;
