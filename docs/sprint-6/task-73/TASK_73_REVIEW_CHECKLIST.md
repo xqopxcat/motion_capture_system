@@ -5,6 +5,10 @@
 - [x] One active inference and exactly one pending slot
 - [x] Latest pending replacement is measured as coalesced
 - [x] Generation, camera session, sequence, disposal, and stale publication guards
+- [x] Queued payload is a private stable canvas, never the advancing live video element
+- [x] Image and `sourceTimestampMs` are captured and scheduled as one identity
+- [x] Replaced/completed/paused/rotated/disposed frame resources are released safely
+- [x] Snapshot capture is synchronous, so no Promise queue or stale snapshot completion exists
 - [x] Hidden pause/resume and cleanup do not duplicate producer callbacks
 - [x] Failure releases scheduler slot; Product State ownership unchanged
 - [x] Candidate, inferred, persisted, and displayed frames documented
@@ -12,6 +16,6 @@
 - [x] Task 67 fields preserved and additive backpressure diagnostics exposed
 - [x] No per-frame logging or new dependency
 - [x] No renderer, smoothing, angle, Worker, API/backend/schema/storage, or Task 74 changes
-- [x] Focused and complete frontend tests pass (45 files, 257 tests)
-- [x] Typecheck and production build pass (183 modules)
+- [x] Focused and complete frontend tests pass (46 files, 260 tests)
+- [x] Typecheck and production build pass (184 modules)
 - [x] Lint checked: no lint script is currently defined

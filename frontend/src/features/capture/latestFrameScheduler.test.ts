@@ -79,4 +79,75 @@ describe("LatestFrameScheduler", () => {
     expect(stale).toHaveBeenCalledTimes(2);
     expect(disposed.snapshot()).toMatchObject({ disposed: true, pendingFrameCount: 0 });
   });
+
+  it("owns and releases replaced, completed, rotated, paused, and disposed frames", async () => {
+    const active = deferred<string>();
+    const releases: string[] = [];
+    const scheduler = new LatestFrameScheduler<string, string>({
+      infer: vi.fn().mockReturnValueOnce(active.promise),
+      publish: vi.fn(),
+      releaseFrame: (frame) => releases.push(frame.payload),
+    });
+    scheduler.rotateSession(1);
+    scheduler.accept({ payload: "active", sourceTimestampMs: 1, observedAtMs: 1 });
+    scheduler.accept({ payload: "replaced", sourceTimestampMs: 2, observedAtMs: 2 });
+    scheduler.accept({ payload: "pending", sourceTimestampMs: 3, observedAtMs: 3 });
+    expect(releases).toEqual(["replaced"]);
+    scheduler.pause();
+    expect(releases).toEqual(["replaced", "pending"]);
+    scheduler.accept({ payload: "rejected-while-paused", sourceTimestampMs: 4, observedAtMs: 4 });
+    expect(releases).toContain("rejected-while-paused");
+    active.resolve("done");
+    await flush();
+    expect(releases).toContain("active");
+
+    const successful = new LatestFrameScheduler<string, string>({
+      infer: () => Promise.resolve("success"),
+      publish: vi.fn(),
+      releaseFrame: (frame) => releases.push(frame.payload),
+    });
+    successful.accept({ payload: "successful", sourceTimestampMs: 4.5, observedAtMs: 4.5 });
+    await flush();
+    expect(releases).toContain("successful");
+
+    const rotating = new LatestFrameScheduler<string, string>({
+      infer: () => new Promise(() => undefined),
+      publish: vi.fn(),
+      releaseFrame: (frame) => releases.push(frame.payload),
+    });
+    rotating.accept({ payload: "rotation-active", sourceTimestampMs: 5, observedAtMs: 5 });
+    rotating.accept({ payload: "rotation-pending", sourceTimestampMs: 6, observedAtMs: 6 });
+    rotating.rotateSession(2);
+    expect(releases).toContain("rotation-pending");
+
+    const disposing = new LatestFrameScheduler<string, string>({
+      infer: () => new Promise(() => undefined),
+      publish: vi.fn(),
+      releaseFrame: (frame) => releases.push(frame.payload),
+    });
+    disposing.accept({ payload: "dispose-active", sourceTimestampMs: 7, observedAtMs: 7 });
+    disposing.accept({ payload: "dispose-pending", sourceTimestampMs: 8, observedAtMs: 8 });
+    disposing.dispose();
+    expect(releases).toContain("dispose-pending");
+  });
+
+  it("passes the pending image and timestamp accepted before later video advancement", async () => {
+    const first = deferred<string>();
+    const inferred: Array<{ image: string; timestamp: number }> = [];
+    const scheduler = new LatestFrameScheduler<{ image: string }, string>({
+      infer: (frame) => {
+        inferred.push({ image: frame.payload.image, timestamp: frame.sourceTimestampMs });
+        return inferred.length === 1 ? first.promise : Promise.resolve("second-result");
+      },
+      publish: vi.fn(),
+    });
+    scheduler.accept({ payload: { image: "pixels-at-100ms" }, sourceTimestampMs: 100, observedAtMs: 10 });
+    scheduler.accept({ payload: { image: "pixels-at-200ms" }, sourceTimestampMs: 200, observedAtMs: 20 });
+    const liveVideoNow = { image: "pixels-at-300ms" };
+    expect(liveVideoNow.image).toBe("pixels-at-300ms");
+    first.resolve("first-result");
+    await flush();
+    expect(inferred[1]).toEqual({ image: "pixels-at-200ms", timestamp: 200 });
+    expect(scheduler.snapshot()).toMatchObject({ activeInferenceCount: 1, pendingFrameCount: 0 });
+  });
 });

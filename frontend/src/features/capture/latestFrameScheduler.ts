@@ -26,6 +26,7 @@ export type LatestFrameSchedulerEvents<T, R> = {
   onFrameCoalesced?: (frame: ScheduledFrame<T>) => void;
   onPendingFrameReplaced?: (frame: ScheduledFrame<T>) => void;
   onStaleResultRejected?: (frame: ScheduledFrame<T>) => void;
+  releaseFrame?: (frame: ScheduledFrame<T>) => void;
   now?: () => number;
 };
 
@@ -42,18 +43,22 @@ export class LatestFrameScheduler<T, R> {
   constructor(private readonly events: LatestFrameSchedulerEvents<T, R>) {}
 
   accept(input: Omit<ScheduledFrame<T>, keyof RuntimeFrameIdentity>) {
-    if (this.disposed || this.paused) return null;
     const frame: ScheduledFrame<T> = {
       ...input,
       generation: this.generation,
       cameraSessionId: this.cameraSessionId,
       frameSequence: ++this.frameSequence,
     };
+    if (this.disposed || this.paused) {
+      this.events.releaseFrame?.(frame);
+      return null;
+    }
     if (!this.activeFrame) this.start(frame);
     else {
       if (this.pendingFrame) {
         this.events.onFrameCoalesced?.(this.pendingFrame);
         this.events.onPendingFrameReplaced?.(this.pendingFrame);
+        this.events.releaseFrame?.(this.pendingFrame);
       }
       this.pendingFrame = frame;
     }
@@ -61,7 +66,10 @@ export class LatestFrameScheduler<T, R> {
   }
 
   rotateSession(cameraSessionId: number) {
-    if (this.pendingFrame) this.events.onFrameCoalesced?.(this.pendingFrame);
+    if (this.pendingFrame) {
+      this.events.onFrameCoalesced?.(this.pendingFrame);
+      this.events.releaseFrame?.(this.pendingFrame);
+    }
     this.pendingFrame = null;
     this.generation += 1;
     this.cameraSessionId = cameraSessionId;
@@ -82,7 +90,10 @@ export class LatestFrameScheduler<T, R> {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    if (this.pendingFrame) this.events.onFrameCoalesced?.(this.pendingFrame);
+    if (this.pendingFrame) {
+      this.events.onFrameCoalesced?.(this.pendingFrame);
+      this.events.releaseFrame?.(this.pendingFrame);
+    }
     this.pendingFrame = null;
     this.generation += 1;
   }
@@ -114,6 +125,7 @@ export class LatestFrameScheduler<T, R> {
       },
       (error) => this.events.onInferenceFailed?.(frame, error),
     ).finally(() => {
+      this.events.releaseFrame?.(frame);
       if (this.activeFrame === frame) this.activeFrame = null;
       const pending = this.pendingFrame;
       this.pendingFrame = null;

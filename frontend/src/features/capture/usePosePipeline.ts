@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPoseEngine } from "../../engines/pose";
 import type { PoseDetectionResult, PoseEngine, PoseEngineStatus } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
+import { captureVideoFrame, type CapturedVideoFrame } from "./capturedVideoFrame";
 import { LatestFrameScheduler } from "./latestFrameScheduler";
 import {
   createVideoFrameProducer,
@@ -28,14 +29,6 @@ function isVideoFrameReady(videoElement: HTMLVideoElement) {
   return videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && videoElement.videoWidth > 0;
 }
 
-function getDetectionTimestampMs(videoElement: HTMLVideoElement) {
-  if (Number.isFinite(videoElement.currentTime) && videoElement.currentTime > 0) {
-    return Math.floor(videoElement.currentTime * 1000);
-  }
-
-  return Math.floor(performance.now());
-}
-
 export function usePosePipeline() {
   const poseEngine = useMemo<PoseEngine>(() => createPoseEngine(), []);
   const [poseState, setPoseState] = useState<CapturePosePipelineState>({
@@ -46,12 +39,11 @@ export function usePosePipeline() {
   const isMountedRef = useRef(true);
   const statusRef = useRef<PoseEngineStatus>("idle");
   const producerRef = useRef<VideoFrameProducer | null>(null);
-  const schedulerRef = useRef<LatestFrameScheduler<HTMLVideoElement, PoseDetectionResult> | null>(null);
+  const schedulerRef = useRef<LatestFrameScheduler<CapturedVideoFrame, PoseDetectionResult> | null>(null);
   const frameIndexRef = useRef(0);
   const isDetectionLoopRunningRef = useRef(false);
   const cameraSessionIdRef = useRef(0);
   const lastAcceptedCandidateAtRef = useRef(Number.NEGATIVE_INFINITY);
-  const lastDetectionTimestampMsRef = useRef(0);
 
   const stopPoseDetection = useCallback(() => {
     isDetectionLoopRunningRef.current = false;
@@ -60,7 +52,6 @@ export function usePosePipeline() {
     producerRef.current = null;
     schedulerRef.current?.dispose();
     schedulerRef.current = null;
-    lastDetectionTimestampMsRef.current = 0;
     if (statusRef.current === "detecting") {
       statusRef.current = "ready";
     }
@@ -146,14 +137,14 @@ export function usePosePipeline() {
 
       const inferenceTokens = new Map<string, ReturnType<typeof captureRuntimeInstrumentation.beginInference>>();
       const frameKey = (frame: { generation: number; frameSequence: number }) => `${frame.generation}:${frame.frameSequence}`;
-      const scheduler = new LatestFrameScheduler<HTMLVideoElement, PoseDetectionResult>({
+      const scheduler = new LatestFrameScheduler<CapturedVideoFrame, PoseDetectionResult>({
         infer: (frame) => {
           frameIndexRef.current += 1;
-          const sourceTimestampMs = frame.sourceTimestampMs > 0
-            ? Math.floor(frame.sourceTimestampMs) : getDetectionTimestampMs(frame.payload);
-          const timestampMs = Math.max(sourceTimestampMs, lastDetectionTimestampMsRef.current + 1);
-          lastDetectionTimestampMsRef.current = timestampMs;
-          return poseEngine.detect({ source: frame.payload, timestampMs, frameIndex: frameIndexRef.current });
+          return poseEngine.detect({
+            source: frame.payload.source,
+            timestampMs: frame.sourceTimestampMs,
+            frameIndex: frameIndexRef.current,
+          });
         },
         onInferenceStarted: (frame) => {
           inferenceTokens.set(frameKey(frame), captureRuntimeInstrumentation.beginInference({
@@ -183,6 +174,7 @@ export function usePosePipeline() {
         onFrameCoalesced: () => captureRuntimeInstrumentation.recordFrameCoalesced(),
         onPendingFrameReplaced: () => captureRuntimeInstrumentation.recordPendingFrameReplacement(),
         onStaleResultRejected: () => captureRuntimeInstrumentation.recordStaleResultRejected(),
+        releaseFrame: (frame) => frame.payload.release(),
         publish: (result, frame, publishedAtMs) => {
           captureRuntimeInstrumentation.recordAcceptedResultPublication(frame.observedAtMs, publishedAtMs);
           if (isMountedRef.current && isDetectionLoopRunningRef.current) {
@@ -204,7 +196,13 @@ export function usePosePipeline() {
           return;
         }
         lastAcceptedCandidateAtRef.current = candidate.observedAtMs;
-        scheduler.accept({ payload: videoElement, sourceTimestampMs: candidate.sourceTimestampMs, observedAtMs: candidate.observedAtMs });
+        const capturedFrame = captureVideoFrame(videoElement, candidate);
+        if (!capturedFrame) return;
+        scheduler.accept({
+          payload: capturedFrame,
+          sourceTimestampMs: capturedFrame.sourceTimestampMs,
+          observedAtMs: capturedFrame.observedAtMs,
+        });
       };
       const producer = createVideoFrameProducer(videoElement, onCandidate);
       producerRef.current = producer;

@@ -10,6 +10,9 @@
 | Raw Pose | Successful recording results still flow through `usePoseFrameCollection`; 33 landmarks preserved |
 | `pose.v1`, timestamps, APIs, backend, schema, storage | Unchanged |
 | Dependencies | None added |
+| MediaPipe input | Installed 0.10.35 `ImageSource = TexImageSource`; private canvas is supported |
 | Smoothing, angles, Worker, Task 74 | Not started |
 
 The display publication remains one `PoseDetectionResult` state update and the existing Canvas owns skeleton rendering. Coalesced candidates never fabricate frames or rewrite values/timestamps.
+
+The inference source canvas is separate from Task 72's display canvas. Snapshot cleanup changes no renderer ownership. Recording and Review continue receiving only successful Pose results with their exact captured-image media timestamps.

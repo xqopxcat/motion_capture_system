@@ -8,9 +8,10 @@
 
 1. One producer reports actual video frames through rVFC, or unique media timestamps through rAF fallback.
 2. Idle cadence filtering avoids blindly inferring each display refresh.
-3. The scheduler starts one inference and retains at most one newest pending candidate.
-4. A newer candidate replaces the prior pending one and records coalescing.
-5. Completion is measured, identity is validated, only a valid latest result is published, then the newest pending candidate starts immediately.
-6. Stop/hidden/session rotation/disposal invalidates old asynchronous results.
+3. An admitted callback synchronously copies its exact video image to a private canvas paired with its source timestamp.
+4. The scheduler starts one inference and retains at most one newest pending canvas.
+5. A newer candidate releases and replaces the prior pending canvas and records coalescing.
+6. Completion is measured, identity is validated, only a valid latest result is published, then the completed canvas is released and the newest pending candidate starts.
+7. Stop/hidden/session rotation/disposal releases pending images and invalidates old asynchronous inference results.
 
-Files added: `latestFrameScheduler.ts`, `videoFrameProducer.ts`, their tests, and seven Task 73 documents. Files changed: `usePosePipeline.ts`, Task 67 instrumentation implementation/test/panel. Rendering and persistence files were not modified.
+Follow-up adds `capturedVideoFrame.ts` and its deterministic test, and extends scheduler tests for image/timestamp identity and resource ownership. Rendering and persistence files remain unmodified.
