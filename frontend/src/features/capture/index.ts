@@ -5,6 +5,13 @@ export type {
   CapturePoseDatasetSummary,
 } from "./buildPoseDatasetDraft";
 export { CaptureDiagnosticsPanel } from "./instrumentation/CaptureDiagnosticsPanel";
+export { getCaptureStageMode } from "./captureStageMode";
+export type { CaptureStageMode } from "./captureStageMode";
+export {
+  createUnifiedCaptureStageActionModel,
+  UnifiedCaptureStage,
+} from "./UnifiedCaptureStage";
+export type { UnifiedCaptureStageProps } from "./UnifiedCaptureStage";
 export {
   buildCapturePresentation,
   captureStateReducer,

@@ -8,6 +8,7 @@ import styles from "./RecordedPosePreview.module.css";
 export type RecordedPosePreviewProps = {
   poseDatasetDraft: CapturePoseDatasetDraft | null;
   videoUrl: string;
+  disabled?: boolean;
 };
 
 function formatPreviewTime(seconds: number) {
@@ -22,7 +23,11 @@ function formatPreviewTime(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
-export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPosePreviewProps) {
+export function RecordedPosePreview({
+  poseDatasetDraft,
+  videoUrl,
+  disabled = false,
+}: RecordedPosePreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -92,7 +97,7 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
   const togglePlayback = useCallback(() => {
     const video = videoRef.current;
 
-    if (!video) {
+    if (!video || disabled) {
       return;
     }
 
@@ -102,13 +107,13 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
     }
 
     video.pause();
-  }, []);
+  }, [disabled]);
 
   const seekTo = useCallback(
     (nextTimeSeconds: number) => {
       const video = videoRef.current;
 
-      if (!video) {
+      if (!video || disabled) {
         return;
       }
 
@@ -116,8 +121,14 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
       setCurrentTimeSeconds(nextTimeSeconds);
       renderCurrentFrame();
     },
-    [renderCurrentFrame],
+    [disabled, renderCurrentFrame],
   );
+
+  useEffect(() => {
+    if (!disabled) return;
+    videoRef.current?.pause();
+    stopPlaybackSync();
+  }, [disabled, stopPlaybackSync]);
 
   useEffect(() => {
     renderCurrentFrame();
@@ -136,6 +147,7 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
           ref={videoRef}
           className={styles.video}
           src={videoUrl}
+          tabIndex={disabled ? -1 : undefined}
           onLoadedMetadata={() => {
             setDurationSeconds(videoRef.current?.duration ?? 0);
             renderCurrentFrame();
@@ -168,7 +180,7 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
       </div>
 
       <div className={styles.controls} aria-label="Recorded preview controls">
-        <button className={styles.playButton} type="button" onClick={togglePlayback}>
+        <button className={styles.playButton} type="button" onClick={togglePlayback} disabled={disabled}>
           {isPlaying ? "Pause" : "Play"}
         </button>
         <input
@@ -180,6 +192,7 @@ export function RecordedPosePreview({ poseDatasetDraft, videoUrl }: RecordedPose
           value={currentTimeSeconds}
           onChange={(event) => seekTo(Number(event.currentTarget.value))}
           aria-label="Recorded preview timeline"
+          disabled={disabled}
         />
         <span className={styles.timeText}>
           {formatPreviewTime(currentTimeSeconds)} / {formatPreviewTime(durationSeconds)}

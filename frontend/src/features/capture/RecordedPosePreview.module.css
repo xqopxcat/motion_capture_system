@@ -55,6 +55,12 @@
   padding: 11px 14px;
 }
 
+.playButton:disabled,
+.timeline:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .timeline {
   accent-color: #22577a;
   width: 100%;
