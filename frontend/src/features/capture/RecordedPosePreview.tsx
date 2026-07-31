@@ -3,6 +3,7 @@ import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
 import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
+import { syncProductionCanvasSize } from "../../engines/visualization";
 import styles from "./RecordedPosePreview.module.css";
 
 export type RecordedPosePreviewProps = {
@@ -54,6 +55,7 @@ export function RecordedPosePreview({
       return;
     }
 
+    syncProductionCanvasSize(canvas);
     const currentTimeMs = video.currentTime * 1000;
     setCurrentTimeSeconds(video.currentTime);
     const poseFrame = poseDatasetDraft
@@ -132,6 +134,14 @@ export function RecordedPosePreview({
 
   useEffect(() => {
     renderCurrentFrame();
+  }, [renderCurrentFrame]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => renderCurrentFrame());
+    observer.observe(canvas);
+    return () => observer.disconnect();
   }, [renderCurrentFrame]);
 
   useEffect(() => {

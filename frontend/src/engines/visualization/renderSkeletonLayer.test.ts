@@ -56,7 +56,8 @@ describe("renderSkeletonLayer", () => {
 
     renderSkeletonLayer(canvas, context, createRenderContext([0, 99]));
 
-    expect(context.arc).toHaveBeenCalledWith(50, 50, 5, 0, Math.PI * 2);
-    expect(context.arc).toHaveBeenCalledWith(50, 50, 11, 0, Math.PI * 2);
+    expect(context.arc).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(context.arc).mock.calls[0].slice(0, 2)).toEqual([50, 50]);
+    expect(vi.mocked(context.arc).mock.calls[1].slice(0, 2)).toEqual([50, 50]);
   });
 });

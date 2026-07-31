@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { PoseDetectionResult } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
+import { PRODUCTION_SKELETON_PROFILE, syncProductionCanvasSize } from "../../engines/visualization";
 import styles from "./CaptureSkeletonOverlay.module.css";
 
 export type CaptureSkeletonOverlayProps = {
@@ -28,6 +29,7 @@ export function CaptureSkeletonOverlay({ poseResult, videoElement }: CaptureSkel
       return;
     }
 
+    syncProductionCanvasSize(canvas);
     renderCaptureSkeleton(
       canvas,
       context,
@@ -45,6 +47,11 @@ export function CaptureSkeletonOverlay({ poseResult, videoElement }: CaptureSkel
       rendered: true,
       startedAtMs,
     });
+    if (!poseResult) return;
+    const staleTimeout = window.setTimeout(() => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }, PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs);
+    return () => window.clearTimeout(staleTimeout);
   }, [poseResult, videoElement]);
 
   return (

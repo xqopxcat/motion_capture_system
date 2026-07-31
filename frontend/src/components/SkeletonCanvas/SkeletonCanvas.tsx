@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { renderVisualization } from "../../engines/visualization";
+import { useCallback, useEffect, useRef } from "react";
+import { isProductionLandmarkRenderable, renderVisualization, syncProductionCanvasSize } from "../../engines/visualization";
 import type { PoseDatasetLandmark, RenderContext } from "../../types";
 import styles from "./SkeletonCanvas.module.css";
 
@@ -9,26 +9,6 @@ export type SkeletonCanvasProps = {
   onJointClick?: (jointId: number) => void;
   renderContext: RenderContext;
 };
-
-function syncCanvasSize(canvas: HTMLCanvasElement) {
-  const rect = canvas.getBoundingClientRect();
-  const pixelRatio = window.devicePixelRatio || 1;
-  const width = Math.max(1, Math.floor(rect.width * pixelRatio));
-  const height = Math.max(1, Math.floor(rect.height * pixelRatio));
-
-  if (canvas.width !== width) {
-    canvas.width = width;
-  }
-
-  if (canvas.height !== height) {
-    canvas.height = height;
-  }
-
-  return {
-    height,
-    width,
-  };
-}
 
 export type JointHitTestInput = {
   canvasHeight: number;
@@ -52,7 +32,7 @@ export function findHitJointId({
   let nearestDistance = Number.POSITIVE_INFINITY;
 
   landmarks.forEach((landmark) => {
-    if (landmark.visibility < 0.35) {
+    if (!isProductionLandmarkRenderable(landmark)) {
       return;
     }
 
@@ -71,21 +51,27 @@ export function findHitJointId({
 
 export function SkeletonCanvas({ onJointClick, renderContext }: SkeletonCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderContextRef = useRef(renderContext);
+  renderContextRef.current = renderContext;
+
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const canvasSize = syncProductionCanvasSize(canvas);
+    renderVisualization(canvas, { ...renderContextRef.current, canvasSize });
+  }, []);
+
+  useEffect(() => {
+    renderCanvas();
+  }, [renderCanvas, renderContext]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-
-    if (!canvas) {
-      return;
-    }
-
-    const canvasSize = syncCanvasSize(canvas);
-
-    renderVisualization(canvas, {
-      ...renderContext,
-      canvasSize,
-    });
-  }, [renderContext]);
+    if (!canvas || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(renderCanvas);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [renderCanvas]);
 
   return (
     <canvas

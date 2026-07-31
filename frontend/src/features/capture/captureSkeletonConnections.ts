@@ -1,26 +1,4 @@
-export type SkeletonConnection = readonly [number, number];
-
-export const CAPTURE_SKELETON_CONNECTIONS: readonly SkeletonConnection[] = [
-  [11, 12],
-  [11, 23],
-  [12, 24],
-  [23, 24],
-  [11, 13],
-  [13, 15],
-  [15, 17],
-  [15, 19],
-  [15, 21],
-  [12, 14],
-  [14, 16],
-  [16, 18],
-  [16, 20],
-  [16, 22],
-  [23, 25],
-  [25, 27],
-  [27, 29],
-  [29, 31],
-  [24, 26],
-  [26, 28],
-  [28, 30],
-  [30, 32],
-];
+export {
+  PRODUCTION_SKELETON_CONNECTIONS as CAPTURE_SKELETON_CONNECTIONS,
+} from "../../engines/visualization/productionSkeletonProfile";
+export type { SkeletonConnection } from "../../engines/visualization/productionSkeletonProfile";
