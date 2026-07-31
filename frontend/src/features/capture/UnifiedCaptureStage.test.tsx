@@ -77,6 +77,13 @@ describe("UnifiedCaptureStage", () => {
     ]);
   });
 
+  it("keeps a single responsive workspace with stable detail and action regions", () => {
+    const markup = renderStage(states.find((state) => state.type === "Reviewing")!);
+    expect(markup).toContain('data-layout="responsive-capture-workspace"');
+    expect(markup).toContain('data-testid="capture-detail-area"');
+    expect(markup).toContain('data-testid="capture-action-area"');
+  });
+
   it.each(states.filter((state) => state.type === "Ready" || state.type === "Countdown" || state.type === "Recording"))(
     "$type renders the live surface without a review surface",
     (state) => {
@@ -127,6 +134,15 @@ describe("UnifiedCaptureStage", () => {
     expect(renderStage(states.find((state) => state.type === "Failed")!)).toContain(">Try again</button>");
     const failed: CaptureProductState = { type: "Failed", stage: "analysis", safeMessage: "Unavailable.", retryable: false, recoveryTarget: "none", routeLeaveRequiresConfirmation: false };
     expect(renderStage(failed)).not.toContain(">Retry</button>");
+  });
+
+  it("keeps Completed and Failed as distinct stable viewport surfaces", () => {
+    const completed = renderStage(states.find((state) => state.type === "Completed")!);
+    const failed = renderStage(states.find((state) => state.type === "Failed")!);
+    expect(completed).toContain('data-testid="completed-surface"');
+    expect(completed).not.toContain('data-testid="failed-surface"');
+    expect(failed).toContain('data-testid="failed-surface"');
+    expect(failed).not.toContain('data-testid="completed-surface"');
   });
 
   it("routes Save and Retake through controller-provided intents", () => {

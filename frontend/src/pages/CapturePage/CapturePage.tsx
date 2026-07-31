@@ -24,7 +24,7 @@ export function CapturePage() {
         routeLeaveRequiresConfirmation={controller.routeLeaveRequiresConfirmation}
         protection={controller.presentation.routeLeaveProtection}
       />
-      <section className={styles.content}>
+      <section className={styles.content} data-testid="responsive-capture-page">
         <header className={styles.header}>
           <p className={styles.kicker}>Motion Capture</p>
           <h1 className={styles.title}>Capture</h1>

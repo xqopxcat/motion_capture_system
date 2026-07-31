@@ -1,13 +1,14 @@
 .recordedPosePreview {
   display: grid;
-  gap: 12px;
+  gap: clamp(8px, 1.5vw, 12px);
+  min-width: 0;
   width: 100%;
 }
 
 .previewSurface {
   aspect-ratio: 16 / 9;
   background: #101820;
-  border-radius: 6px;
+  border-radius: 12px;
   display: grid;
   overflow: hidden;
   position: relative;
@@ -18,7 +19,7 @@
   display: block;
   grid-area: 1 / 1;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   width: 100%;
   z-index: 1;
 }
@@ -36,22 +37,23 @@
   align-items: center;
   background: #f8fafc;
   border: 1px solid #e1e7ef;
-  border-radius: 6px;
+  border-radius: 9px;
   display: grid;
   gap: 12px;
   grid-template-columns: 1fr;
-  padding: 10px;
+  min-width: 0;
+  padding: 10px 12px;
 }
 
 .playButton {
   background: #ffffff;
   border: 1px solid #cfd6df;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #20242a;
   cursor: pointer;
   font: inherit;
   font-weight: 700;
-  min-height: 48px;
+  min-height: 44px;
   padding: 11px 14px;
 }
 
@@ -63,6 +65,7 @@
 
 .timeline {
   accent-color: #22577a;
+  min-width: 0;
   width: 100%;
 }
 
@@ -71,6 +74,42 @@
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.playButton:focus-visible,
+.timeline:focus-visible {
+  outline: 3px solid #77b8aa;
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .controls {
+    gap: 8px 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .timeline {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .timeText {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 359px) {
+  .controls {
+    padding: 8px;
+  }
+
+  .playButton {
+    padding-inline: 12px;
+  }
+
+  .timeText {
+    font-size: 0.75rem;
+  }
 }
 
 @media (min-width: 640px) {

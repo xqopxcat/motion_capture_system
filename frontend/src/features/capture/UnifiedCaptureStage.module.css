@@ -1,10 +1,14 @@
 .stage {
   background: #ffffff;
   border: 1px solid #d8dde5;
-  border-radius: 10px;
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgb(17 24 39 / 8%);
   display: grid;
-  gap: 14px;
-  padding: 12px;
+  gap: clamp(12px, 1.8vw, 20px);
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(12px, 2vw, 22px);
+  width: 100%;
 }
 
 .stageHeader,
@@ -18,70 +22,101 @@
 .actionArea {
   gap: 12px;
   justify-content: space-between;
+  min-width: 0;
+}
+
+.stageHeader > div {
+  min-width: 0;
 }
 
 .eyebrow {
-  color: #5b6572;
+  color: #667085;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.09em;
   margin: 0;
   text-transform: uppercase;
 }
 
 .title {
   color: #111827;
-  font-size: 1.125rem;
+  font-size: clamp(1.125rem, 2.3vw, 1.5rem);
+  line-height: 1.2;
   margin: 4px 0 0;
+  overflow-wrap: anywhere;
 }
 
 .stateBadge,
 .recordingBadge {
+  border: 1px solid transparent;
   border-radius: 999px;
+  flex: none;
   font-size: 0.75rem;
   font-weight: 800;
-  padding: 7px 10px;
+  letter-spacing: 0.04em;
+  padding: 7px 11px;
+  text-transform: uppercase;
 }
 
 .stateBadge {
   background: #eef2f7;
-  color: #4b5563;
+  border-color: #dce2ea;
+  color: #475467;
 }
 
 .recordingBadge {
   background: #fff0ed;
+  border-color: #f2b8ae;
   color: #9a3412;
 }
 
 .viewport {
   aspect-ratio: 16 / 9;
   background: #101820;
-  border-radius: 8px;
+  border: 1px solid #263443;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 4%);
+  min-width: 0;
   overflow: hidden;
   position: relative;
   width: 100%;
 }
 
+.stage[data-stage-mode="review"] .viewport,
+.stage[data-stage-mode="saving"] .viewport {
+  aspect-ratio: auto;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
 .liveSurface,
 .reviewSurface {
-  height: 100%;
+  min-width: 0;
   position: relative;
   width: 100%;
 }
 
+.liveSurface {
+  height: 100%;
+}
+
 .liveSurface > section,
-.liveSurface > section > div,
-.reviewSurface > div,
-.reviewSurface > div > div:first-child {
+.liveSurface > section > div {
   height: 100%;
 }
 
 .reviewSurface > div {
-  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
 }
 
 .reviewSurface > div > div:first-child {
-  aspect-ratio: auto;
+  aspect-ratio: 16 / 9;
+  border: 1px solid #263443;
+  border-radius: 12px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .stateSurface {
@@ -91,28 +126,41 @@
   flex-direction: column;
   height: 100%;
   justify-content: center;
-  padding: 28px;
+  min-width: 0;
+  padding: clamp(20px, 6vw, 48px);
   text-align: center;
 }
 
+.stage[data-stage-mode="preparing"] .stateSurface::before {
+  animation: stageSpin 900ms linear infinite;
+  border: 3px solid rgb(255 255 255 / 28%);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  content: "";
+  height: 30px;
+  margin-bottom: 16px;
+  width: 30px;
+}
+
 .stateTitle {
-  font-size: 1.25rem;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
   font-weight: 800;
   margin: 0;
 }
 
 .stateMessage,
 .guidance {
-  color: #c4ccd6;
-  line-height: 1.5;
+  color: #cbd5e1;
+  line-height: 1.55;
   margin: 8px 0 0;
   max-width: 520px;
+  overflow-wrap: anywhere;
 }
 
 .countdownOverlay,
 .savingOverlay {
   align-items: center;
-  background: rgb(8 15 24 / 68%);
+  background: rgb(8 15 24 / 70%);
   color: #ffffff;
   display: flex;
   inset: 0;
@@ -124,69 +172,117 @@
 .countdownOverlay {
   font-size: clamp(4rem, 14vw, 9rem);
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .savingOverlay {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  bottom: auto;
   flex-direction: column;
   gap: 8px;
+  padding: clamp(16px, 5vw, 36px);
   text-align: center;
 }
 
+.savingOverlay strong {
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+}
+
+.savingOverlay span {
+  line-height: 1.45;
+  max-width: 560px;
+  overflow-wrap: anywhere;
+}
+
 .recordingOverlay {
-  background: rgb(8 15 24 / 72%);
+  background: rgb(8 15 24 / 78%);
+  border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 999px;
   color: #ffffff;
   gap: 8px;
-  left: 12px;
+  left: clamp(8px, 2vw, 14px);
   padding: 8px 11px;
   position: absolute;
-  top: 12px;
+  top: clamp(8px, 2vw, 14px);
   z-index: 4;
 }
 
+.recordingOverlay time {
+  font-variant-numeric: tabular-nums;
+}
+
 .recordingDot {
-  background: #ef4444;
+  background: #ff6b57;
   border-radius: 50%;
   height: 9px;
   width: 9px;
 }
 
+.detailArea {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 .warning {
   background: #fff8e5;
   border: 1px solid #e7c978;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #624600;
+  line-height: 1.45;
   margin: 0;
-  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  padding: 11px 13px;
 }
 
 .statusMessage {
-  color: #4b5563;
-  line-height: 1.5;
+  color: #475467;
+  line-height: 1.55;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .titleField {
   display: grid;
-  font-weight: 700;
-  gap: 6px;
+  font-weight: 750;
+  gap: 7px;
+  min-width: 0;
 }
 
 .reviewDetails,
 .resultPanel,
 .failurePanel {
   display: grid;
-  gap: 8px;
+  gap: 9px;
+  min-width: 0;
 }
 
-.reviewDetails > span {
-  color: #4b5563;
+.reviewDetails {
+  align-items: end;
+  grid-template-columns: minmax(110px, auto) minmax(240px, 1fr);
+}
+
+.duration {
+  color: #667085;
+  display: grid;
+  font-size: 0.8125rem;
+  gap: 4px;
+  padding-bottom: 11px;
+}
+
+.duration strong {
+  color: #1d2939;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultPanel,
 .failurePanel {
-  border-radius: 7px;
-  padding: 12px;
+  border-radius: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  padding: clamp(13px, 2vw, 18px);
 }
 
 .resultPanel {
@@ -196,7 +292,7 @@
 }
 
 .failurePanel {
-  background: #fff4f1;
+  background: #fff7f5;
   border: 1px solid #e4aaa0;
   color: #76261c;
 }
@@ -206,39 +302,61 @@
 }
 
 .titleField input {
-  border: 1px solid #c8d0da;
-  border-radius: 6px;
+  border: 1px solid #b9c2cf;
+  border-radius: 8px;
+  color: #111827;
   font: inherit;
+  min-height: 46px;
+  min-width: 0;
   padding: 10px 12px;
+  width: 100%;
+}
+
+.actionArea {
+  flex-wrap: wrap;
 }
 
 .primaryAction,
 .stopAction,
 .secondaryAction {
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 9px;
   cursor: pointer;
+  flex: 0 1 240px;
   font: inherit;
   font-weight: 800;
-  min-height: 50px;
-  padding: 12px 18px;
+  min-height: 48px;
+  padding: 11px 18px;
 }
 
-.primaryAction {
+.primaryAction,
+.stopAction {
   background: #8f2d1f;
   color: #ffffff;
-  flex: 1;
 }
 
-.stopAction,
 .secondaryAction {
   background: #ffffff;
-  border-color: #cfd6df;
+  border-color: #bfc8d4;
   color: #20242a;
+  flex-basis: 150px;
 }
 
-.stopAction {
-  flex: 1;
+.primaryAction:hover:not(:disabled),
+.stopAction:hover:not(:disabled) {
+  background: #76261c;
+}
+
+.secondaryAction:hover:not(:disabled) {
+  background: #f5f7fa;
+}
+
+.primaryAction:focus-visible,
+.stopAction:focus-visible,
+.secondaryAction:focus-visible,
+.titleField input:focus-visible {
+  outline: 3px solid #77b8aa;
+  outline-offset: 2px;
 }
 
 .primaryAction:disabled,
@@ -249,18 +367,82 @@
   opacity: 0.55;
 }
 
-.actionPlaceholder {
-  display: block;
-  min-height: 50px;
+.titleField input:disabled {
+  background: #eef1f5;
 }
 
-@media (max-width: 640px) {
+.actionPlaceholder {
+  display: block;
+  min-height: 48px;
+}
+
+@keyframes stageSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (min-width: 1280px) {
+  .stage {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .stage {
+    border-radius: 12px;
+  }
+
+  .reviewDetails {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .duration {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 639px) {
   .actionArea {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .primaryAction,
+  .stopAction,
   .secondaryAction {
+    flex: none;
     width: 100%;
+  }
+
+  .stateBadge,
+  .recordingBadge {
+    font-size: 0.6875rem;
+    padding: 6px 9px;
+  }
+}
+
+@media (max-width: 359px) {
+  .stage {
+    border-left: 0;
+    border-radius: 0;
+    border-right: 0;
+    margin-inline: -10px;
+    width: calc(100% + 20px);
+  }
+
+  .savingOverlay {
+    font-size: 0.8125rem;
+  }
+
+  .recordingOverlay {
+    font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-stage-mode="preparing"] .stateSurface::before {
+    animation: none;
   }
 }

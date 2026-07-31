@@ -1,53 +1,85 @@
 .capturePage {
-  background: #f6f8fb;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 88%), transparent 38rem),
+    #f3f6fa;
   min-height: 100vh;
-  padding: 14px;
+  overflow-x: clip;
+  padding:
+    max(72px, calc(env(safe-area-inset-top) + 62px))
+    max(14px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
 }
+
 .content {
   display: grid;
-  gap: 14px;
+  gap: clamp(14px, 2vw, 22px);
   margin: 0 auto;
-  max-width: 1080px;
+  max-width: 1120px;
+  min-width: 0;
+  width: 100%;
 }
 
 .header {
   display: grid;
   gap: 6px;
+  max-width: 720px;
+  min-width: 0;
 }
 
 .kicker {
-  color: #5b6572;
-  font-size: 0.875rem;
-  font-weight: 700;
+  color: #667085;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   margin: 0;
   text-transform: uppercase;
 }
 
 .title {
-  color: #111827;
-  font-size: 1.625rem;
-  line-height: 1.1;
+  color: #101828;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  letter-spacing: -0.025em;
+  line-height: 1.05;
   margin: 0;
 }
 
 .description {
-  color: #4b5563;
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  color: #475467;
+  font-size: clamp(0.9375rem, 1.5vw, 1.0625rem);
+  line-height: 1.55;
   margin: 0;
   max-width: 680px;
+  overflow-wrap: anywhere;
 }
 
 @media (min-width: 768px) {
   .capturePage {
-    padding: 24px;
+    padding:
+      max(28px, env(safe-area-inset-top))
+      max(28px, env(safe-area-inset-right))
+      max(36px, env(safe-area-inset-bottom))
+      max(28px, env(safe-area-inset-left));
+  }
+}
+
+@media (min-width: 1280px) {
+  .capturePage {
+    padding-top: 40px;
   }
 
   .content {
-    gap: 18px;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 359px) {
+  .capturePage {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
   }
 
-  .title {
-    font-size: 2rem;
+  .description {
+    font-size: 0.875rem;
   }
 }

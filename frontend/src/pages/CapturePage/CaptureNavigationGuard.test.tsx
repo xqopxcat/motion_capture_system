@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { NavigationType } from "react-router-dom";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
+  CaptureNavigationDialog,
   createCaptureNavigationBlocker,
   getCaptureNavigationDialogCopy,
   resetStaleBlockedNavigation,
@@ -75,5 +77,15 @@ describe("CaptureNavigationGuard", () => {
 
     expect(reset).toHaveBeenCalledOnce();
     expect(shouldShowCaptureNavigationDialog(blocker.state, false)).toBe(false);
+  });
+
+  it("keeps the responsive confirmation dialog accessible", () => {
+    const markup = renderToStaticMarkup(
+      <CaptureNavigationDialog protection="blocked-saving" onStay={() => undefined} onLeave={() => undefined} />,
+    );
+    expect(markup).toContain('role="alertdialog"');
+    expect(markup).toContain('aria-modal="true"');
+    expect(markup).toContain("Stay");
+    expect(markup).toContain("Leave anyway");
   });
 });

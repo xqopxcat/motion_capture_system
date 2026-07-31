@@ -55,6 +55,42 @@ type CaptureNavigationGuardProps = {
   protection: CaptureNavigationProtection;
 };
 
+type CaptureNavigationDialogProps = {
+  protection: CaptureNavigationProtection;
+  onStay: () => void;
+  onLeave: () => void;
+};
+
+export function CaptureNavigationDialog({
+  protection,
+  onStay,
+  onLeave,
+}: CaptureNavigationDialogProps) {
+  const copy = getCaptureNavigationDialogCopy(protection);
+  return (
+    <div className={styles.backdrop} role="presentation">
+      <section
+        aria-describedby="capture-navigation-message"
+        aria-labelledby="capture-navigation-title"
+        aria-modal="true"
+        className={styles.dialog}
+        role="alertdialog"
+      >
+        <h2 id="capture-navigation-title">{copy.title}</h2>
+        <p id="capture-navigation-message">{copy.message}</p>
+        <div className={styles.actions}>
+          <button type="button" className={styles.stayAction} onClick={onStay} autoFocus>
+            Stay
+          </button>
+          <button type="button" className={styles.leaveAction} onClick={onLeave}>
+            {copy.leaveLabel}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function CaptureNavigationGuard({
   routeLeaveRequiresConfirmation,
   protection,
@@ -74,27 +110,11 @@ export function CaptureNavigationGuard({
   }
   if (blocker.state !== "blocked") return null;
 
-  const copy = getCaptureNavigationDialogCopy(protection);
   return (
-    <div className={styles.backdrop} role="presentation">
-      <section
-        aria-describedby="capture-navigation-message"
-        aria-labelledby="capture-navigation-title"
-        aria-modal="true"
-        className={styles.dialog}
-        role="alertdialog"
-      >
-        <h2 id="capture-navigation-title">{copy.title}</h2>
-        <p id="capture-navigation-message">{copy.message}</p>
-        <div className={styles.actions}>
-          <button type="button" className={styles.stayAction} onClick={() => resolveCaptureNavigation(blocker, "stay")} autoFocus>
-            Stay
-          </button>
-          <button type="button" className={styles.leaveAction} onClick={() => resolveCaptureNavigation(blocker, "leave")}>
-            {copy.leaveLabel}
-          </button>
-        </div>
-      </section>
-    </div>
+    <CaptureNavigationDialog
+      protection={protection}
+      onStay={() => resolveCaptureNavigation(blocker, "stay")}
+      onLeave={() => resolveCaptureNavigation(blocker, "leave")}
+    />
   );
 }

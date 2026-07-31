@@ -38,6 +38,21 @@ function primaryActionLabel(action: CapturePresentationModel["primaryAction"]) {
     default: return null;
   }
 }
+
+function stateBadgeLabel(state: CaptureProductState["type"]) {
+  return ({
+    PermissionRequired: "Permission",
+    RequestingPermission: "Permission",
+    Preparing: "Preparing",
+    Ready: "Ready",
+    Countdown: "Countdown",
+    Recording: "REC",
+    Reviewing: "Review",
+    Saving: "Saving",
+    Completed: "Complete",
+    Failed: "Attention",
+  } as const)[state];
+}
 function reviewSnapshot(state: CaptureProductState): CaptureReviewSnapshot | null {
   if (state.type === "Reviewing" || state.type === "Saving") return state.snapshot;
   return null;
@@ -76,14 +91,20 @@ export function UnifiedCaptureStage({
   const displayedActionLabel = presentation.failure?.recoveryActionLabel ?? actionLabel;
 
   return (
-    <section className={styles.stage} aria-label="Unified capture stage" data-stage-mode={mode}>
+    <section
+      className={styles.stage}
+      aria-busy={productState.type === "Preparing" || productState.type === "Saving"}
+      aria-label="Unified capture stage"
+      data-layout="responsive-capture-workspace"
+      data-stage-mode={mode}
+    >
       <header className={styles.stageHeader}>
         <div>
           <p className={styles.eyebrow}>Capture</p>
           <h2 className={styles.title}>{presentation.statusLabel}</h2>
         </div>
         <span className={productState.type === "Recording" ? styles.recordingBadge : styles.stateBadge}>
-          {productState.type === "Recording" ? "REC" : productState.type}
+          {stateBadgeLabel(productState.type)}
         </span>
       </header>
 
@@ -156,44 +177,46 @@ export function UnifiedCaptureStage({
         )}
       </div>
 
-      {snapshot?.interruptionReason && (mode === "review" || mode === "saving") && (
-        <p className={styles.warning} role="status">{snapshot.interruptionReason}</p>
-      )}
+      <div className={styles.detailArea} data-testid="capture-detail-area">
+        {snapshot?.interruptionReason && (mode === "review" || mode === "saving") && (
+          <p className={styles.warning} role="status">{snapshot.interruptionReason}</p>
+        )}
 
-      {(mode === "review" || mode === "saving") && (
-        <div className={styles.reviewDetails}>
-          <span>Duration <strong>{presentation.review?.durationLabel}</strong></span>
-          <label className={styles.titleField}>
-            Record title
-            <input
-              value={recordTitle}
-              onChange={(event) => onRecordTitleChange(event.currentTarget.value)}
-              placeholder="Motion capture session"
-              disabled={!presentation.review?.titleEditable}
-            />
-          </label>
-        </div>
-      )}
+        {(mode === "review" || mode === "saving") && (
+          <div className={styles.reviewDetails}>
+            <span className={styles.duration}>Duration <strong>{presentation.review?.durationLabel}</strong></span>
+            <label className={styles.titleField}>
+              Record title
+              <input
+                value={recordTitle}
+                onChange={(event) => onRecordTitleChange(event.currentTarget.value)}
+                placeholder="Motion capture session"
+                disabled={!presentation.review?.titleEditable}
+              />
+            </label>
+          </div>
+        )}
 
-      {presentation.completed && (
-        <div className={styles.resultPanel} role="status">
-          <strong>Saved successfully</strong>
-          <span>{presentation.completed.title}</span>
-        </div>
-      )}
+        {presentation.completed && (
+          <div className={styles.resultPanel} role="status">
+            <strong>Saved successfully</strong>
+            <span>{presentation.completed.title}</span>
+          </div>
+        )}
 
-      {presentation.failure && (
-        <div className={styles.failurePanel} role="alert">
-          <strong>{presentation.failure.title}</strong>
-          <span>Stage: {presentation.failure.stageLabel}</span>
-          <p>{presentation.failure.message}</p>
-          {presentation.failure.recordId && <span>Your existing record will be reused.</span>}
-        </div>
-      )}
+        {presentation.failure && (
+          <div className={styles.failurePanel} role="alert">
+            <strong>{presentation.failure.title}</strong>
+            <span>Stage: {presentation.failure.stageLabel}</span>
+            <p>{presentation.failure.message}</p>
+            {presentation.failure.recordId && <span>Your existing record will be reused.</span>}
+          </div>
+        )}
 
-      <p className={styles.statusMessage} aria-live="polite">{presentation.statusMessage}</p>
+        <p className={styles.statusMessage} aria-live="polite">{presentation.statusMessage}</p>
+      </div>
 
-      <footer className={styles.actionArea} aria-label="Capture actions">
+      <footer className={styles.actionArea} aria-label="Capture actions" data-testid="capture-action-area">
         {displayedActionLabel ? (
           <button
             className={productState.type === "Recording" ? styles.stopAction : styles.primaryAction}

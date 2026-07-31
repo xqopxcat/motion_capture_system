@@ -4,7 +4,11 @@
   display: flex;
   inset: 0;
   justify-content: center;
-  padding: 20px;
+  padding:
+    max(14px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
   position: fixed;
   z-index: 1000;
 }
@@ -16,8 +20,10 @@
   color: #111827;
   display: grid;
   gap: 14px;
+  max-height: calc(100dvh - 28px);
   max-width: 460px;
-  padding: 22px;
+  overflow-y: auto;
+  padding: clamp(18px, 5vw, 24px);
   width: 100%;
 }
 
@@ -47,6 +53,12 @@
   padding: 10px 14px;
 }
 
+.stayAction:focus-visible,
+.leaveAction:focus-visible {
+  outline: 3px solid #77b8aa;
+  outline-offset: 2px;
+}
+
 .stayAction {
   background: #ffffff;
   border: 1px solid #cfd6df;
@@ -63,5 +75,10 @@
   .actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .stayAction,
+  .leaveAction {
+    width: 100%;
   }
 }
