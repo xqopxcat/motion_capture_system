@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useBlocker } from "react-router-dom";
 import type { BlockerFunction } from "react-router-dom";
 import type { CapturePresentationModel } from "../../features/capture";
@@ -34,6 +34,22 @@ export function resolveCaptureNavigation(
   else blocker.proceed();
 }
 
+export function resetStaleBlockedNavigation(
+  blocker: { state: string; reset?: () => void },
+  routeLeaveRequiresConfirmation: boolean,
+) {
+  if (blocker.state === "blocked" && !routeLeaveRequiresConfirmation) {
+    blocker.reset?.();
+  }
+}
+
+export function shouldShowCaptureNavigationDialog(
+  blockerState: string,
+  routeLeaveRequiresConfirmation: boolean,
+) {
+  return blockerState === "blocked" && routeLeaveRequiresConfirmation;
+}
+
 type CaptureNavigationGuardProps = {
   routeLeaveRequiresConfirmation: boolean;
   protection: CaptureNavigationProtection;
@@ -49,6 +65,13 @@ export function CaptureNavigationGuard({
   );
   const blocker = useBlocker(shouldBlock);
 
+  useEffect(() => {
+    resetStaleBlockedNavigation(blocker, routeLeaveRequiresConfirmation);
+  }, [blocker, routeLeaveRequiresConfirmation]);
+
+  if (!shouldShowCaptureNavigationDialog(blocker.state, routeLeaveRequiresConfirmation)) {
+    return null;
+  }
   if (blocker.state !== "blocked") return null;
 
   const copy = getCaptureNavigationDialogCopy(protection);

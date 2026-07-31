@@ -3,7 +3,9 @@ import { NavigationType } from "react-router-dom";
 import {
   createCaptureNavigationBlocker,
   getCaptureNavigationDialogCopy,
+  resetStaleBlockedNavigation,
   resolveCaptureNavigation,
+  shouldShowCaptureNavigationDialog,
 } from "./CaptureNavigationGuard";
 
 const location = (pathname: string) => ({
@@ -62,5 +64,16 @@ describe("CaptureNavigationGuard", () => {
     resolveCaptureNavigation({ reset, proceed }, "leave");
     expect(reset).toHaveBeenCalledOnce();
     expect(proceed).toHaveBeenCalledOnce();
+  });
+
+  it("resets a stale blocked transition and removes its dialog when protection clears", () => {
+    const reset = vi.fn();
+    const blocker = { state: "blocked", reset };
+
+    expect(shouldShowCaptureNavigationDialog(blocker.state, true)).toBe(true);
+    resetStaleBlockedNavigation(blocker, false);
+
+    expect(reset).toHaveBeenCalledOnce();
+    expect(shouldShowCaptureNavigationDialog(blocker.state, false)).toBe(false);
   });
 });

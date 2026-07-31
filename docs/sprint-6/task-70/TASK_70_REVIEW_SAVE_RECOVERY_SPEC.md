@@ -49,6 +49,8 @@ Browser refresh/unload retains the feasible native warning while protection is a
 
 Internal navigation is protected with React Router's supported `useBlocker` API. The blocker is driven by the controller-derived `routeLeaveRequiresConfirmation` flag and therefore does not reconstruct Product State. It covers Link/NavLink, programmatic navigation, and browser Back/Forward (`POP`). Stay resets the pending transition; Leave proceeds to the router's original pending destination.
 
+If protection becomes false while a transition is blocked—for example when Saving becomes Completed—the guard resets/cancels that stale transition and immediately removes the dialog. It never proceeds to the old destination automatically.
+
 Reviewing uses “Discard this recording?” and Saving uses “Leave while saving?”. Completed and states whose controller flag is false do not block.
 
 The package range remains `react-router-dom ^7.1.1`; the installed version verified for this implementation is 7.18.0. No dependency was added.

@@ -46,11 +46,13 @@
 - [x] Leave proceeds to the original pending destination.
 - [x] Completed and unprotected states do not block.
 - [x] Existing beforeunload protection remains active.
+- [x] A blocked transition is reset, never proceeded, when controller protection clears.
+- [x] The stale confirmation dialog disappears immediately after protection clears.
 
 ## Validation record
 
 - [x] Focused capture tests.
-- [x] Complete frontend tests: 40 files / 233 tests passed.
+- [x] Complete frontend tests: 40 files / 234 tests passed.
 - [x] TypeScript project build/typecheck.
 - [x] Production Vite build.
 - [x] Lint: no lint script exists; record as not applicable.
