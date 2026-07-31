@@ -39,7 +39,7 @@ const states: CaptureProductState[] = [
   { type: "Recording", operationToken: token("recording", 2), cameraSessionId: 1, recordingOriginMs: 3000, stopRequested: false, interruptedBy: null },
   { type: "Reviewing", snapshot: snapshot() },
   { type: "Saving", operationToken: token("saving", 4), snapshot: snapshot(), substate: { stage: "Analyzing", progress: null }, resume: { completedArtifacts: new Set() } },
-  { type: "Completed", recordId: "record-1" },
+  { type: "Completed", recordId: "record-1", title: "Sprint session" },
   { type: "Failed", stage: "device", safeMessage: "Camera lost.", retryable: true, recoveryTarget: "PermissionRequired", routeLeaveRequiresConfirmation: false },
 ];
 
@@ -106,6 +106,8 @@ describe("UnifiedCaptureStage", () => {
     expect(markup).toContain("Save Recording");
     expect(markup).toContain("Retake");
     expect(markup).toContain("Camera disconnected.");
+    expect(markup).toContain("Duration");
+    expect(markup).toContain("00:01");
   });
 
   it("disables review playback controls while Saving", () => {
@@ -113,11 +115,16 @@ describe("UnifiedCaptureStage", () => {
     expect(markup).toContain('data-stage-mode="saving"');
     expect(markup).toContain("disabled=\"\"");
     expect(markup).not.toContain(">Save Recording</button>");
+    expect(markup).toContain('data-testid="saving-indeterminate"');
+    expect(markup).not.toMatch(/\d+%/);
   });
 
   it("shows View Record on Completed and Retry only for retryable Failed", () => {
-    expect(renderStage(states.find((state) => state.type === "Completed")!)).toContain("View Record");
-    expect(renderStage(states.find((state) => state.type === "Failed")!)).toContain(">Retry</button>");
+    const completed = renderStage(states.find((state) => state.type === "Completed")!);
+    expect(completed).toContain("View Record");
+    expect(completed).toContain("Sprint session");
+    expect(completed).not.toContain("Working…");
+    expect(renderStage(states.find((state) => state.type === "Failed")!)).toContain(">Try again</button>");
     const failed: CaptureProductState = { type: "Failed", stage: "analysis", safeMessage: "Unavailable.", retryable: false, recoveryTarget: "none", routeLeaveRequiresConfirmation: false };
     expect(renderStage(failed)).not.toContain(">Retry</button>");
   });

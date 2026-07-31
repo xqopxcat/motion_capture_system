@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildKneeMetricSeries, sha256Hex } from "./publishCaptureRecord";
+import { buildCapturePublishRecoveryPlan, buildKneeMetricSeries, sha256Hex } from "./publishCaptureRecord";
 import type { PoseDataset } from "../../types";
 
 function landmark(id: number, x = id / 100, y = id / 100) {
@@ -48,6 +48,49 @@ describe("production capture artifact preparation", () => {
       metricDefinitionVersion: "knee-flexion.v1",
       side: "left",
       unit: "degree",
+    });
+  });
+});
+
+describe("capture publish recovery plan", () => {
+  it("creates only before a Record identity is known", () => {
+    expect(buildCapturePublishRecoveryPlan({ completedArtifacts: new Set() })).toMatchObject({
+      createRecord: true,
+      recordId: null,
+    });
+    expect(buildCapturePublishRecoveryPlan({ recordId: "record-1", completedArtifacts: new Set() })).toMatchObject({
+      createRecord: false,
+      recordId: "record-1",
+    });
+  });
+
+  it("preserves completed artifacts and resumes only missing uploads", () => {
+    expect(buildCapturePublishRecoveryPlan({
+      recordId: "record-1",
+      completedArtifacts: new Set(["video", "pose"]),
+    }).missingArtifacts).toEqual(["metrics", "thumbnail"]);
+  });
+
+  it("retries finalization on the same Record without uploads when all artifacts completed", () => {
+    expect(buildCapturePublishRecoveryPlan({
+      recordId: "record-1",
+      completedArtifacts: new Set(["video", "pose", "metrics", "thumbnail"]),
+      lifecycleFailed: true,
+    })).toMatchObject({
+      createRecord: false,
+      missingArtifacts: [],
+      retryLifecycle: true,
+      recordId: "record-1",
+    });
+  });
+
+  it("blocks duplicate creation after an ambiguous create outcome", () => {
+    expect(buildCapturePublishRecoveryPlan({
+      completedArtifacts: new Set(),
+      creationOutcomeAmbiguous: true,
+    })).toMatchObject({
+      createRecord: false,
+      duplicateCreationBlocked: true,
     });
   });
 });

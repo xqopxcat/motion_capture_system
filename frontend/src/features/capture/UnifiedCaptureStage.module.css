@@ -172,6 +172,39 @@
   gap: 6px;
 }
 
+.reviewDetails,
+.resultPanel,
+.failurePanel {
+  display: grid;
+  gap: 8px;
+}
+
+.reviewDetails > span {
+  color: #4b5563;
+}
+
+.resultPanel,
+.failurePanel {
+  border-radius: 7px;
+  padding: 12px;
+}
+
+.resultPanel {
+  background: #edf8f0;
+  border: 1px solid #9bc7a5;
+  color: #195b2b;
+}
+
+.failurePanel {
+  background: #fff4f1;
+  border: 1px solid #e4aaa0;
+  color: #76261c;
+}
+
+.failurePanel p {
+  margin: 0;
+}
+
 .titleField input {
   border: 1px solid #c8d0da;
   border-radius: 6px;

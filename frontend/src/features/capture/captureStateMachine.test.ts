@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CaptureOperationToken, CaptureProductState } from "./captureControllerTypes";
+import { buildPoseDatasetDraft } from "./buildPoseDatasetDraft";
 import {
   buildCapturePresentation,
   captureStateReducer,
@@ -11,6 +12,24 @@ const token = (kind: CaptureOperationToken["kind"], id: number): CaptureOperatio
 
 function ready(): CaptureProductState {
   return { type: "Ready", cameraSessionId: 1 };
+}
+
+function reviewing(): CaptureProductState {
+  return {
+    type: "Reviewing",
+    snapshot: Object.freeze({
+      reviewToken: token("review", 3),
+      recordingToken: token("recording", 2),
+      recordingOriginMs: 0,
+      durationMs: 1_500,
+      videoBlob: new Blob(["video"]),
+      videoUrl: "blob:review",
+      poseDraft: buildPoseDatasetDraft([]),
+      title: "Draft",
+      interruptionReason: null,
+      diagnosticSessionStartedAtMs: null,
+    }),
+  };
 }
 
 describe("captureStateReducer", () => {
@@ -47,7 +66,7 @@ describe("captureStateReducer", () => {
 
   it("ignores invalid and stale events by identity", () => {
     const state = ready();
-    expect(captureStateReducer(state, { type: "SAVE", token: token("saving", 1), resume: { completedArtifacts: new Set() } })).toBe(state);
+    expect(captureStateReducer(state, { type: "SAVE", token: token("saving", 1), title: "Session", resume: { completedArtifacts: new Set() } })).toBe(state);
     const requesting = captureStateReducer(createPermissionRequiredState(), {
       type: "ENABLE_CAMERA",
       token: token("camera", 1),
@@ -112,5 +131,36 @@ describe("captureStateReducer", () => {
     expect(switched).toMatchObject({ type: "RequestingPermission", requestedDeviceId: "rear" });
     expect(buildCapturePresentation(ready(), null, 0).canSwitchCamera).toBe(true);
   });
-});
 
+  it("freezes the edited title, rejects duplicate Save, and retains it after Ready confirmation", () => {
+    const saving = captureStateReducer(reviewing(), {
+      type: "SAVE",
+      token: token("saving", 4),
+      title: "Trimmed title",
+      resume: { completedArtifacts: new Set() },
+    });
+    expect(saving).toMatchObject({ type: "Saving", snapshot: { title: "Trimmed title" } });
+    expect(captureStateReducer(saving, {
+      type: "SAVE",
+      token: token("saving", 5),
+      title: "Duplicate",
+      resume: { completedArtifacts: new Set() },
+    })).toBe(saving);
+    expect(captureStateReducer(saving, {
+      type: "SAVE_SUCCEEDED",
+      token: token("saving", 4),
+      recordId: "record-1",
+    })).toEqual({ type: "Completed", recordId: "record-1", title: "Trimmed title" });
+  });
+
+  it("activates navigation protection for unsaved review and active saving", () => {
+    expect(buildCapturePresentation(reviewing(), null, 0).routeLeaveProtection).toBe("confirm-unsaved");
+    const saving = captureStateReducer(reviewing(), {
+      type: "SAVE",
+      token: token("saving", 4),
+      title: "Session",
+      resume: { completedArtifacts: new Set() },
+    });
+    expect(buildCapturePresentation(saving, null, 0).routeLeaveProtection).toBe("blocked-saving");
+  });
+});

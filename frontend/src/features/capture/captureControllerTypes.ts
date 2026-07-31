@@ -133,6 +133,7 @@ type SavingState = {
 type CompletedState = {
   type: "Completed";
   recordId: string;
+  title: string;
 };
 
 type FailedState = {
@@ -180,7 +181,7 @@ export type CaptureEvent =
   | ({ type: "RECORDING_READY"; snapshot: CaptureReviewSnapshot } & TokenEvent)
   | ({ type: "RECORDING_FAILED"; safeMessage: string } & TokenEvent)
   | { type: "RETAKE"; token: CaptureOperationToken }
-  | { type: "SAVE"; token: CaptureOperationToken; resume: CapturePublishResumeState }
+  | { type: "SAVE"; token: CaptureOperationToken; title: string; resume: CapturePublishResumeState }
   | ({ type: "SAVE_STAGE_CHANGED"; substate: CaptureSavingSubstate } & TokenEvent)
   | ({ type: "SAVE_SUCCEEDED"; recordId: string } & TokenEvent)
   | ({
@@ -222,5 +223,25 @@ export type CapturePresentationModel = {
   canSwitchCamera: boolean;
   canUseOverlayControls: boolean;
   routeLeaveProtection: "none" | "confirm-unsaved" | "blocked-saving";
+  review: {
+    durationLabel: string;
+    titleEditable: boolean;
+    interruptionWarning: string | null;
+  } | null;
+  saving: {
+    stageLabel: string;
+    progressMode: "indeterminate" | "steps";
+    completedSteps: number;
+    totalSteps: number;
+    currentStepLabel: string | null;
+  } | null;
+  completed: { recordId: string; title: string } | null;
+  failure: {
+    title: string;
+    stageLabel: string;
+    message: string;
+    retryable: boolean;
+    recordId: string | null;
+    recoveryActionLabel: string | null;
+  } | null;
 };
-

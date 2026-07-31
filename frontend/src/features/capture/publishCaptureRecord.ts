@@ -47,7 +47,23 @@ type PreparedArtifact = {
   contentType: string;
 };
 
+const CAPTURE_ARTIFACTS = ["video", "pose", "metrics", "thumbnail"] as const;
+
+export function buildCapturePublishRecoveryPlan(resume: CapturePublishResumeState) {
+  return {
+    recordId: resume.recordId ?? null,
+    createRecord: !resume.recordId && !resume.creationOutcomeAmbiguous,
+    missingArtifacts: CAPTURE_ARTIFACTS.filter((artifact) => !resume.completedArtifacts.has(artifact)),
+    retryLifecycle: resume.lifecycleFailed === true,
+    duplicateCreationBlocked: !resume.recordId && resume.creationOutcomeAmbiguous === true,
+  };
+}
+
 export async function publishCaptureRecord(input: PublishInput): Promise<FinalizeRecordResponse> {
+  const recoveryPlan = buildCapturePublishRecoveryPlan(input.resume);
+  if (recoveryPlan.duplicateCreationBlocked) {
+    throw new Error("Record creation outcome is ambiguous; duplicate creation is blocked.");
+  }
   const poseDataset = buildPoseDatasetV1(input.poseDraft);
   input.onProgress({ stage: "preparing", message: "Preparing browser analysis artifacts…" });
 
@@ -67,10 +83,10 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     checksum: await sha256Hex(thumbnailBlob),
     contentType: "image/jpeg",
   };
-  const recordId = input.resume.recordId ?? await createRecord(input, poseDataset);
+  const recordId = recoveryPlan.recordId ?? await createRecord(input, poseDataset);
   input.resume.recordId = recordId;
 
-  if (!input.resume.completedArtifacts.has("video")) {
+  if (recoveryPlan.missingArtifacts.includes("video")) {
     input.onProgress({ stage: "uploading-video", message: "Uploading video to private storage…" });
     const signed = await apiJson<SignedUploadUrlResponse>("/uploads/video", {
       recordId,
@@ -85,7 +101,7 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     input.resume.completedArtifacts.add("video");
   }
 
-  if (!input.resume.completedArtifacts.has("pose")) {
+  if (recoveryPlan.missingArtifacts.includes("pose")) {
     input.onProgress({ stage: "uploading-pose", message: "Uploading pose.v1 dataset…" });
     const signed = await requestJsonUpload("/uploads/pose", recordId, pose);
     await uploadSigned(signed.uploadUrl, pose);
@@ -95,7 +111,7 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     input.resume.completedArtifacts.add("pose");
   }
 
-  if (!input.resume.completedArtifacts.has("metrics")) {
+  if (recoveryPlan.missingArtifacts.includes("metrics")) {
     input.onProgress({ stage: "uploading-metrics", message: "Uploading Metric Series…" });
     const signed = await requestJsonUpload("/uploads/metrics", recordId, metrics);
     await uploadSigned(signed.uploadUrl, metrics);
@@ -106,7 +122,7 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     input.resume.completedArtifacts.add("metrics");
   }
 
-  if (!input.resume.completedArtifacts.has("thumbnail")) {
+  if (recoveryPlan.missingArtifacts.includes("thumbnail")) {
     input.onProgress({ stage: "uploading-thumbnail", message: "Uploading thumbnail…" });
     const signed = await apiJson<SignedUploadUrlResponse>("/uploads/thumbnail", {
       recordId,
@@ -124,7 +140,7 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
   }
 
   input.onProgress({ stage: "finalizing", message: "Backend is validating and finalizing…" });
-  if (input.resume.lifecycleFailed) {
+  if (recoveryPlan.retryLifecycle) {
     await apiJson(`/records/${recordId}/retry`, {});
     input.resume.lifecycleFailed = false;
   }

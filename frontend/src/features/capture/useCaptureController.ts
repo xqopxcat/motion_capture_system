@@ -61,15 +61,15 @@ export function mapPublishProgressToSavingSubstate(
 }
 
 export function classifySavingFailure(
-  error: unknown,
+  _error: unknown,
   resume: CapturePublishResumeState,
+  substate: CaptureSavingSubstate = { stage: "Analyzing", progress: null },
 ): {
   stage: CaptureFailureStage;
   retryable: boolean;
   recoveryTarget: CaptureRecoveryTarget;
   safeMessage: string;
 } {
-  const message = error instanceof Error ? error.message : "Saving the Record failed.";
   if (resume.creationOutcomeAmbiguous) {
     return {
       stage: "record-creation-ambiguous",
@@ -80,19 +80,29 @@ export function classifySavingFailure(
     };
   }
   if (!resume.recordId) {
+    const creating = substate.stage === "CreatingRecord";
     return {
-      stage: "analysis",
+      stage: creating ? "record-creation" : "analysis",
       retryable: true,
       recoveryTarget: "SavingAnalyzing",
-      safeMessage: message,
+      safeMessage: creating
+        ? "We couldn't create the record. Your local recording is still available and can be retried safely."
+        : "We couldn't prepare the motion analysis. Your local recording is still available and can be retried safely.",
     };
   }
+  const finalizing = substate.stage === "Finalizing" || resume.lifecycleFailed === true;
   return {
-    stage: resume.completedArtifacts.size > 0 ? "upload" : "record-creation",
+    stage: finalizing ? "finalization" : "upload",
     retryable: true,
-    recoveryTarget: resume.lifecycleFailed ? "SavingFinalizing" : "SavingUploading",
-    safeMessage: message,
+    recoveryTarget: finalizing ? "SavingFinalizing" : "SavingUploading",
+    safeMessage: finalizing
+      ? "Your record exists and completed uploads are preserved. Final confirmation can be retried without creating another record."
+      : "Saving was interrupted. Your record and completed uploads are preserved; retry will continue from the next safe step.",
   };
+}
+
+export function normalizeCaptureTitle(draft: string, snapshotTitle: string, date = new Date()) {
+  return draft.trim() || snapshotTitle.trim() || `Motion Capture ${date.toLocaleString()}`;
 }
 
 export function useCaptureController(options: CaptureControllerOptions = {}) {
@@ -108,6 +118,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   const mountedRef = useRef(true);
   const countdownTimeoutRef = useRef<number | null>(null);
   const saveStartedTokenRef = useRef<number | null>(null);
+  const savingSubstateRef = useRef<CaptureSavingSubstate>({ stage: "Analyzing", progress: null });
   const reviewCreatedForRecordingRef = useRef<number | null>(null);
   const [previewVideoElement, setPreviewVideoElement] = useState<HTMLVideoElement | null>(null);
   const [countdownValue, setCountdownValue] = useState<number | null>(null);
@@ -360,14 +371,18 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   }, [camera.startCamera, newToken, recorder.resetRecordingResult]);
 
   const save = useCallback(() => {
-    if (stateRef.current.type !== "Reviewing") return;
+    const current = stateRef.current;
+    if (current.type !== "Reviewing") return;
+    const title = normalizeCaptureTitle(recordTitle, current.snapshot.title);
+    setRecordTitle(title);
     const token = newToken("saving");
     dispatch({
       type: "SAVE",
       token,
+      title,
       resume: { completedArtifacts: new Set() },
     });
-  }, [newToken]);
+  }, [newToken, recordTitle]);
 
   useEffect(() => {
     if (
@@ -380,17 +395,18 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     const token = productState.operationToken;
     const resume = productState.resume;
     void publishCaptureRecord({
-      title: recordTitle || productState.snapshot.title,
+      title: productState.snapshot.title,
       description: "Captured and analyzed in the browser.",
       videoBlob: productState.snapshot.videoBlob,
       poseDraft: productState.snapshot.poseDraft,
       resume,
       onProgress: (progress) => {
         if (!mountedRef.current) return;
+        savingSubstateRef.current = mapPublishProgressToSavingSubstate(progress);
         dispatch({
           type: "SAVE_STAGE_CHANGED",
           token,
-          substate: mapPublishProgressToSavingSubstate(progress),
+          substate: savingSubstateRef.current,
         });
       },
     })
@@ -399,9 +415,9 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
       })
       .catch((error) => {
         if (!mountedRef.current) return;
-        dispatch({ type: "SAVE_FAILED", token, resume, ...classifySavingFailure(error, resume) });
+        dispatch({ type: "SAVE_FAILED", token, resume, ...classifySavingFailure(error, resume, savingSubstateRef.current) });
       });
-  }, [productState, recordTitle]);
+  }, [productState]);
 
   const retry = useCallback(() => {
     const current = stateRef.current;

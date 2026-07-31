@@ -73,6 +73,7 @@ export function UnifiedCaptureStage({
   const showsLiveSurface = mode === "live" || (mode === "preparing" && cameraStream !== null);
   const showsReviewSurface = (mode === "review" || mode === "saving") && snapshot !== null;
   const actionLabel = primaryActionLabel(presentation.primaryAction);
+  const displayedActionLabel = presentation.failure?.recoveryActionLabel ?? actionLabel;
 
   return (
     <section className={styles.stage} aria-label="Unified capture stage" data-stage-mode={mode}>
@@ -143,6 +144,14 @@ export function UnifiedCaptureStage({
           <div className={styles.savingOverlay} role="status">
             <strong>{presentation.statusLabel}</strong>
             <span>{presentation.statusMessage}</span>
+            {presentation.saving?.progressMode === "steps" ? (
+              <span data-testid="saving-step-progress">
+                {presentation.saving.completedSteps} of {presentation.saving.totalSteps} items saved
+                {presentation.saving.currentStepLabel ? ` · ${presentation.saving.currentStepLabel}` : ""}
+              </span>
+            ) : (
+              <span data-testid="saving-indeterminate">Working…</span>
+            )}
           </div>
         )}
       </div>
@@ -152,28 +161,47 @@ export function UnifiedCaptureStage({
       )}
 
       {(mode === "review" || mode === "saving") && (
-        <label className={styles.titleField}>
-          Record title
-          <input
-            value={recordTitle}
-            onChange={(event) => onRecordTitleChange(event.currentTarget.value)}
-            placeholder="Motion capture session"
-            disabled={mode === "saving"}
-          />
-        </label>
+        <div className={styles.reviewDetails}>
+          <span>Duration <strong>{presentation.review?.durationLabel}</strong></span>
+          <label className={styles.titleField}>
+            Record title
+            <input
+              value={recordTitle}
+              onChange={(event) => onRecordTitleChange(event.currentTarget.value)}
+              placeholder="Motion capture session"
+              disabled={!presentation.review?.titleEditable}
+            />
+          </label>
+        </div>
+      )}
+
+      {presentation.completed && (
+        <div className={styles.resultPanel} role="status">
+          <strong>Saved successfully</strong>
+          <span>{presentation.completed.title}</span>
+        </div>
+      )}
+
+      {presentation.failure && (
+        <div className={styles.failurePanel} role="alert">
+          <strong>{presentation.failure.title}</strong>
+          <span>Stage: {presentation.failure.stageLabel}</span>
+          <p>{presentation.failure.message}</p>
+          {presentation.failure.recordId && <span>Your existing record will be reused.</span>}
+        </div>
       )}
 
       <p className={styles.statusMessage} aria-live="polite">{presentation.statusMessage}</p>
 
       <footer className={styles.actionArea} aria-label="Capture actions">
-        {actionLabel ? (
+        {displayedActionLabel ? (
           <button
             className={productState.type === "Recording" ? styles.stopAction : styles.primaryAction}
             type="button"
             onClick={onPrimaryAction}
             disabled={!presentation.primaryActionEnabled}
           >
-            {actionLabel}
+            {displayedActionLabel}
           </button>
         ) : (
           <span className={styles.actionPlaceholder} aria-hidden="true" />

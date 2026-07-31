@@ -148,7 +148,7 @@ export function captureStateReducer(
       return {
         type: "Saving",
         operationToken: event.token,
-        snapshot: state.snapshot,
+        snapshot: Object.freeze({ ...state.snapshot, title: event.title }),
         substate: { stage: "Analyzing", progress: null },
         resume: event.resume,
       };
@@ -157,7 +157,7 @@ export function captureStateReducer(
       return { ...state, substate: event.substate };
     case "SAVE_SUCCEEDED":
       if (state.type !== "Saving" || !sameToken(state.operationToken, event.token)) return state;
-      return { type: "Completed", recordId: event.recordId };
+      return { type: "Completed", recordId: event.recordId, title: state.snapshot.title };
     case "SAVE_FAILED":
       if (state.type !== "Saving" || !sameToken(state.operationToken, event.token)) return state;
       return {
@@ -247,6 +247,10 @@ export function buildCapturePresentation(
     canSwitchCamera: state.type === "Ready",
     canUseOverlayControls:
       state.type === "Ready" || state.type === "Countdown" || state.type === "Recording",
+    review: null,
+    saving: null,
+    completed: null,
+    failure: null,
   } as const;
   switch (state.type) {
     case "PermissionRequired":
@@ -262,12 +266,68 @@ export function buildCapturePresentation(
     case "Recording":
       return { ...base, primaryAction: "stop", primaryActionEnabled: !state.stopRequested, secondaryActions: [], statusLabel: state.stopRequested ? "Finishing" : "Recording", statusMessage: state.stopRequested ? "Finishing the local recording." : "Recording video and raw pose.", routeLeaveProtection: "confirm-unsaved" };
     case "Reviewing":
-      return { ...base, primaryAction: "save", primaryActionEnabled: true, secondaryActions: ["retake"], statusLabel: "Review", statusMessage: state.snapshot.interruptionReason ?? "Review the local recording before saving.", routeLeaveProtection: "confirm-unsaved" };
+      return { ...base, primaryAction: "save", primaryActionEnabled: true, secondaryActions: ["retake"], statusLabel: "Review your recording", statusMessage: "Play, seek, and name your recording before saving.", routeLeaveProtection: "confirm-unsaved", review: buildReviewPresentation(state.snapshot, true) };
     case "Saving":
-      return { ...base, primaryAction: "none", primaryActionEnabled: false, secondaryActions: [], statusLabel: state.substate.stage, statusMessage: state.substate.progress?.message ?? "Saving the Record.", routeLeaveProtection: "blocked-saving" };
+      return { ...base, primaryAction: "none", primaryActionEnabled: false, secondaryActions: [], statusLabel: savingStageLabel(state.substate.stage), statusMessage: savingStageMessage(state.substate.stage), routeLeaveProtection: "blocked-saving", review: buildReviewPresentation(state.snapshot, false), saving: buildSavingPresentation(state) };
     case "Completed":
-      return { ...base, primaryAction: "view-record", primaryActionEnabled: true, secondaryActions: [], statusLabel: "Ready", statusMessage: "The Record is ready.", routeLeaveProtection: "none" };
+      return { ...base, primaryAction: "view-record", primaryActionEnabled: true, secondaryActions: [], statusLabel: "Recording saved", statusMessage: `“${state.title}” is ready to view.`, routeLeaveProtection: "none", completed: { recordId: state.recordId, title: state.title } };
     case "Failed":
-      return { ...base, primaryAction: state.retryable ? "retry" : "none", primaryActionEnabled: state.retryable, secondaryActions: ["back"], statusLabel: "Needs attention", statusMessage: state.safeMessage, routeLeaveProtection: state.routeLeaveRequiresConfirmation ? "confirm-unsaved" : "none" };
+      return { ...base, primaryAction: state.retryable ? "retry" : "none", primaryActionEnabled: state.retryable, secondaryActions: ["back"], statusLabel: failureTitle(state.stage), statusMessage: state.safeMessage, routeLeaveProtection: state.routeLeaveRequiresConfirmation ? "confirm-unsaved" : "none", failure: { title: failureTitle(state.stage), stageLabel: failureStageLabel(state.stage), message: state.safeMessage, retryable: state.retryable, recordId: state.recordId ?? null, recoveryActionLabel: state.retryable ? recoveryActionLabel(state.recoveryTarget) : null } };
   }
+}
+
+function buildReviewPresentation(snapshot: Extract<CaptureProductState, { type: "Reviewing" | "Saving" }>["snapshot"], titleEditable: boolean) {
+  return {
+    durationLabel: formatDuration(snapshot.durationMs),
+    titleEditable,
+    interruptionWarning: snapshot.interruptionReason,
+  };
+}
+
+function formatDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function savingStageLabel(stage: Extract<CaptureProductState, { type: "Saving" }>["substate"]["stage"]) {
+  return ({ Analyzing: "Preparing your motion analysis", CreatingRecord: "Creating your record", UploadingArtifacts: "Saving video and analysis data", Finalizing: "Finalizing your record" } as const)[stage];
+}
+
+function savingStageMessage(stage: Extract<CaptureProductState, { type: "Saving" }>["substate"]["stage"]) {
+  return stage === "Finalizing"
+    ? "Your uploads are complete. We’re confirming that the record is ready."
+    : "Keep this page open while your recording is safely saved.";
+}
+
+function buildSavingPresentation(state: Extract<CaptureProductState, { type: "Saving" }>) {
+  const labels = { video: "Video", pose: "Pose data", metrics: "Motion metrics", thumbnail: "Thumbnail" } as const;
+  const current = state.substate.stage === "UploadingArtifacts" && state.substate.artifact
+    ? labels[state.substate.artifact]
+    : state.substate.stage === "Finalizing" ? "Finalizing" : null;
+  return {
+    stageLabel: savingStageLabel(state.substate.stage),
+    progressMode: state.resume.recordId ? "steps" as const : "indeterminate" as const,
+    completedSteps: state.resume.completedArtifacts.size,
+    totalSteps: 4,
+    currentStepLabel: current,
+  };
+}
+
+function failureTitle(stage: Extract<CaptureProductState, { type: "Failed" }>["stage"]) {
+  if (stage === "analysis" || stage === "review-validation") return "Analysis failed";
+  if (stage === "record-creation" || stage === "record-creation-ambiguous") return "Record creation needs attention";
+  if (stage === "upload") return "Upload interrupted";
+  if (stage === "finalization") return "Finalization interrupted";
+  if (stage === "permission") return "Camera permission required";
+  return stage === "recording" ? "Recording failed" : "Capture unavailable";
+}
+
+function failureStageLabel(stage: Extract<CaptureProductState, { type: "Failed" }>["stage"]) {
+  return ({ permission: "Camera permission", preparation: "Camera preparation", recording: "Recording", "review-validation": "Recording review", analysis: "Motion analysis", "record-creation": "Record creation", "record-creation-ambiguous": "Record creation confirmation", upload: "Saving artifacts", finalization: "Final confirmation", device: "Camera device" } as const)[stage];
+}
+
+function recoveryActionLabel(target: Extract<CaptureProductState, { type: "Failed" }>["recoveryTarget"]) {
+  return target === "SavingFinalizing" ? "Retry finalization" : target.startsWith("Saving") ? "Resume saving" : "Try again";
 }
