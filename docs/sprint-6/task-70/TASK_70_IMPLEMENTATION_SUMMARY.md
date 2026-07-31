@@ -10,6 +10,7 @@
 - Added structured failure title, product stage, safe message, retry label and known-Record context.
 - Added a publisher recovery plan used to reuse a known Record, skip completed artifacts, retry lifecycle finalization and block ambiguous duplicate creation.
 - Preserved `beforeunload` navigation protection.
+- Added router-level blocking through `useBlocker`, with state-specific confirmation copy and Stay/Leave handling for the original pending transition.
 
 ## Inspected implementation
 
@@ -26,10 +27,12 @@
 - `frontend/src/features/capture/publishCaptureRecord.ts`
 - `frontend/src/features/capture/UnifiedCaptureStage.tsx`
 - `frontend/src/features/capture/UnifiedCaptureStage.module.css`
+- `frontend/src/pages/CapturePage/CaptureNavigationGuard.tsx`
+- `frontend/src/pages/CapturePage/CaptureNavigationGuard.module.css`
+- `frontend/src/pages/CapturePage/CapturePage.tsx`
 - Corresponding capture tests
 
 ## Intentionally deferred to Task 71
 
 - Final responsive spacing, visual hierarchy, typography, polished progress animation and mobile-specific composition.
 - No broad Capture visual redesign was performed.
-

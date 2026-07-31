@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySavingFailure, mapPublishProgressToSavingSubstate, normalizeCaptureTitle } from "./useCaptureController";
+import { classifySavingFailure, mapPublishProgressToSavingSubstate, normalizeCaptureTitle, shouldPreventCaptureUnload } from "./useCaptureController";
 
 describe("capture controller policies", () => {
   it("maps publisher stages into approved Saving substates", () => {
@@ -52,5 +52,10 @@ describe("capture controller policies", () => {
     expect(normalizeCaptureTitle("  Sprint run  ", "Old")).toBe("Sprint run");
     expect(normalizeCaptureTitle(" ", " Existing title ")).toBe("Existing title");
     expect(normalizeCaptureTitle(" ", " ", new Date("2026-07-30T00:00:00Z"))).toMatch(/^Motion Capture /);
+  });
+
+  it("keeps beforeunload protection driven by the controller route-leave flag", () => {
+    expect(shouldPreventCaptureUnload(true)).toBe(true);
+    expect(shouldPreventCaptureUnload(false)).toBe(false);
   });
 });

@@ -105,6 +105,10 @@ export function normalizeCaptureTitle(draft: string, snapshotTitle: string, date
   return draft.trim() || snapshotTitle.trim() || `Motion Capture ${date.toLocaleString()}`;
 }
 
+export function shouldPreventCaptureUnload(routeLeaveRequiresConfirmation: boolean) {
+  return routeLeaveRequiresConfirmation;
+}
+
 export function useCaptureController(options: CaptureControllerOptions = {}) {
   const now = options.now ?? (() => performance.now());
   const countdownDurationMs = options.countdownDurationMs ?? DEFAULT_CAPTURE_COUNTDOWN_MS;
@@ -463,16 +467,17 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     () => buildCapturePresentation(productState, countdownValue, recorder.elapsedSeconds),
     [countdownValue, productState, recorder.elapsedSeconds],
   );
+  const routeLeaveRequiresConfirmation = presentation.routeLeaveProtection !== "none";
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (presentation.routeLeaveProtection === "none") return;
+      if (!shouldPreventCaptureUnload(routeLeaveRequiresConfirmation)) return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [presentation.routeLeaveProtection]);
+  }, [routeLeaveRequiresConfirmation]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -503,6 +508,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   return {
     productState,
     presentation,
+    routeLeaveRequiresConfirmation,
     primaryAction,
     requestCamera,
     startCountdown,

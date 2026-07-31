@@ -18,6 +18,15 @@
 - Private upload signing/completion: unchanged.
 - Ready confirmation requirement: unchanged.
 - No dependency added.
+- React Router's installed `useBlocker` API is used with the existing data-router setup; router configuration and route contracts are unchanged.
+
+## Navigation protection
+
+- The controller-derived route-leave flag is the only enable/disable authority.
+- `useBlocker` covers router PUSH, REPLACE and POP navigation.
+- The confirmation component owns only the pending router transition and emits reset/proceed decisions.
+- Existing `beforeunload` handling remains active.
+- No second Capture lifecycle or navigation state machine was introduced.
 
 ## Explicit non-changes
 
@@ -26,4 +35,3 @@ No scheduling/backpressure, smoothing, angles, Worker, Pose Engine, Production D
 ## Instrumentation
 
 Review synchronization remains within the existing recorded preview. Saving disables playback, causing its animation loop to stop/become inert. Retry replaces the Product State operation token and cannot start a parallel publisher effect for the same token. No instrumentation definitions or session counters were redefined.
-

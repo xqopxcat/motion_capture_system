@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { CaptureDiagnosticsPanel, UnifiedCaptureStage } from "../../features/capture";
 import { captureRuntimeInstrumentation } from "../../features/capture/instrumentation/captureRuntimeInstrumentation";
 import { useCapturePipeline } from "../../hooks";
+import { CaptureNavigationGuard } from "./CaptureNavigationGuard";
 import styles from "./CapturePage.module.css";
 
 export function CapturePage() {
@@ -19,6 +20,10 @@ export function CapturePage() {
 
   return (
     <main className={styles.capturePage}>
+      <CaptureNavigationGuard
+        routeLeaveRequiresConfirmation={controller.routeLeaveRequiresConfirmation}
+        protection={controller.presentation.routeLeaveProtection}
+      />
       <section className={styles.content}>
         <header className={styles.header}>
           <p className={styles.kicker}>Motion Capture</p>

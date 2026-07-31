@@ -45,5 +45,10 @@ These changes extend state data but do not redesign the Product State graph.
 
 ## Navigation and recovery limits
 
-Browser refresh/unload receives the feasible native warning while Reviewing or Saving. This is not guaranteed browser recovery. Router-level transitions currently occur only through actions controlled by the capture page; a future application-wide router blocker may use the same Task 68 presentation flag without creating another state machine.
+Browser refresh/unload retains the feasible native warning while protection is active. This is not guaranteed browser recovery.
 
+Internal navigation is protected with React Router's supported `useBlocker` API. The blocker is driven by the controller-derived `routeLeaveRequiresConfirmation` flag and therefore does not reconstruct Product State. It covers Link/NavLink, programmatic navigation, and browser Back/Forward (`POP`). Stay resets the pending transition; Leave proceeds to the router's original pending destination.
+
+Reviewing uses “Discard this recording?” and Saving uses “Leave while saving?”. Completed and states whose controller flag is false do not block.
+
+The package range remains `react-router-dom ^7.1.1`; the installed version verified for this implementation is 7.18.0. No dependency was added.

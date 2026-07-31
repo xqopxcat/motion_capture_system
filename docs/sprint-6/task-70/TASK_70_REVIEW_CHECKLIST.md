@@ -36,10 +36,21 @@
 - [x] No API/backend/schema/dependency changes.
 - [x] No Task 71/72/73, smoothing, angle, Worker or engine work.
 
+## Router navigation follow-up
+
+- [x] Installed React Router 7.18.0 blocker API verified.
+- [x] Reviewing and Saving use the controller-derived route-leave flag.
+- [x] PUSH/REPLACE cover Link, NavLink and programmatic navigate.
+- [x] POP covers browser Back/Forward.
+- [x] Stay resets the pending navigation.
+- [x] Leave proceeds to the original pending destination.
+- [x] Completed and unprotected states do not block.
+- [x] Existing beforeunload protection remains active.
+
 ## Validation record
 
 - [x] Focused capture tests.
-- [x] Complete frontend tests: 39 files / 225 tests passed.
+- [x] Complete frontend tests: 40 files / 233 tests passed.
 - [x] TypeScript project build/typecheck.
 - [x] Production Vite build.
 - [x] Lint: no lint script exists; record as not applicable.
