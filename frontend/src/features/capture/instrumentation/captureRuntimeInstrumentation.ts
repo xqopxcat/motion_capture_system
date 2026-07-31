@@ -43,6 +43,7 @@ export type CaptureRuntimeSnapshot = {
     frameIntervalMs: NumericSummary;
   };
   inference: {
+    candidateFrameCount: number;
     inferenceAttemptCount: number;
     inferenceCompletedCount: number;
     inferenceSkippedCount: number;
@@ -53,6 +54,13 @@ export type CaptureRuntimeSnapshot = {
     pendingInferenceCount: number;
     maximumObservedPendingInference: number;
     droppedOrSupersededFrameCount: number;
+    coalescedCandidateCount: number;
+    pendingFrameReplacementCount: number;
+    staleResultRejectedCount: number;
+    acceptedResultPublicationCount: number;
+    producerPauseCount: number;
+    producerResumeCount: number;
+    sourceFrameToPublishLatencyMs: NumericSummary;
   };
   poseResult: {
     latestResultSequenceId: number | null;
@@ -285,12 +293,19 @@ export class CaptureRuntimeInstrumentation {
   private latestCameraFrameObservedAtMs: number | null = null;
   private latestVideoReadyState: number | null = null;
   private inferenceAttemptCount = 0;
+  private candidateFrameCount = 0;
   private inferenceCompletedCount = 0;
   private inferenceSkippedCount = 0;
   private inferenceFailureCount = 0;
   private pendingInferenceCount = 0;
   private maximumObservedPendingInference = 0;
   private droppedOrSupersededFrameCount = 0;
+  private coalescedCandidateCount = 0;
+  private pendingFrameReplacementCount = 0;
+  private staleResultRejectedCount = 0;
+  private acceptedResultPublicationCount = 0;
+  private producerPauseCount = 0;
+  private producerResumeCount = 0;
   private lastInferredSourceTimestampMs: number | null = null;
   private latestInferenceDurationMs: number | null = null;
   private latestResultSequenceId: number | null = null;
@@ -320,6 +335,7 @@ export class CaptureRuntimeInstrumentation {
   );
   private readonly inferenceDurations = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly poseResultAges = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
+  private readonly sourceFrameToPublishLatencies = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly frameToOverlayProxy = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly renderTimestamps = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly renderDurations = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
@@ -342,12 +358,19 @@ export class CaptureRuntimeInstrumentation {
     this.latestCameraFrameObservedAtMs = null;
     this.latestVideoReadyState = null;
     this.inferenceAttemptCount = 0;
+    this.candidateFrameCount = 0;
     this.inferenceCompletedCount = 0;
     this.inferenceSkippedCount = 0;
     this.inferenceFailureCount = 0;
     this.pendingInferenceCount = 0;
     this.maximumObservedPendingInference = 0;
     this.droppedOrSupersededFrameCount = 0;
+    this.coalescedCandidateCount = 0;
+    this.pendingFrameReplacementCount = 0;
+    this.staleResultRejectedCount = 0;
+    this.acceptedResultPublicationCount = 0;
+    this.producerPauseCount = 0;
+    this.producerResumeCount = 0;
     this.lastInferredSourceTimestampMs = null;
     this.latestInferenceDurationMs = null;
     this.latestResultSequenceId = null;
@@ -371,6 +394,7 @@ export class CaptureRuntimeInstrumentation {
       this.inferenceCompletionTimestamps,
       this.inferenceDurations,
       this.poseResultAges,
+      this.sourceFrameToPublishLatencies,
       this.frameToOverlayProxy,
       this.renderTimestamps,
       this.renderDurations,
@@ -415,6 +439,40 @@ export class CaptureRuntimeInstrumentation {
   recordInferenceSkipped() {
     if (!this.enabled) return;
     this.inferenceSkippedCount += 1;
+  }
+
+  recordFrameCandidate() {
+    if (this.enabled) this.candidateFrameCount += 1;
+  }
+
+  recordFrameCoalesced() {
+    if (!this.enabled) return;
+    this.coalescedCandidateCount += 1;
+  }
+
+  recordPendingFrameReplacement() {
+    if (!this.enabled) return;
+    this.pendingFrameReplacementCount += 1;
+  }
+
+  recordStaleResultRejected() {
+    if (this.enabled) this.staleResultRejectedCount += 1;
+  }
+
+  recordAcceptedResultPublication(sourceFrameObservedAtMs?: number, publishedAtMs?: number) {
+    if (!this.enabled) return;
+    this.acceptedResultPublicationCount += 1;
+    if (Number.isFinite(sourceFrameObservedAtMs) && Number.isFinite(publishedAtMs)) {
+      this.sourceFrameToPublishLatencies.push(publishedAtMs! - sourceFrameObservedAtMs!);
+    }
+  }
+
+  recordProducerPaused() {
+    if (this.enabled) this.producerPauseCount += 1;
+  }
+
+  recordProducerResumed() {
+    if (this.enabled) this.producerResumeCount += 1;
   }
 
   beginInference(input: {
@@ -559,6 +617,7 @@ export class CaptureRuntimeInstrumentation {
         frameIntervalMs: summarizeNumericSamples(this.cameraFrameIntervals.getValues()),
       },
       inference: {
+        candidateFrameCount: this.candidateFrameCount,
         inferenceAttemptCount: this.inferenceAttemptCount,
         inferenceCompletedCount: this.inferenceCompletedCount,
         inferenceSkippedCount: this.inferenceSkippedCount,
@@ -569,6 +628,15 @@ export class CaptureRuntimeInstrumentation {
         pendingInferenceCount: this.pendingInferenceCount,
         maximumObservedPendingInference: this.maximumObservedPendingInference,
         droppedOrSupersededFrameCount: this.droppedOrSupersededFrameCount,
+        coalescedCandidateCount: this.coalescedCandidateCount,
+        pendingFrameReplacementCount: this.pendingFrameReplacementCount,
+        staleResultRejectedCount: this.staleResultRejectedCount,
+        acceptedResultPublicationCount: this.acceptedResultPublicationCount,
+        producerPauseCount: this.producerPauseCount,
+        producerResumeCount: this.producerResumeCount,
+        sourceFrameToPublishLatencyMs: summarizeNumericSamples(
+          this.sourceFrameToPublishLatencies.getValues(),
+        ),
       },
       poseResult: {
         latestResultSequenceId: this.latestResultSequenceId,
@@ -630,4 +698,3 @@ export function observeCaptureLongTasks(collector: CaptureRuntimeInstrumentation
 }
 
 export const captureRuntimeInstrumentation = new CaptureRuntimeInstrumentation();
-

@@ -75,6 +75,13 @@ describe("Capture runtime instrumentation", () => {
       videoReadyState: 4,
     });
     collector.recordInferenceSkipped();
+    collector.recordFrameCandidate();
+    collector.recordFrameCoalesced();
+    collector.recordPendingFrameReplacement();
+    collector.recordStaleResultRejected();
+    collector.recordAcceptedResultPublication(5, 18);
+    collector.recordProducerPaused();
+    collector.recordProducerResumed();
     const token = collector.beginInference({
       sourceMediaTimestampMs: 10,
       sourceFrameObservedAtMs: 5,
@@ -94,10 +101,18 @@ describe("Capture runtime instrumentation", () => {
       inferenceAttemptCount: 1,
       inferenceCompletedCount: 1,
       inferenceSkippedCount: 1,
+      candidateFrameCount: 1,
+      coalescedCandidateCount: 1,
+      pendingFrameReplacementCount: 1,
+      staleResultRejectedCount: 1,
+      acceptedResultPublicationCount: 1,
+      producerPauseCount: 1,
+      producerResumeCount: 1,
       pendingInferenceCount: 0,
       maximumObservedPendingInference: 1,
       latestInferenceDurationMs: 10,
     });
+    expect(snapshot.inference.sourceFrameToPublishLatencyMs.mean).toBe(13);
     expect(snapshot.poseResult.latestResultSequenceId).toBe(1);
     expect(snapshot.poseResult.latestPoseResultAgeMs).toBe(4);
     expect(snapshot.poseResult.videoFrameToOverlayProxyMs.mean).toBe(16);
@@ -133,4 +148,3 @@ describe("Capture runtime instrumentation", () => {
     expect(resolveCaptureDiagnosticsEnabled({ isDevelopment: true })).toBe(false);
   });
 });
-

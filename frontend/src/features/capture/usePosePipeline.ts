@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPoseEngine } from "../../engines/pose";
 import type { PoseDetectionResult, PoseEngine, PoseEngineStatus } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
+import { LatestFrameScheduler } from "./latestFrameScheduler";
+import {
+  createVideoFrameProducer,
+  LIVE_FRAME_PRODUCER_POLICY,
+  type VideoFrameCandidate,
+  type VideoFrameProducer,
+} from "./videoFrameProducer";
 
 export type CapturePosePipelineState = {
   status: PoseEngineStatus;
@@ -16,8 +23,6 @@ const initialPosePipelineState: CapturePosePipelineState = {
   errorMessage: null,
   isDetecting: false,
 };
-
-const minimumDetectIntervalMs = 66;
 
 function isVideoFrameReady(videoElement: HTMLVideoElement) {
   return videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && videoElement.videoWidth > 0;
@@ -40,22 +45,21 @@ export function usePosePipeline() {
   const [currentPoseResult, setCurrentPoseResult] = useState<PoseDetectionResult | null>(null);
   const isMountedRef = useRef(true);
   const statusRef = useRef<PoseEngineStatus>("idle");
-  const animationFrameRef = useRef<number | null>(null);
+  const producerRef = useRef<VideoFrameProducer | null>(null);
+  const schedulerRef = useRef<LatestFrameScheduler<HTMLVideoElement, PoseDetectionResult> | null>(null);
   const frameIndexRef = useRef(0);
   const isDetectionLoopRunningRef = useRef(false);
-  const isDetectingFrameRef = useRef(false);
-  const lastDetectStartedAtRef = useRef(0);
+  const cameraSessionIdRef = useRef(0);
+  const lastAcceptedCandidateAtRef = useRef(Number.NEGATIVE_INFINITY);
   const lastDetectionTimestampMsRef = useRef(0);
 
   const stopPoseDetection = useCallback(() => {
     isDetectionLoopRunningRef.current = false;
 
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    isDetectingFrameRef.current = false;
+    producerRef.current?.dispose();
+    producerRef.current = null;
+    schedulerRef.current?.dispose();
+    schedulerRef.current = null;
     lastDetectionTimestampMsRef.current = 0;
     if (statusRef.current === "detecting") {
       statusRef.current = "ready";
@@ -129,6 +133,9 @@ export function usePosePipeline() {
       }
 
       isDetectionLoopRunningRef.current = true;
+      cameraSessionIdRef.current += 1;
+      const cameraSessionId = cameraSessionIdRef.current;
+      lastAcceptedCandidateAtRef.current = Number.NEGATIVE_INFINITY;
       statusRef.current = "detecting";
       setPoseState((currentState) => ({
         ...currentState,
@@ -137,98 +144,91 @@ export function usePosePipeline() {
         errorMessage: null,
       }));
 
-      const detectNextFrame = () => {
-        if (!isDetectionLoopRunningRef.current || !isMountedRef.current) {
-          return;
-        }
-
-        const now = performance.now();
-        const frameIsReady = isVideoFrameReady(videoElement);
-        const sourceMediaTimestampMs = Number.isFinite(videoElement.currentTime)
-          ? videoElement.currentTime * 1000
-          : 0;
-
-        if (frameIsReady) {
-          captureRuntimeInstrumentation.recordCameraObservation({
-            observedAtMs: now,
-            sourceMediaTimestampMs,
-            videoReadyState: videoElement.readyState,
-          });
-        }
-
-        const shouldDetect =
-          !isDetectingFrameRef.current &&
-          frameIsReady &&
-          now - lastDetectStartedAtRef.current >= minimumDetectIntervalMs;
-
-        if (shouldDetect) {
-          isDetectingFrameRef.current = true;
-          lastDetectStartedAtRef.current = now;
+      const inferenceTokens = new Map<string, ReturnType<typeof captureRuntimeInstrumentation.beginInference>>();
+      const frameKey = (frame: { generation: number; frameSequence: number }) => `${frame.generation}:${frame.frameSequence}`;
+      const scheduler = new LatestFrameScheduler<HTMLVideoElement, PoseDetectionResult>({
+        infer: (frame) => {
           frameIndexRef.current += 1;
-          const sourceTimestampMs = getDetectionTimestampMs(videoElement);
+          const sourceTimestampMs = frame.sourceTimestampMs > 0
+            ? Math.floor(frame.sourceTimestampMs) : getDetectionTimestampMs(frame.payload);
           const timestampMs = Math.max(sourceTimestampMs, lastDetectionTimestampMsRef.current + 1);
           lastDetectionTimestampMsRef.current = timestampMs;
-          const inferenceToken = captureRuntimeInstrumentation.beginInference({
-            sourceFrameObservedAtMs: now,
-            sourceMediaTimestampMs,
-            startedAtMs: now,
-          });
+          return poseEngine.detect({ source: frame.payload, timestampMs, frameIndex: frameIndexRef.current });
+        },
+        onInferenceStarted: (frame) => {
+          inferenceTokens.set(frameKey(frame), captureRuntimeInstrumentation.beginInference({
+            sourceFrameObservedAtMs: frame.observedAtMs,
+            sourceMediaTimestampMs: frame.sourceTimestampMs,
+            startedAtMs: performance.now(),
+          }));
+        },
+        onInferenceCompleted: (frame, result, completedAtMs) => {
+          const key = frameKey(frame);
+          captureRuntimeInstrumentation.completeInference(inferenceTokens.get(key) ?? null, result, completedAtMs);
+          inferenceTokens.delete(key);
+        },
+        onInferenceFailed: (frame, error) => {
+          const key = frameKey(frame);
+          captureRuntimeInstrumentation.failInference(inferenceTokens.get(key) ?? null, performance.now());
+          inferenceTokens.delete(key);
+          if (!isMountedRef.current || !isDetectionLoopRunningRef.current) return;
+          producerRef.current?.dispose();
+          schedulerRef.current?.dispose();
+          isDetectionLoopRunningRef.current = false;
+          statusRef.current = "error";
+          setCurrentPoseResult(null);
+          setPoseState((currentState) => ({ ...currentState, status: "error", isDetecting: false,
+            errorMessage: error instanceof Error ? error.message : "Pose detection could not run." }));
+        },
+        onFrameCoalesced: () => captureRuntimeInstrumentation.recordFrameCoalesced(),
+        onPendingFrameReplaced: () => captureRuntimeInstrumentation.recordPendingFrameReplacement(),
+        onStaleResultRejected: () => captureRuntimeInstrumentation.recordStaleResultRejected(),
+        publish: (result, frame, publishedAtMs) => {
+          captureRuntimeInstrumentation.recordAcceptedResultPublication(frame.observedAtMs, publishedAtMs);
+          if (isMountedRef.current && isDetectionLoopRunningRef.current) {
+            setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);
+          }
+        },
+      });
+      scheduler.rotateSession(cameraSessionId);
+      schedulerRef.current = scheduler;
 
-          void poseEngine
-            .detect({
-              source: videoElement,
-              timestampMs,
-              frameIndex: frameIndexRef.current,
-            })
-            .then((result) => {
-              captureRuntimeInstrumentation.completeInference(
-                inferenceToken,
-                result,
-                performance.now(),
-              );
-
-              if (!isMountedRef.current || !isDetectionLoopRunningRef.current) {
-                return;
-              }
-
-              setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);
-            })
-            .catch((error) => {
-              captureRuntimeInstrumentation.failInference(inferenceToken, performance.now());
-
-              if (!isMountedRef.current) {
-                return;
-              }
-
-              isDetectionLoopRunningRef.current = false;
-              if (animationFrameRef.current !== null) {
-                cancelAnimationFrame(animationFrameRef.current);
-                animationFrameRef.current = null;
-              }
-              statusRef.current = "error";
-              setCurrentPoseResult(null);
-              setPoseState((currentState) => ({
-                ...currentState,
-                status: "error",
-                isDetecting: false,
-                errorMessage:
-                  error instanceof Error ? error.message : "Pose detection could not run.",
-              }));
-            })
-            .finally(() => {
-              isDetectingFrameRef.current = false;
-            });
-        } else if (frameIsReady) {
+      const onCandidate = (candidate: VideoFrameCandidate) => {
+        if (!isDetectionLoopRunningRef.current || !isMountedRef.current || !isVideoFrameReady(videoElement)) return;
+        captureRuntimeInstrumentation.recordCameraObservation({ observedAtMs: candidate.observedAtMs,
+          sourceMediaTimestampMs: candidate.sourceTimestampMs, videoReadyState: videoElement.readyState });
+        captureRuntimeInstrumentation.recordFrameCandidate();
+        const busy = scheduler.snapshot().activeInferenceCount === 1;
+        if (!busy && candidate.observedAtMs - lastAcceptedCandidateAtRef.current < LIVE_FRAME_PRODUCER_POLICY.minimumInferenceIntervalMs) {
           captureRuntimeInstrumentation.recordInferenceSkipped();
+          return;
         }
-
-        animationFrameRef.current = requestAnimationFrame(detectNextFrame);
+        lastAcceptedCandidateAtRef.current = candidate.observedAtMs;
+        scheduler.accept({ payload: videoElement, sourceTimestampMs: candidate.sourceTimestampMs, observedAtMs: candidate.observedAtMs });
       };
-
-      animationFrameRef.current = requestAnimationFrame(detectNextFrame);
+      const producer = createVideoFrameProducer(videoElement, onCandidate);
+      producerRef.current = producer;
+      producer.start();
     },
     [poseEngine],
   );
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (!isDetectionLoopRunningRef.current) return;
+      if (document.hidden) {
+        producerRef.current?.pause();
+        schedulerRef.current?.pause();
+        captureRuntimeInstrumentation.recordProducerPaused();
+      } else {
+        schedulerRef.current?.resume();
+        producerRef.current?.start();
+        captureRuntimeInstrumentation.recordProducerResumed();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   const disposePosePipeline = useCallback(() => {
     if (statusRef.current === "idle" || statusRef.current === "disposed") {

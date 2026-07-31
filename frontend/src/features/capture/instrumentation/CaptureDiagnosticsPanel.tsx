@@ -66,6 +66,10 @@ export function CaptureDiagnosticsPanel() {
         <div><dt>Skipped scheduler ticks</dt><dd>{snapshot.inference.inferenceSkippedCount}</dd></div>
         <div><dt>Observed unprocessed frames</dt><dd>{snapshot.inference.droppedOrSupersededFrameCount}</dd></div>
         <div><dt>Pending / max pending</dt><dd>{snapshot.inference.pendingInferenceCount} / {snapshot.inference.maximumObservedPendingInference}</dd></div>
+        <div><dt>Candidates / coalesced</dt><dd>{snapshot.inference.candidateFrameCount} / {snapshot.inference.coalescedCandidateCount}</dd></div>
+        <div><dt>Published / stale rejected</dt><dd>{snapshot.inference.acceptedResultPublicationCount} / {snapshot.inference.staleResultRejectedCount}</dd></div>
+        <div><dt>Source-to-publish</dt><dd>{format(snapshot.inference.sourceFrameToPublishLatencyMs.mean, " ms")}</dd></div>
+        <div><dt>Producer pause / resume</dt><dd>{snapshot.inference.producerPauseCount} / {snapshot.inference.producerResumeCount}</dd></div>
         <div><dt>Long tasks</dt><dd>{snapshot.mainThread.supported === false ? "unsupported" : snapshot.mainThread.longTaskCount}</dd></div>
         <div><dt>Static jitter</dt><dd>{snapshot.jitter.status}: {format(snapshot.jitter.aggregateNormalizedRms)}</dd></div>
         <div><dt>Preview sync mean / P95</dt><dd>{format(snapshot.previewSync.errorMs.mean, " ms")} / {format(snapshot.previewSync.errorMs.p95, " ms")}</dd></div>
@@ -79,4 +83,3 @@ export function CaptureDiagnosticsPanel() {
     </aside>
   );
 }
-
