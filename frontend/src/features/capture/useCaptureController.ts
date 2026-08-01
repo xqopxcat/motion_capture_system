@@ -128,6 +128,8 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   const [countdownValue, setCountdownValue] = useState<number | null>(null);
   const [videoReadinessRevision, setVideoReadinessRevision] = useState(0);
   const [recordTitle, setRecordTitle] = useState("");
+  const [cameraFacingMode, setCameraFacingMode] = useState<"user" | "environment">("user");
+  const [skeletonVisible, setSkeletonVisible] = useState(true);
   const camera = useCameraStream();
   const recorder = useMediaRecorder(camera.stream);
   const pose = usePosePipeline();
@@ -153,15 +155,21 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
       const current = stateRef.current;
       if (current.type !== "PermissionRequired" && current.type !== "Ready") return;
       const token = newToken("camera");
-      dispatch(
-        current.type === "Ready" && deviceId
-          ? { type: "CAMERA_SWITCH", token, deviceId }
-          : { type: "ENABLE_CAMERA", token, deviceId },
-      );
-      void camera.startCamera({ deviceId: deviceId ?? undefined });
+      dispatch({ type: "ENABLE_CAMERA", token, deviceId });
+      void camera.startCamera({ deviceId: deviceId ?? undefined, facingMode: cameraFacingMode });
     },
-    [camera, newToken],
+    [camera, cameraFacingMode, newToken],
   );
+
+  const flipCamera = useCallback(() => {
+    if (stateRef.current.type !== "Ready") return;
+    const nextFacingMode = cameraFacingMode === "user" ? "environment" : "user";
+    const token = newToken("camera");
+    pose.stopPoseDetection();
+    setCameraFacingMode(nextFacingMode);
+    dispatch({ type: "CAMERA_SWITCH", token, facingMode: nextFacingMode });
+    void camera.startCamera({ facingMode: nextFacingMode });
+  }, [camera, cameraFacingMode, newToken, pose.stopPoseDetection]);
 
   useEffect(() => {
     if (!previewVideoElement) return;
@@ -190,7 +198,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
       if (permission === "granted") {
         const token = newToken("camera");
         dispatch({ type: "ENABLE_CAMERA", token });
-        void camera.startCamera();
+        void camera.startCamera({ facingMode: cameraFacingMode });
       }
     };
     void enter();
@@ -519,8 +527,13 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     retry,
     recordTitle,
     setRecordTitle,
+    cameraFacingMode,
+    flipCamera,
+    skeletonVisible,
+    setSkeletonVisible,
     cameraPreview: { ...camera, onVideoElementChange: setPreviewVideoElement },
     currentPoseResult: pose.currentPoseResult,
+    currentDisplayFrame: pose.currentDisplayFrame,
     localRecording: recorder,
     poseDatasetDraft: productState.type === "Reviewing" ? productState.snapshot.poseDraft : null,
     poseFrameCollection: poseCollection,

@@ -43,7 +43,7 @@ const states: CaptureProductState[] = [
   { type: "Failed", stage: "device", safeMessage: "Camera lost.", retryable: true, recoveryTarget: "PermissionRequired", routeLeaveRequiresConfirmation: false },
 ];
 
-function renderStage(state: CaptureProductState) {
+function renderStage(state: CaptureProductState, skeletonVisible = true) {
   return renderToStaticMarkup(
     <UnifiedCaptureStage
       productState={state}
@@ -51,12 +51,17 @@ function renderStage(state: CaptureProductState) {
       cameraStream={null}
       cameraStatus={state.type === "Ready" || state.type === "Countdown" || state.type === "Recording" ? "ready" : "idle"}
       currentPoseResult={null}
+      currentDisplayFrame={null}
       liveVideoElement={null}
       onLiveVideoElementChange={() => undefined}
       onPrimaryAction={() => undefined}
       onRetake={() => undefined}
       recordTitle=""
       onRecordTitleChange={() => undefined}
+      cameraFacingMode="user"
+      onFlipCamera={() => undefined}
+      skeletonVisible={skeletonVisible}
+      onSkeletonVisibilityChange={() => undefined}
     />,
   );
 }
@@ -103,6 +108,26 @@ describe("UnifiedCaptureStage", () => {
     const markup = renderStage(states.find((state) => state.type === "Recording")!);
     expect(markup).toContain("Recording status");
     expect(markup).toContain(">Stop</button>");
+    expect(markup).toContain("Flip Camera");
+    expect(markup).toContain("Skeleton On");
+  });
+
+  it("exposes display-only skeleton controls in Live and Review", () => {
+    const live = renderStage(states.find((state) => state.type === "Ready")!);
+    const review = renderStage(states.find((state) => state.type === "Reviewing")!);
+    expect(live).toContain('data-control="skeleton-toggle"');
+    expect(live).toContain('aria-pressed="true"');
+    expect(review).toContain('data-control="skeleton-toggle"');
+    expect(review).not.toContain('data-control="camera-flip"');
+  });
+
+  it("hides only the skeleton canvas when the display preference is off", () => {
+    const markup = renderStage(states.find((state) => state.type === "Ready")!, false);
+    expect(markup).toContain('aria-pressed="false"');
+    expect(markup).toContain("Skeleton Off");
+    expect(markup).toContain('aria-label="Live camera preview"');
+    expect(markup).toContain('aria-label="Capture skeleton overlay"');
+    expect(markup).toContain('hidden=""');
   });
 
   it("renders recorded review instead of live camera and keeps Save/Retake intents", () => {
@@ -160,7 +185,7 @@ describe("UnifiedCaptureStage", () => {
   });
 
   it("contains no legacy camera, recording, upload or close-preview controls", () => {
-    const markup = states.map(renderStage).join(" ");
+    const markup = states.map((state) => renderStage(state)).join(" ");
     ["Start Camera", "Stop Camera", "Start Recording", "Stop Recording", "Upload", "Close Preview", "Clear Preview"].forEach((label) => {
       expect(markup).not.toContain(label);
     });

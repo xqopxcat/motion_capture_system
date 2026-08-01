@@ -2,7 +2,7 @@
 
 ## Final decision
 
-**PASS WITH DOCUMENTED PHYSICAL VALIDATION GAPS**
+**FAIL — BLOCKERS REMAIN** until the manual reporter verifies the alignment and mobile layout fixes on physical camera/device.
 
 ## Completed validations
 
@@ -10,10 +10,10 @@ All Task 66–73 contracts are represented in the acceptance matrix. State/prese
 
 ## Automated evidence
 
-- 46 test files / 260 tests passed.
+- 48 test files / 267 tests passed after the second acceptance fix.
 - TypeScript and production build passed; 184 modules transformed.
-- No known Sprint 6 blocking regression remains.
-- No blocker fix was required.
+- Manual validation exposed blockers after the automated closure run.
+- Implementation fixes now require physical revalidation.
 
 ## Manual/physical evidence
 
@@ -29,7 +29,7 @@ Physical skeleton alignment/lag/jitter, mobile thermal behavior, real recording/
 
 ## Blockers
 
-None known.
+The implementation fixes are present and automated checks pass, but the previously observed alignment and mobile failures remain open until manual revalidation.
 
 ## Deferred Sprint 7 work
 

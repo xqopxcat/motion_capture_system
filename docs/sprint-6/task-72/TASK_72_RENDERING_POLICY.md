@@ -14,6 +14,8 @@ Capture's compatibility wrapper delegates to the shared production renderer. Vie
 
 ## Viewport and DPR
 
+Manual acceptance correction: Capture Live and Recorded Review pass actual source dimensions and the `contain` fit policy into shared projection. Normalized points map into the rendered media content rectangle, including letterbox offsets. Canvas backing dimensions remain CSS size × DPR exactly once.
+
 | CSS viewport width | Viewport scale | Joint radius CSS | Connection width CSS |
 |---:|---:|---:|---:|
 | 320/375px | Lower clamp 0.78 | 3.51px | 2.34px |
@@ -35,4 +37,3 @@ At 320, 375, 768, 1024 and 1440px the temporary renderer harness reported 1.778 
 - Live stale policy uses one replaceable timeout.
 - Resize handling uses ResizeObserver and redraws only on resize.
 - Recorded Review keeps its existing single playback synchronization loop.
-

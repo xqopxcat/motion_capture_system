@@ -318,7 +318,8 @@
 
 .primaryAction,
 .stopAction,
-.secondaryAction {
+.secondaryAction,
+.utilityAction {
   border: 1px solid transparent;
   border-radius: 9px;
   cursor: pointer;
@@ -342,6 +343,23 @@
   flex-basis: 150px;
 }
 
+.utilityAction {
+  background: #eef2f7;
+  border-color: #c7d0dc;
+  color: #263443;
+  flex-basis: 150px;
+}
+
+.srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .primaryAction:hover:not(:disabled),
 .stopAction:hover:not(:disabled) {
   background: #76261c;
@@ -354,6 +372,7 @@
 .primaryAction:focus-visible,
 .stopAction:focus-visible,
 .secondaryAction:focus-visible,
+.utilityAction:focus-visible,
 .titleField input:focus-visible {
   outline: 3px solid #77b8aa;
   outline-offset: 2px;
@@ -362,6 +381,7 @@
 .primaryAction:disabled,
 .stopAction:disabled,
 .secondaryAction:disabled,
+.utilityAction:disabled,
 .titleField input:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -400,6 +420,82 @@
     display: flex;
     justify-content: space-between;
     padding-bottom: 0;
+  }
+
+  .stage[data-stage-mode="live"] {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    gap: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+    padding: 0;
+  }
+
+  .stage[data-stage-mode="live"] .stageHeader,
+  .stage[data-stage-mode="live"] .detailArea {
+    display: none;
+  }
+
+  .stage[data-stage-mode="live"] .viewport {
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    height: 100%;
+  }
+
+  .stage[data-stage-mode="live"] .actionArea {
+    background: #ffffff;
+    border-top: 1px solid #d8dde5;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr);
+    padding:
+      10px
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .stage[data-stage-mode="live"] .primaryAction,
+  .stage[data-stage-mode="live"] .stopAction {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .stage[data-stage-mode="live"] [data-control="camera-flip"] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .stage[data-stage-mode="live"] [data-control="skeleton-toggle"] {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .stage[data-stage-mode="live"] .primaryAction,
+  .stage[data-stage-mode="live"] .stopAction,
+  .stage[data-stage-mode="live"] .utilityAction {
+    min-width: 0;
+    padding-inline: 8px;
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .stage[data-stage-mode="live"] {
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+  }
+
+  .stage[data-stage-mode="live"] .stageHeader,
+  .stage[data-stage-mode="live"] .detailArea {
+    display: none;
+  }
+
+  .stage[data-stage-mode="live"] .viewport {
+    aspect-ratio: auto;
+    height: 100%;
   }
 }
 

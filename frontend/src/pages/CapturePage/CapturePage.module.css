@@ -83,3 +83,40 @@
     font-size: 0.875rem;
   }
 }
+
+@media (max-width: 767px) {
+  .capturePage[data-live-capture="true"] {
+    height: 100dvh;
+    inset: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    position: fixed;
+    z-index: 100;
+  }
+
+  .capturePage[data-live-capture="true"] .content {
+    gap: 0;
+    height: 100%;
+    max-width: none;
+  }
+
+  .capturePage[data-live-capture="true"] .header {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .capturePage[data-live-capture="true"] {
+    height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+
+  .capturePage[data-live-capture="true"] .content {
+    height: 100%;
+  }
+
+  .capturePage[data-live-capture="true"] .header {
+    display: none;
+  }
+}

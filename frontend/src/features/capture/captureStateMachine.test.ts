@@ -126,9 +126,13 @@ describe("captureStateReducer", () => {
     const switched = captureStateReducer(ready(), {
       type: "CAMERA_SWITCH",
       token: token("camera", 5),
-      deviceId: "rear",
+      facingMode: "environment",
     });
-    expect(switched).toMatchObject({ type: "RequestingPermission", requestedDeviceId: "rear" });
+    expect(switched).toMatchObject({
+      type: "RequestingPermission",
+      requestedDeviceId: null,
+      facingMode: "environment",
+    });
     expect(buildCapturePresentation(ready(), null, 0).canSwitchCamera).toBe(true);
   });
 

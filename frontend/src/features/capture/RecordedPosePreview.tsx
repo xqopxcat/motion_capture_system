@@ -10,6 +10,7 @@ export type RecordedPosePreviewProps = {
   poseDatasetDraft: CapturePoseDatasetDraft | null;
   videoUrl: string;
   disabled?: boolean;
+  skeletonVisible?: boolean;
 };
 
 function formatPreviewTime(seconds: number) {
@@ -28,6 +29,7 @@ export function RecordedPosePreview({
   poseDatasetDraft,
   videoUrl,
   disabled = false,
+  skeletonVisible = true,
 }: RecordedPosePreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -67,13 +69,22 @@ export function RecordedPosePreview({
       videoTimestampMs: currentTimeMs,
     });
 
-    if (!poseFrame) {
+    if (!poseFrame || !skeletonVisible) {
       clearCaptureSkeleton(canvas, context);
       return;
     }
 
-    renderCaptureSkeleton(canvas, context, poseFrame);
-  }, [poseDatasetDraft]);
+    renderCaptureSkeleton(
+      canvas,
+      context,
+      poseFrame,
+      video.videoWidth > 0 && video.videoHeight > 0
+        ? { sourceWidth: video.videoWidth, sourceHeight: video.videoHeight }
+        : undefined,
+      0,
+      "contain",
+    );
+  }, [poseDatasetDraft, skeletonVisible]);
 
   const stopPlaybackSync = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -186,6 +197,7 @@ export function RecordedPosePreview({
           aria-label="Recorded pose skeleton overlay"
           width={1280}
           height={720}
+          hidden={!skeletonVisible}
         />
       </div>
 

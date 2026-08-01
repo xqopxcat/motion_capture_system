@@ -199,8 +199,8 @@ export function captureStateReducer(
       return {
         type: "RequestingPermission",
         operationToken: event.token,
-        requestedDeviceId: event.deviceId,
-        facingMode: "user",
+        requestedDeviceId: null,
+        facingMode: event.facingMode,
       };
     case "PAGE_HIDDEN":
       if (state.type === "Countdown") {

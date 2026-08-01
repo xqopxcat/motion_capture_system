@@ -19,7 +19,12 @@ export function CapturePage() {
   };
 
   return (
-    <main className={styles.capturePage}>
+    <main
+      className={styles.capturePage}
+      data-live-capture={
+        productStateUsesLiveCamera(controller.productState.type) ? "true" : undefined
+      }
+    >
       <CaptureNavigationGuard
         routeLeaveRequiresConfirmation={controller.routeLeaveRequiresConfirmation}
         protection={controller.presentation.routeLeaveProtection}
@@ -40,16 +45,25 @@ export function CapturePage() {
           cameraStatus={controller.cameraPreview.status}
           cameraErrorMessage={controller.cameraPreview.errorMessage}
           currentPoseResult={controller.currentPoseResult}
+          currentDisplayFrame={controller.currentDisplayFrame}
           liveVideoElement={controller.previewVideoElement}
           onLiveVideoElementChange={controller.cameraPreview.onVideoElementChange}
           onPrimaryAction={runPrimaryAction}
           onRetake={controller.retake}
           recordTitle={controller.recordTitle}
           onRecordTitleChange={controller.setRecordTitle}
+          cameraFacingMode={controller.cameraFacingMode}
+          onFlipCamera={controller.flipCamera}
+          skeletonVisible={controller.skeletonVisible}
+          onSkeletonVisibilityChange={controller.setSkeletonVisible}
         />
 
         <CaptureDiagnosticsPanel />
       </section>
     </main>
   );
+}
+
+function productStateUsesLiveCamera(state: string) {
+  return state === "Ready" || state === "Countdown" || state === "Recording";
 }

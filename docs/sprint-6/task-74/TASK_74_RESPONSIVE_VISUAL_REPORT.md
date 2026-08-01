@@ -16,6 +16,6 @@ A 320px screenshot was visually inspected: text wrapped, CTA remained inside the
 
 ## Capture-stage evidence
 
-Static/automated validation confirms one responsive workspace, stable media/detail/action regions, no legacy control rows, page `overflow-x: clip`, safe-area padding, long-text wrapping, 320px adjustments, mobile/tablet/desktop breakpoints, bounded controls, dialog mobile layout, `:focus-visible`, and `prefers-reduced-motion: reduce`. Renderer tests cover DPR, resize, mirror and cover-crop projection.
+Static/automated validation confirms a camera-first mobile Live stage, a three-control bottom dock, shared video/canvas bounds, safe-area padding, bounded controls, dialog mobile layout, `:focus-visible`, and `prefers-reduced-motion: reduce`. Renderer tests cover DPR, resize, mirror, `contain` letterboxing and `cover` cropping.
 
-Authenticated Capture screenshots and geometry at the five widths are **Not Available**. Therefore media alignment, title/playback usability, dialog fit while actively protected, and live 16:9 behavior remain physical/manual checklist items.
+Authenticated Capture screenshots and geometry at the five widths are **Not Available**. Therefore corrected media alignment, mobile camera-stage height, bottom-dock ergonomics, title/playback usability and dialog fit remain physical/manual checklist items.

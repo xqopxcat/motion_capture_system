@@ -13,6 +13,14 @@ export type VideoPlayerProps = {
   onTimeChange?: (currentTime: number) => void;
 };
 
+export function videoNeedsSeek(currentTime: number, requestedTime: number) {
+  return Math.abs(currentTime - requestedTime) >= 0.001;
+}
+
+export function shouldReportMediaTime(time: number, pendingSeekTime: number | null) {
+  return pendingSeekTime === null || Math.abs(time - pendingSeekTime) < 0.01;
+}
+
 export function VideoPlayer({
   playback,
   src,
@@ -23,6 +31,16 @@ export function VideoPlayer({
   onTimeChange,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const pendingSeekTimeRef = useRef<number | null>(null);
+
+  const reportMediaTime = (time: number) => {
+    const pendingSeekTime = pendingSeekTimeRef.current;
+    if (pendingSeekTime !== null) {
+      if (!shouldReportMediaTime(time, pendingSeekTime)) return;
+      pendingSeekTimeRef.current = null;
+    }
+    onTimeChange?.(time);
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -37,12 +55,13 @@ export function VideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
 
-    if (!video || Math.abs(video.currentTime - playback.currentTime) < 0.05) {
+    if (!video || playback.isPlaying || !videoNeedsSeek(video.currentTime, playback.currentTime)) {
       return;
     }
 
+    pendingSeekTimeRef.current = playback.currentTime;
     video.currentTime = playback.currentTime;
-  }, [playback.currentTime]);
+  }, [playback.currentTime, playback.isPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -68,7 +87,7 @@ export function VideoPlayer({
 
     let callbackId = 0;
     const handlePresentedFrame: VideoFrameRequestCallback = (_now, metadata) => {
-      onTimeChange?.(metadata.mediaTime);
+      reportMediaTime(metadata.mediaTime);
       callbackId = video.requestVideoFrameCallback(handlePresentedFrame);
     };
 
@@ -94,7 +113,11 @@ export function VideoPlayer({
           }
         }}
         onEnded={onEnded}
-        onTimeUpdate={(event) => onTimeChange?.(event.currentTarget.currentTime)}
+        onSeeked={(event) => {
+          pendingSeekTimeRef.current = null;
+          onTimeChange?.(event.currentTarget.currentTime);
+        }}
+        onTimeUpdate={(event) => reportMediaTime(event.currentTarget.currentTime)}
       />
       <p className={styles.status}>
         {playback.isPlaying ? "Playing" : "Paused"} - {playback.playbackSpeed}x

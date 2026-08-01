@@ -18,9 +18,13 @@ export function renderCaptureSkeleton(
   poseResult: RenderablePoseSkeleton | null,
   viewport?: CaptureSkeletonViewport,
   poseAgeMs = 0,
+  objectFit: "contain" | "cover" = "contain",
+  clear = true,
 ) {
   renderProductionSkeleton(canvas, context, poseResult, {
+    clear,
     poseAgeMs,
     sourceViewport: viewport,
+    objectFit,
   });
 }

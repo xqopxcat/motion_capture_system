@@ -193,7 +193,7 @@ export type CaptureEvent =
       resume: CapturePublishResumeState;
     } & TokenEvent)
   | { type: "RETRY"; token: CaptureOperationToken }
-  | { type: "CAMERA_SWITCH"; token: CaptureOperationToken; deviceId: string }
+  | { type: "CAMERA_SWITCH"; token: CaptureOperationToken; facingMode: "user" | "environment" }
   | { type: "PAGE_HIDDEN" }
   | { type: "PAGE_VISIBLE" }
   | { type: "TRACK_ENDED"; reason: string }

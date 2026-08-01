@@ -95,4 +95,18 @@ describe("production skeleton viewport scaling", () => {
     expect(projectProductionSkeletonPoint(target, landmark(11, 1, 0.25, 0.5), { mirror: true })).toEqual({ x: 150, y: 50 });
     expect(projectProductionSkeletonPoint(target, landmark(11, 1, 0, 0), { sourceViewport: { sourceWidth: 100, sourceHeight: 100 } })).toEqual({ x: 0, y: -50 });
   });
+
+  it("projects contained media into its actual letterboxed content box", () => {
+    const target = canvas(1600, 900);
+    expect(projectProductionSkeletonPoint(
+      target,
+      landmark(11, 1, 0, 0),
+      { objectFit: "contain", sourceViewport: { sourceWidth: 800, sourceHeight: 800 } },
+    )).toEqual({ x: 350, y: 0 });
+    expect(projectProductionSkeletonPoint(
+      target,
+      landmark(11, 1, 1, 1),
+      { objectFit: "contain", sourceViewport: { sourceWidth: 800, sourceHeight: 800 } },
+    )).toEqual({ x: 1250, y: 900 });
+  });
 });

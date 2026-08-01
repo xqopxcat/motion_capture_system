@@ -10,6 +10,7 @@ import { getCaptureStageMode } from "./captureStageMode";
 import { CaptureSkeletonOverlay } from "./CaptureSkeletonOverlay";
 import { RecordedPosePreview } from "./RecordedPosePreview";
 import styles from "./UnifiedCaptureStage.module.css";
+import type { CapturePoseDisplayFrame } from "./usePosePipeline";
 
 export type UnifiedCaptureStageProps = {
   productState: CaptureProductState;
@@ -18,12 +19,17 @@ export type UnifiedCaptureStageProps = {
   cameraStatus: CameraStreamStatus;
   cameraErrorMessage?: string | null;
   currentPoseResult: PoseDetectionResult | null;
+  currentDisplayFrame: CapturePoseDisplayFrame | null;
   liveVideoElement: HTMLVideoElement | null;
   onLiveVideoElementChange: (videoElement: HTMLVideoElement | null) => void;
   onPrimaryAction: () => void;
   onRetake: () => void;
   recordTitle: string;
   onRecordTitleChange: (title: string) => void;
+  cameraFacingMode: "user" | "environment";
+  onFlipCamera: () => void;
+  skeletonVisible: boolean;
+  onSkeletonVisibilityChange: (visible: boolean) => void;
 };
 
 function primaryActionLabel(action: CapturePresentationModel["primaryAction"]) {
@@ -76,12 +82,17 @@ export function UnifiedCaptureStage({
   cameraStatus,
   cameraErrorMessage,
   currentPoseResult,
+  currentDisplayFrame,
   liveVideoElement,
   onLiveVideoElementChange,
   onPrimaryAction,
   onRetake,
   recordTitle,
   onRecordTitleChange,
+  cameraFacingMode,
+  onFlipCamera,
+  skeletonVisible,
+  onSkeletonVisibilityChange,
 }: UnifiedCaptureStageProps) {
   const mode = getCaptureStageMode(productState);
   const snapshot = reviewSnapshot(productState);
@@ -121,8 +132,10 @@ export function UnifiedCaptureStage({
               showControls={false}
             />
             <CaptureSkeletonOverlay
+              displayFrame={currentDisplayFrame}
               poseResult={currentPoseResult}
               videoElement={liveVideoElement}
+              visible={skeletonVisible}
             />
           </div>
         )}
@@ -133,6 +146,7 @@ export function UnifiedCaptureStage({
               poseDatasetDraft={snapshot.poseDraft}
               videoUrl={snapshot.videoUrl}
               disabled={mode === "saving"}
+              skeletonVisible={skeletonVisible}
             />
           </div>
         )}
@@ -232,6 +246,28 @@ export function UnifiedCaptureStage({
         {productState.type === "Reviewing" && (
           <button className={styles.secondaryAction} type="button" onClick={onRetake}>
             Retake
+          </button>
+        )}
+        {mode === "live" && (
+          <button
+            data-control="camera-flip"
+            className={styles.utilityAction}
+            type="button"
+            onClick={onFlipCamera}
+            disabled={!presentation.canSwitchCamera}
+          >
+            Flip Camera<span className={styles.srOnly}> ({cameraFacingMode})</span>
+          </button>
+        )}
+        {(mode === "live" || mode === "review") && (
+          <button
+            aria-pressed={skeletonVisible}
+            data-control="skeleton-toggle"
+            className={styles.utilityAction}
+            type="button"
+            onClick={() => onSkeletonVisibilityChange(!skeletonVisible)}
+          >
+            Skeleton {skeletonVisible ? "On" : "Off"}
           </button>
         )}
       </footer>

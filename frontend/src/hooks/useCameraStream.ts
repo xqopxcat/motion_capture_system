@@ -63,7 +63,7 @@ export function useCameraStream() {
     }
   }, []);
 
-  const startCamera = useCallback(async (options: { deviceId?: string } = {}) => {
+  const startCamera = useCallback(async (options: { deviceId?: string; facingMode?: "user" | "environment" } = {}) => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraState({
         status: "unsupported",
@@ -89,7 +89,7 @@ export function useCameraStream() {
         audio: false,
         video: {
           ...(options.deviceId ? { deviceId: { exact: options.deviceId } } : {}),
-          facingMode: "user",
+          facingMode: { ideal: options.facingMode ?? "user" },
         },
       });
 

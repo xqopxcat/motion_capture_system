@@ -33,4 +33,19 @@ describe("Capture production skeleton wrapper", () => {
     expect(context.clearRect).toHaveBeenCalledTimes(2);
     expect(context.arc).not.toHaveBeenCalled();
   });
+
+  it("can preserve an inference-matched display frame under the skeleton", () => {
+    const context = drawingContext();
+    renderCaptureSkeleton(
+      { width: 200, height: 100 } as HTMLCanvasElement,
+      context,
+      { landmarks2D: [{ id: 0, x: 0.5, y: 0.2 }] },
+      undefined,
+      0,
+      "contain",
+      false,
+    );
+    expect(context.clearRect).not.toHaveBeenCalled();
+    expect(context.arc).toHaveBeenCalledOnce();
+  });
 });

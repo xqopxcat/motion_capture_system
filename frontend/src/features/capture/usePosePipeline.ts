@@ -18,6 +18,12 @@ export type CapturePosePipelineState = {
   isDetecting: boolean;
 };
 
+export type CapturePoseDisplayFrame = {
+  source: HTMLCanvasElement;
+  sourceHeight: number;
+  sourceWidth: number;
+};
+
 const initialPosePipelineState: CapturePosePipelineState = {
   status: "idle",
   engineName: "mediapipe-pose-landmarker",
@@ -29,6 +35,10 @@ function isVideoFrameReady(videoElement: HTMLVideoElement) {
   return videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && videoElement.videoWidth > 0;
 }
 
+export function nextPoseEngineTimestamp(observedAtMs: number, previousTimestampMs: number) {
+  return Math.max(observedAtMs, previousTimestampMs + 0.001);
+}
+
 export function usePosePipeline() {
   const poseEngine = useMemo<PoseEngine>(() => createPoseEngine(), []);
   const [poseState, setPoseState] = useState<CapturePosePipelineState>({
@@ -36,6 +46,7 @@ export function usePosePipeline() {
     engineName: poseEngine.metadata.name,
   });
   const [currentPoseResult, setCurrentPoseResult] = useState<PoseDetectionResult | null>(null);
+  const [currentDisplayFrame, setCurrentDisplayFrame] = useState<CapturePoseDisplayFrame | null>(null);
   const isMountedRef = useRef(true);
   const statusRef = useRef<PoseEngineStatus>("idle");
   const producerRef = useRef<VideoFrameProducer | null>(null);
@@ -44,6 +55,13 @@ export function usePosePipeline() {
   const isDetectionLoopRunningRef = useRef(false);
   const cameraSessionIdRef = useRef(0);
   const lastAcceptedCandidateAtRef = useRef(Number.NEGATIVE_INFINITY);
+  const lastEngineTimestampMsRef = useRef(Number.NEGATIVE_INFINITY);
+  const displayFrameRef = useRef<CapturePoseDisplayFrame | null>(null);
+
+  const replaceDisplayFrame = useCallback((nextFrame: CapturePoseDisplayFrame | null) => {
+    displayFrameRef.current = nextFrame;
+    if (isMountedRef.current) setCurrentDisplayFrame(nextFrame);
+  }, []);
 
   const stopPoseDetection = useCallback(() => {
     isDetectionLoopRunningRef.current = false;
@@ -61,12 +79,13 @@ export function usePosePipeline() {
     }
 
     setCurrentPoseResult(null);
+    replaceDisplayFrame(null);
     setPoseState((currentState) => ({
       ...currentState,
       isDetecting: false,
       status: currentState.status === "detecting" ? "ready" : currentState.status,
     }));
-  }, []);
+  }, [replaceDisplayFrame]);
 
   const initializePosePipeline = useCallback(async () => {
     if (statusRef.current === "initializing" || statusRef.current === "ready") {
@@ -140,11 +159,16 @@ export function usePosePipeline() {
       const scheduler = new LatestFrameScheduler<CapturedVideoFrame, PoseDetectionResult>({
         infer: (frame) => {
           frameIndexRef.current += 1;
+          const engineTimestampMs = nextPoseEngineTimestamp(
+            frame.observedAtMs,
+            lastEngineTimestampMsRef.current,
+          );
+          lastEngineTimestampMsRef.current = engineTimestampMs;
           return poseEngine.detect({
             source: frame.payload.source,
-            timestampMs: frame.sourceTimestampMs,
+            timestampMs: engineTimestampMs,
             frameIndex: frameIndexRef.current,
-          });
+          }).then((result) => ({ ...result, timestampMs: frame.sourceTimestampMs }));
         },
         onInferenceStarted: (frame) => {
           inferenceTokens.set(frameKey(frame), captureRuntimeInstrumentation.beginInference({
@@ -178,6 +202,17 @@ export function usePosePipeline() {
         publish: (result, frame, publishedAtMs) => {
           captureRuntimeInstrumentation.recordAcceptedResultPublication(frame.observedAtMs, publishedAtMs);
           if (isMountedRef.current && isDetectionLoopRunningRef.current) {
+            if (result.landmarks2D.length > 0) {
+              const displaySource = document.createElement("canvas");
+              displaySource.width = frame.payload.source.width;
+              displaySource.height = frame.payload.source.height;
+              displaySource.getContext("2d")?.drawImage(frame.payload.source, 0, 0);
+              replaceDisplayFrame({
+                source: displaySource,
+                sourceHeight: displaySource.height,
+                sourceWidth: displaySource.width,
+              });
+            } else replaceDisplayFrame(null);
             setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);
           }
         },
@@ -208,7 +243,7 @@ export function usePosePipeline() {
       producerRef.current = producer;
       producer.start();
     },
-    [poseEngine],
+    [poseEngine, replaceDisplayFrame],
   );
 
   useEffect(() => {
@@ -258,6 +293,7 @@ export function usePosePipeline() {
 
   return {
     currentPoseResult,
+    currentDisplayFrame,
     poseState,
     initializePosePipeline,
     disposePosePipeline,

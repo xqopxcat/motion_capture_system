@@ -18,6 +18,7 @@ export type DisplayPoseLandmark = {
 
 export type DisplayPoseSkeleton = { landmarks2D: DisplayPoseLandmark[] };
 export type SkeletonSourceViewport = { sourceWidth: number; sourceHeight: number };
+export type SkeletonObjectFit = "contain" | "cover";
 
 export type ProductionSkeletonRenderOptions = {
   clear?: boolean;
@@ -25,6 +26,7 @@ export type ProductionSkeletonRenderOptions = {
   poseAgeMs?: number;
   profile?: ProductionSkeletonDisplayProfile;
   sourceViewport?: SkeletonSourceViewport;
+  objectFit?: SkeletonObjectFit;
 };
 
 export type SkeletonDisplayScale = {
@@ -103,12 +105,14 @@ export function isProductionLandmarkRenderable(
 export function projectProductionSkeletonPoint(
   canvas: HTMLCanvasElement,
   landmark: DisplayPoseLandmark,
-  options: Pick<ProductionSkeletonRenderOptions, "mirror" | "sourceViewport"> = {},
+  options: Pick<ProductionSkeletonRenderOptions, "mirror" | "objectFit" | "sourceViewport"> = {},
 ) {
   const normalizedX = options.mirror ? 1 - landmark.x : landmark.x;
   const viewport = options.sourceViewport;
   if (viewport && viewport.sourceWidth > 0 && viewport.sourceHeight > 0) {
-    const scale = Math.max(canvas.width / viewport.sourceWidth, canvas.height / viewport.sourceHeight);
+    const scale = (options.objectFit ?? "cover") === "contain"
+      ? Math.min(canvas.width / viewport.sourceWidth, canvas.height / viewport.sourceHeight)
+      : Math.max(canvas.width / viewport.sourceWidth, canvas.height / viewport.sourceHeight);
     const renderedWidth = viewport.sourceWidth * scale;
     const renderedHeight = viewport.sourceHeight * scale;
     return {

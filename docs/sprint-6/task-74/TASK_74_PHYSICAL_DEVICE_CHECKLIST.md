@@ -4,7 +4,9 @@ Run once on a primary desktop and once on a representative lower-performance pho
 
 - [ ] Authenticate and enter Capture; verify one permission request and one stream
 - [ ] Deny permission; verify safe recovery; re-request where browser permits
-- [ ] Ready: 16:9 live video, dominant Record, mirrored/resize-aligned skeleton, stale clear
+- [ ] Ready: uncropped `contain` live video, dominant Record, resize-aligned skeleton and stale clear
+- [ ] Mobile Ready/Recording: near-full-screen camera with only Flip, Record/Stop and Skeleton in the bottom dock
+- [ ] Skeleton toggle: hides only rendering in Live and Review; inference, Raw Pose and recorded data remain unchanged
 - [ ] Countdown: readability, Cancel, hidden-tab cancel, no late recording
 - [ ] Record ≥30 seconds: REC/timer/Stop, hidden safe-stop, no duplicate loops
 - [ ] Review: video load/play/pause/seek, nearest pose sync, title edit, interruption warning
