@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { recordedPreviewAspectRatio } from "./RecordedPosePreview";
+import {
+  MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX,
+  recordedPreviewAspectRatio,
+  recordedPreviewMaximumWidth,
+} from "./RecordedPosePreview";
 
 describe("Recorded Pose Preview geometry", () => {
   it("uses the recorded video's intrinsic aspect ratio", () => {
@@ -10,5 +14,14 @@ describe("Recorded Pose Preview geometry", () => {
 
   it("uses 16:9 only before valid metadata is available", () => {
     expect(recordedPreviewAspectRatio(0, 0)).toBeCloseTo(16 / 9);
+  });
+
+  it("caps display size without changing the recorded aspect ratio", () => {
+    expect(recordedPreviewMaximumWidth(4 / 3)).toBeCloseTo(
+      MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX * 4 / 3,
+    );
+    expect(recordedPreviewMaximumWidth(9 / 16)).toBeCloseTo(
+      MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX * 9 / 16,
+    );
   });
 });

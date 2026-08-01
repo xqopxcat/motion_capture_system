@@ -6,6 +6,8 @@ import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkel
 import { syncProductionCanvasSize } from "../../engines/visualization";
 import styles from "./RecordedPosePreview.module.css";
 
+export const MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX = 560;
+
 export type RecordedPosePreviewProps = {
   poseDatasetDraft: CapturePoseDatasetDraft | null;
   videoUrl: string;
@@ -27,6 +29,10 @@ function formatPreviewTime(seconds: number) {
 
 export function recordedPreviewAspectRatio(videoWidth: number, videoHeight: number) {
   return videoWidth > 0 && videoHeight > 0 ? videoWidth / videoHeight : 16 / 9;
+}
+
+export function recordedPreviewMaximumWidth(aspectRatio: number) {
+  return aspectRatio * MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX;
 }
 
 export function RecordedPosePreview({
@@ -175,7 +181,10 @@ export function RecordedPosePreview({
       <div
         className={styles.previewSurface}
         data-testid="recorded-preview-surface"
-        style={{ aspectRatio: videoAspectRatio }}
+        style={{
+          aspectRatio: videoAspectRatio,
+          maxWidth: recordedPreviewMaximumWidth(videoAspectRatio),
+        }}
       >
         <video
           ref={videoRef}

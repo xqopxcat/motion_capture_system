@@ -9,6 +9,8 @@
   background: #101820;
   border-radius: 12px;
   display: grid;
+  margin-inline: auto;
+  max-height: 560px;
   overflow: hidden;
   position: relative;
   width: 100%;
