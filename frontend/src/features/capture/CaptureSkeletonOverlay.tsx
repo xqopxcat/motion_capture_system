@@ -18,15 +18,6 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (displayFrame) {
-        displayFrame.source.width = 0;
-        displayFrame.source.height = 0;
-      }
-    };
-  }, [displayFrame]);
-
-  useEffect(() => {
     const startedAtMs = performance.now();
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
@@ -52,23 +43,6 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
       });
       return;
     }
-    if (displayFrame && displayFrame.sourceWidth > 0 && displayFrame.sourceHeight > 0 &&
-        displayFrame.source.width > 0 && displayFrame.source.height > 0) {
-      const scale = Math.min(
-        canvas.width / displayFrame.sourceWidth,
-        canvas.height / displayFrame.sourceHeight,
-      );
-      const width = displayFrame.sourceWidth * scale;
-      const height = displayFrame.sourceHeight * scale;
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(
-        displayFrame.source,
-        (canvas.width - width) / 2,
-        (canvas.height - height) / 2,
-        width,
-        height,
-      );
-    }
     renderCaptureSkeleton(
       canvas,
       context,
@@ -83,7 +57,6 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
         : undefined,
       0,
       "contain",
-      !displayFrame,
     );
     captureRuntimeInstrumentation.recordCanvasRender({
       endedAtMs: performance.now(),

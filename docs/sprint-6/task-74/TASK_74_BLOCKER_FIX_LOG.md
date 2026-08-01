@@ -10,9 +10,11 @@ A second manual pass confirmed that static projection alone was insufficient: Li
 
 The acceptance fix adds contain projection with actual source geometry, changes Live video to contain, introduces a camera-first mobile layout, adds Ready-only facing-mode flip, and adds a display-only Skeleton toggle for Live/Review. Raw Pose, inference, recording, API/backend/schema/storage, smoothing, angles and Worker remain unchanged.
 
-The follow-up composites the skeleton over the exact immutable frame analyzed by MediaPipe, retains only one bounded display snapshot, stops the old scheduler before camera replacement, gives MediaPipe a separate strictly monotonic runtime clock while preserving source timestamps in published pose results, adds tablet/rotation layout handling, and reduces Viewer seek tolerance to 1 ms.
+The follow-up retains the immutable inference frame's source geometry for `contain` projection, but keeps the overlay canvas transparent and renders only the skeleton over the continuously playing live video. It stops the old scheduler before camera replacement, gives MediaPipe a separate strictly monotonic runtime clock while preserving source timestamps in published pose results, adds tablet/rotation layout handling, and reduces Viewer seek tolerance to 1 ms.
 
-The display snapshot is released by the overlay effect only after React has stopped rendering that exact frame, avoiding a Flip-time `drawImage` race against a zero-sized canvas. Viewer now ignores stale media callbacks while an explicit frame seek is pending and does not drive controlled seeks backward during active playback.
+No inference snapshot is cloned or drawn into the display overlay. This preserves live camera cadence and avoids delayed full-frame replacement, stale-clear flashing, and zero-sized-canvas `drawImage` races. Viewer now ignores stale media callbacks while an explicit frame seek is pending and does not drive controlled seeks backward during active playback.
+
+Preparing keeps the camera-first page layout whenever a camera stream already exists, so initialization does not briefly fall back to the standard document layout.
 
 Paused Viewer navigation is controller-owned: `Next Frame`, `Previous Frame`, Timeline and annotation jumps update the requested frame/time, while paused `timeupdate`, video-frame and `seeked` events cannot overwrite that explicit navigation with the previously displayed frame.
 

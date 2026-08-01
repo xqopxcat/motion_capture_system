@@ -22,7 +22,10 @@ export function CapturePage() {
     <main
       className={styles.capturePage}
       data-live-capture={
-        productStateUsesLiveCamera(controller.productState.type) ? "true" : undefined
+        productStateUsesLiveCamera(
+          controller.productState.type,
+          controller.cameraPreview.stream !== null,
+        ) ? "true" : undefined
       }
     >
       <CaptureNavigationGuard
@@ -64,6 +67,7 @@ export function CapturePage() {
   );
 }
 
-function productStateUsesLiveCamera(state: string) {
-  return state === "Ready" || state === "Countdown" || state === "Recording";
+export function productStateUsesLiveCamera(state: string, hasCameraStream: boolean) {
+  return state === "Ready" || state === "Countdown" || state === "Recording" ||
+    (state === "Preparing" && hasCameraStream);
 }

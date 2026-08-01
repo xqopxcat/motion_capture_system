@@ -19,7 +19,6 @@ export type CapturePosePipelineState = {
 };
 
 export type CapturePoseDisplayFrame = {
-  source: HTMLCanvasElement;
   sourceHeight: number;
   sourceWidth: number;
 };
@@ -203,14 +202,9 @@ export function usePosePipeline() {
           captureRuntimeInstrumentation.recordAcceptedResultPublication(frame.observedAtMs, publishedAtMs);
           if (isMountedRef.current && isDetectionLoopRunningRef.current) {
             if (result.landmarks2D.length > 0) {
-              const displaySource = document.createElement("canvas");
-              displaySource.width = frame.payload.source.width;
-              displaySource.height = frame.payload.source.height;
-              displaySource.getContext("2d")?.drawImage(frame.payload.source, 0, 0);
               replaceDisplayFrame({
-                source: displaySource,
-                sourceHeight: displaySource.height,
-                sourceWidth: displaySource.width,
+                sourceHeight: frame.payload.source.height,
+                sourceWidth: frame.payload.source.width,
               });
             } else replaceDisplayFrame(null);
             setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);

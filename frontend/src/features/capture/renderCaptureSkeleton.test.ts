@@ -4,7 +4,7 @@ import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
 function drawingContext() {
   return {
     arc: vi.fn(), beginPath: vi.fn(), clearRect: vi.fn(), fill: vi.fn(), fillRect: vi.fn(),
-    lineTo: vi.fn(), moveTo: vi.fn(), restore: vi.fn(), save: vi.fn(), setLineDash: vi.fn(), stroke: vi.fn(),
+    drawImage: vi.fn(), lineTo: vi.fn(), moveTo: vi.fn(), restore: vi.fn(), save: vi.fn(), setLineDash: vi.fn(), stroke: vi.fn(),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -34,7 +34,7 @@ describe("Capture production skeleton wrapper", () => {
     expect(context.arc).not.toHaveBeenCalled();
   });
 
-  it("can preserve an inference-matched display frame under the skeleton", () => {
+  it("keeps the overlay transparent and clears before drawing the skeleton", () => {
     const context = drawingContext();
     renderCaptureSkeleton(
       { width: 200, height: 100 } as HTMLCanvasElement,
@@ -43,9 +43,9 @@ describe("Capture production skeleton wrapper", () => {
       undefined,
       0,
       "contain",
-      false,
     );
-    expect(context.clearRect).not.toHaveBeenCalled();
+    expect(context.clearRect).toHaveBeenCalledOnce();
+    expect(context.drawImage).not.toHaveBeenCalled();
     expect(context.arc).toHaveBeenCalledOnce();
   });
 });

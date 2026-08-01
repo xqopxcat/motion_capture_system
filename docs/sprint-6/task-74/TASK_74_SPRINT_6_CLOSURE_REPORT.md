@@ -10,7 +10,7 @@ All Task 66–73 contracts are represented in the acceptance matrix. State/prese
 
 ## Automated evidence
 
-- 49 test files / 271 tests passed after the acceptance follow-ups.
+- 50 test files / 273 tests passed after the acceptance follow-ups.
 - TypeScript and production build passed; 184 modules transformed.
 - Manual validation exposed blockers after the automated closure run.
 - Implementation fixes now require physical revalidation.
