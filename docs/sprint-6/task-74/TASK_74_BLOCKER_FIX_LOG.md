@@ -16,6 +16,8 @@ The display snapshot is released by the overlay effect only after React has stop
 
 Paused Viewer navigation is controller-owned: `Next Frame`, `Previous Frame`, Timeline and annotation jumps update the requested frame/time, while paused `timeupdate`, video-frame and `seeked` events cannot overwrite that explicit navigation with the previously displayed frame.
 
+Capture Review now reads the recorded video's intrinsic dimensions from metadata and applies that aspect ratio to the shared video/Skeleton surface, matching Viewer behavior. `16:9` is only the pre-metadata fallback.
+
 ## Environmental gaps (not product blockers)
 
 - Capture route required authentication; no authenticated session was available.

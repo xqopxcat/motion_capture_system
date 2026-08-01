@@ -1,3 +1,4 @@
+import { useEffect, useState, type CSSProperties } from "react";
 import type { PoseDetectionResult } from "../../engines/pose";
 import type { CameraStreamStatus } from "../../hooks";
 import { CameraPreview } from "../../components";
@@ -94,6 +95,11 @@ export function UnifiedCaptureStage({
   skeletonVisible,
   onSkeletonVisibilityChange,
 }: UnifiedCaptureStageProps) {
+  const [liveVideoAspectRatio, setLiveVideoAspectRatio] = useState(16 / 9);
+
+  useEffect(() => {
+    if (!cameraStream) setLiveVideoAspectRatio(16 / 9);
+  }, [cameraStream]);
   const mode = getCaptureStageMode(productState);
   const snapshot = reviewSnapshot(productState);
   const showsLiveSurface = mode === "live" || (mode === "preparing" && cameraStream !== null);
@@ -122,21 +128,28 @@ export function UnifiedCaptureStage({
       <div className={styles.viewport}>
         {showsLiveSurface && (
           <div className={styles.liveSurface} data-testid="live-surface">
-            <CameraPreview
-              stream={cameraStream}
-              status={cameraStatus}
-              errorMessage={cameraErrorMessage}
-              onStart={onPrimaryAction}
-              onStop={() => undefined}
-              onVideoElementChange={onLiveVideoElementChange}
-              showControls={false}
-            />
-            <CaptureSkeletonOverlay
-              displayFrame={currentDisplayFrame}
-              poseResult={currentPoseResult}
-              videoElement={liveVideoElement}
-              visible={skeletonVisible}
-            />
+            <div
+              className={styles.liveMediaFrame}
+              data-testid="live-media-frame"
+              style={{ "--live-video-aspect-ratio": liveVideoAspectRatio } as CSSProperties}
+            >
+              <CameraPreview
+                stream={cameraStream}
+                status={cameraStatus}
+                errorMessage={cameraErrorMessage}
+                onStart={onPrimaryAction}
+                onStop={() => undefined}
+                onVideoElementChange={onLiveVideoElementChange}
+                onVideoDimensionsChange={(width, height) => setLiveVideoAspectRatio(width / height)}
+                showControls={false}
+              />
+              <CaptureSkeletonOverlay
+                displayFrame={currentDisplayFrame}
+                poseResult={currentPoseResult}
+                videoElement={liveVideoElement}
+                visible={skeletonVisible}
+              />
+            </div>
           </div>
         )}
 

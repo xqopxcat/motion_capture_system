@@ -94,6 +94,8 @@ describe("UnifiedCaptureStage", () => {
     (state) => {
       const markup = renderStage(state);
       expect(markup).toContain('data-testid="live-surface"');
+      expect(markup).toContain('data-testid="live-media-frame"');
+      expect(markup).toContain('--live-video-aspect-ratio:1.7777777777777777');
       expect(markup).not.toContain('data-testid="review-surface"');
     },
   );

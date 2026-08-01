@@ -10,6 +10,7 @@ export type CameraPreviewProps = {
   onStop: () => void;
   showControls?: boolean;
   onVideoElementChange?: (videoElement: HTMLVideoElement | null) => void;
+  onVideoDimensionsChange?: (width: number, height: number) => void;
 };
 
 export function CameraPreview({
@@ -20,6 +21,7 @@ export function CameraPreview({
   onStop,
   showControls = true,
   onVideoElementChange,
+  onVideoDimensionsChange,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isReady = status === "ready";
@@ -50,6 +52,12 @@ export function CameraPreview({
           muted
           playsInline
           aria-label="Live camera preview"
+          onLoadedMetadata={(event) => {
+            const { videoHeight, videoWidth } = event.currentTarget;
+            if (videoWidth > 0 && videoHeight > 0) {
+              onVideoDimensionsChange?.(videoWidth, videoHeight);
+            }
+          }}
         />
         {!isReady && (
           <div className={styles.placeholder}>

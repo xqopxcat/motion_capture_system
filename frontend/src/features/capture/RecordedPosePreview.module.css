@@ -6,7 +6,6 @@
 }
 
 .previewSurface {
-  aspect-ratio: 16 / 9;
   background: #101820;
   border-radius: 12px;
   display: grid;

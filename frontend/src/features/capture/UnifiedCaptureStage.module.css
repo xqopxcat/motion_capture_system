@@ -99,11 +99,24 @@
 }
 
 .liveSurface {
+  align-items: center;
+  container-type: size;
+  display: flex;
   height: 100%;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.liveSurface > section,
-.liveSurface > section > div {
+.liveMediaFrame {
+  aspect-ratio: var(--live-video-aspect-ratio, 1.7778);
+  max-height: 100%;
+  max-width: 100%;
+  position: relative;
+  width: min(100cqw, calc(100cqh * var(--live-video-aspect-ratio, 1.7778)));
+}
+
+.liveMediaFrame > section,
+.liveMediaFrame > section > div {
   height: 100%;
 }
 
@@ -112,7 +125,6 @@
 }
 
 .reviewSurface > div > div:first-child {
-  aspect-ratio: 16 / 9;
   border: 1px solid #263443;
   border-radius: 12px;
   min-height: 0;
@@ -476,6 +488,10 @@
   .stage[data-stage-mode="live"] .primaryAction,
   .stage[data-stage-mode="live"] .stopAction,
   .stage[data-stage-mode="live"] .utilityAction {
+    align-self: center;
+    flex-basis: auto;
+    height: 48px;
+    max-height: 48px;
     min-width: 0;
     padding-inline: 8px;
     width: 100%;
@@ -507,7 +523,8 @@
 
   .primaryAction,
   .stopAction,
-  .secondaryAction {
+  .secondaryAction,
+  .utilityAction {
     flex: none;
     width: 100%;
   }

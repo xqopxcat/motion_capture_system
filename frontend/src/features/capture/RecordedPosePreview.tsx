@@ -25,6 +25,10 @@ function formatPreviewTime(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
+export function recordedPreviewAspectRatio(videoWidth: number, videoHeight: number) {
+  return videoWidth > 0 && videoHeight > 0 ? videoWidth / videoHeight : 16 / 9;
+}
+
 export function RecordedPosePreview({
   poseDatasetDraft,
   videoUrl,
@@ -37,6 +41,7 @@ export function RecordedPosePreview({
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
 
   const syncCurrentTime = useCallback(() => {
     const video = videoRef.current;
@@ -148,6 +153,10 @@ export function RecordedPosePreview({
   }, [renderCurrentFrame]);
 
   useEffect(() => {
+    setVideoAspectRatio(16 / 9);
+  }, [videoUrl]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => renderCurrentFrame());
@@ -163,14 +172,20 @@ export function RecordedPosePreview({
 
   return (
     <div className={styles.recordedPosePreview}>
-      <div className={styles.previewSurface}>
+      <div
+        className={styles.previewSurface}
+        data-testid="recorded-preview-surface"
+        style={{ aspectRatio: videoAspectRatio }}
+      >
         <video
           ref={videoRef}
           className={styles.video}
           src={videoUrl}
           tabIndex={disabled ? -1 : undefined}
-          onLoadedMetadata={() => {
-            setDurationSeconds(videoRef.current?.duration ?? 0);
+          onLoadedMetadata={(event) => {
+            const video = event.currentTarget;
+            setDurationSeconds(video.duration ?? 0);
+            setVideoAspectRatio(recordedPreviewAspectRatio(video.videoWidth, video.videoHeight));
             renderCurrentFrame();
           }}
           onPlay={() => {
