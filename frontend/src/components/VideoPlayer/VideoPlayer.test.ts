@@ -10,4 +10,13 @@ describe("VideoPlayer frame seeking", () => {
     expect(shouldReportMediaTime(5 / 30, 6 / 30)).toBe(false);
     expect(shouldReportMediaTime(6 / 30, 6 / 30)).toBe(true);
   });
+
+  it("does not let paused video events overwrite explicit frame navigation", () => {
+    expect(shouldReportMediaTime(5 / 30, 6 / 30, false)).toBe(false);
+    expect(shouldReportMediaTime(6 / 30, 6 / 30, false)).toBe(false);
+  });
+
+  it("allows playback callbacks again after the paused seek is complete", () => {
+    expect(shouldReportMediaTime(7 / 30, null, true)).toBe(true);
+  });
 });

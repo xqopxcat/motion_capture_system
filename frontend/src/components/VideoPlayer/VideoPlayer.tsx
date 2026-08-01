@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import type { PlaybackState } from "../../types";
 import styles from "./VideoPlayer.module.css";
 
@@ -17,7 +17,12 @@ export function videoNeedsSeek(currentTime: number, requestedTime: number) {
   return Math.abs(currentTime - requestedTime) >= 0.001;
 }
 
-export function shouldReportMediaTime(time: number, pendingSeekTime: number | null) {
+export function shouldReportMediaTime(
+  time: number,
+  pendingSeekTime: number | null,
+  isPlaying = true,
+) {
+  if (!isPlaying) return false;
   return pendingSeekTime === null || Math.abs(time - pendingSeekTime) < 0.01;
 }
 
@@ -35,14 +40,20 @@ export function VideoPlayer({
 
   const reportMediaTime = (time: number) => {
     const pendingSeekTime = pendingSeekTimeRef.current;
+    if (!playback.isPlaying) {
+      if (pendingSeekTime !== null && Math.abs(time - pendingSeekTime) < 0.01) {
+        pendingSeekTimeRef.current = null;
+      }
+      return;
+    }
     if (pendingSeekTime !== null) {
-      if (!shouldReportMediaTime(time, pendingSeekTime)) return;
+      if (!shouldReportMediaTime(time, pendingSeekTime, playback.isPlaying)) return;
       pendingSeekTimeRef.current = null;
     }
     onTimeChange?.(time);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const video = videoRef.current;
 
     if (!video) {
@@ -94,7 +105,7 @@ export function VideoPlayer({
     callbackId = video.requestVideoFrameCallback(handlePresentedFrame);
 
     return () => video.cancelVideoFrameCallback(callbackId);
-  }, [onTimeChange, src]);
+  }, [onTimeChange, playback.isPlaying, src]);
 
   return (
     <section className={styles.videoPlayer} aria-label={title}>
@@ -114,8 +125,11 @@ export function VideoPlayer({
         }}
         onEnded={onEnded}
         onSeeked={(event) => {
-          pendingSeekTimeRef.current = null;
-          onTimeChange?.(event.currentTarget.currentTime);
+          if (!playback.isPlaying) {
+            pendingSeekTimeRef.current = null;
+            return;
+          }
+          reportMediaTime(event.currentTarget.currentTime);
         }}
         onTimeUpdate={(event) => reportMediaTime(event.currentTarget.currentTime)}
       />

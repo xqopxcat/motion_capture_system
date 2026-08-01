@@ -14,6 +14,8 @@ The follow-up composites the skeleton over the exact immutable frame analyzed by
 
 The display snapshot is released by the overlay effect only after React has stopped rendering that exact frame, avoiding a Flip-time `drawImage` race against a zero-sized canvas. Viewer now ignores stale media callbacks while an explicit frame seek is pending and does not drive controlled seeks backward during active playback.
 
+Paused Viewer navigation is controller-owned: `Next Frame`, `Previous Frame`, Timeline and annotation jumps update the requested frame/time, while paused `timeupdate`, video-frame and `seeked` events cannot overwrite that explicit navigation with the previously displayed frame.
+
 ## Environmental gaps (not product blockers)
 
 - Capture route required authentication; no authenticated session was available.
