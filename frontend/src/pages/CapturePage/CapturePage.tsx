@@ -47,7 +47,7 @@ export function CapturePage() {
           cameraStream={controller.cameraPreview.stream}
           cameraStatus={controller.cameraPreview.status}
           cameraErrorMessage={controller.cameraPreview.errorMessage}
-          currentPoseResult={controller.currentPoseResult}
+          currentFilteredPose={controller.currentFilteredPose}
           currentDisplayFrame={controller.currentDisplayFrame}
           liveVideoElement={controller.previewVideoElement}
           onLiveVideoElementChange={controller.cameraPreview.onVideoElementChange}

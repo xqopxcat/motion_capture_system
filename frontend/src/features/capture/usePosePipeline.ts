@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPoseEngine } from "../../engines/pose";
-import type { PoseDetectionResult, PoseEngine, PoseEngineStatus } from "../../engines/pose";
+import { createPoseEngine, mapPoseDetectionResultToRawCanonicalPose, transformRawPoseForRuntimeVisualization } from "../../engines/pose";
+import type { FilteredRuntimePose, PoseEngine, PoseEngineStatus, RawCanonicalPose } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { captureVideoFrame, type CapturedVideoFrame } from "./capturedVideoFrame";
 import { LatestFrameScheduler } from "./latestFrameScheduler";
@@ -44,12 +44,13 @@ export function usePosePipeline() {
     ...initialPosePipelineState,
     engineName: poseEngine.metadata.name,
   });
-  const [currentPoseResult, setCurrentPoseResult] = useState<PoseDetectionResult | null>(null);
+  const [currentRawPose, setCurrentRawPose] = useState<RawCanonicalPose | null>(null);
+  const [currentFilteredPose, setCurrentFilteredPose] = useState<FilteredRuntimePose | null>(null);
   const [currentDisplayFrame, setCurrentDisplayFrame] = useState<CapturePoseDisplayFrame | null>(null);
   const isMountedRef = useRef(true);
   const statusRef = useRef<PoseEngineStatus>("idle");
   const producerRef = useRef<VideoFrameProducer | null>(null);
-  const schedulerRef = useRef<LatestFrameScheduler<CapturedVideoFrame, PoseDetectionResult> | null>(null);
+  const schedulerRef = useRef<LatestFrameScheduler<CapturedVideoFrame, RawCanonicalPose> | null>(null);
   const frameIndexRef = useRef(0);
   const isDetectionLoopRunningRef = useRef(false);
   const cameraSessionIdRef = useRef(0);
@@ -77,7 +78,8 @@ export function usePosePipeline() {
       return;
     }
 
-    setCurrentPoseResult(null);
+    setCurrentRawPose(null);
+    setCurrentFilteredPose(null);
     replaceDisplayFrame(null);
     setPoseState((currentState) => ({
       ...currentState,
@@ -155,7 +157,7 @@ export function usePosePipeline() {
 
       const inferenceTokens = new Map<string, ReturnType<typeof captureRuntimeInstrumentation.beginInference>>();
       const frameKey = (frame: { generation: number; frameSequence: number }) => `${frame.generation}:${frame.frameSequence}`;
-      const scheduler = new LatestFrameScheduler<CapturedVideoFrame, PoseDetectionResult>({
+      const scheduler = new LatestFrameScheduler<CapturedVideoFrame, RawCanonicalPose>({
         infer: (frame) => {
           frameIndexRef.current += 1;
           const engineTimestampMs = nextPoseEngineTimestamp(
@@ -167,7 +169,11 @@ export function usePosePipeline() {
             source: frame.payload.source,
             timestampMs: engineTimestampMs,
             frameIndex: frameIndexRef.current,
-          }).then((result) => ({ ...result, timestampMs: frame.sourceTimestampMs }));
+          }).then((result) => mapPoseDetectionResultToRawCanonicalPose(result, {
+            sourceTimestampMs: frame.sourceTimestampMs,
+            frameIndex: result.frameIndex,
+            cameraSessionId,
+          }));
         },
         onInferenceStarted: (frame) => {
           inferenceTokens.set(frameKey(frame), captureRuntimeInstrumentation.beginInference({
@@ -190,7 +196,8 @@ export function usePosePipeline() {
           schedulerRef.current?.dispose();
           isDetectionLoopRunningRef.current = false;
           statusRef.current = "error";
-          setCurrentPoseResult(null);
+          setCurrentRawPose(null);
+          setCurrentFilteredPose(null);
           setPoseState((currentState) => ({ ...currentState, status: "error", isDetecting: false,
             errorMessage: error instanceof Error ? error.message : "Pose detection could not run." }));
         },
@@ -207,7 +214,11 @@ export function usePosePipeline() {
                 sourceWidth: frame.payload.source.width,
               });
             } else replaceDisplayFrame(null);
-            setCurrentPoseResult(result.landmarks2D.length > 0 ? result : null);
+            const acceptedRawPose = result.landmarks2D.length > 0 ? result : null;
+            const filteredPose = transformRawPoseForRuntimeVisualization(acceptedRawPose);
+            captureRuntimeInstrumentation.associateRuntimePose(acceptedRawPose, filteredPose);
+            setCurrentRawPose(acceptedRawPose);
+            setCurrentFilteredPose(filteredPose);
           }
         },
       });
@@ -286,7 +297,8 @@ export function usePosePipeline() {
   }, [poseEngine, stopPoseDetection]);
 
   return {
-    currentPoseResult,
+    currentRawPose,
+    currentFilteredPose,
     currentDisplayFrame,
     poseState,
     initializePosePipeline,

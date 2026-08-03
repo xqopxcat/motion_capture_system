@@ -91,6 +91,8 @@ describe("poseDatasetV1", () => {
       valid: true,
       errors: [],
     });
+    expect(JSON.stringify(dataset)).not.toContain("runtimeProfileId");
+    expect(JSON.stringify(dataset)).not.toContain("filtered");
   });
 
   it("fails validation when frames are missing", () => {

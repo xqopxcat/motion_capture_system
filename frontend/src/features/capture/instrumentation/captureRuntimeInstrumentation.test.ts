@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PoseDetectionResult, PoseLandmark2D } from "../../../engines/pose";
+import { mapPoseDetectionResultToRawCanonicalPose } from "../../../engines/pose";
+import type { PoseLandmark2D, RawCanonicalPose } from "../../../engines/pose";
 import {
   BoundedSampleBuffer,
   CaptureRuntimeInstrumentation,
@@ -13,15 +14,17 @@ function landmark(id: number, x: number, y: number, visibility = 1): PoseLandmar
   return { id, name: `joint_${id}`, x, y, visibility };
 }
 
-function result(frameIndex: number): PoseDetectionResult {
-  return {
+function result(frameIndex: number): RawCanonicalPose {
+  const landmarks = Array.from({ length: 33 }, (_, id) =>
+    landmark(id, id === 11 ? 0.2 : id === 12 ? 0.8 : 0.5, 0.3));
+  return mapPoseDetectionResultToRawCanonicalPose({
     engineName: "test",
     engineVersion: "1",
     frameIndex,
     timestampMs: frameIndex * 33,
-    landmarks2D: [landmark(11, 0.2, 0.3), landmark(12, 0.8, 0.3)],
+    landmarks2D: landmarks,
     landmarks3D: [],
-  };
+  }, { sourceTimestampMs: frameIndex * 33, frameIndex });
 }
 
 describe("Capture runtime instrumentation", () => {

@@ -39,7 +39,7 @@ describe("Task 75 quality policy", () => {
 
   it("locks authority, pose.v1, and the no-filter-persistence rule", () => {
     expect(POSE_DATA_AUTHORITY.rawCanonicalPose).toMatchObject({ authoritative: true, recordingInput: true, landmarkCount: 33 });
-    expect(POSE_DATA_AUTHORITY.filteredRuntimePose).toMatchObject({ authoritative: false, runtimeOnly: true, persist: false, implemented: false });
+    expect(POSE_DATA_AUTHORITY.filteredRuntimePose).toMatchObject({ authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: false });
     expect(POSE_DATA_AUTHORITY.persistedArtifact).toMatchObject({ schemaVersion: "pose.v1", source: "raw-canonical-pose", filteredCoordinates: false });
   });
 

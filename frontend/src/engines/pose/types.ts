@@ -29,6 +29,32 @@ export type PoseDetectionResult = {
   landmarks3D: PoseLandmark3D[];
 };
 
+declare const rawCanonicalPoseBrand: unique symbol;
+declare const filteredRuntimePoseBrand: unique symbol;
+
+export type RawCanonicalPose = Readonly<{
+  readonly [rawCanonicalPoseBrand]: true;
+  engineName: string;
+  engineVersion: string;
+  timestampMs: number;
+  frameIndex?: number;
+  cameraSessionId?: number;
+  landmarks2D: readonly Readonly<PoseLandmark2D>[];
+  landmarks3D: readonly Readonly<PoseLandmark3D>[];
+}>;
+
+export type FilteredRuntimePose = Readonly<{
+  readonly [filteredRuntimePoseBrand]: true;
+  engineName: string;
+  engineVersion: string;
+  timestampMs: number;
+  frameIndex?: number;
+  cameraSessionId?: number;
+  runtimeProfileId: "runtime-visualization.identity.v1";
+  landmarks2D: readonly Readonly<PoseLandmark2D>[];
+  landmarks3D: readonly Readonly<PoseLandmark3D>[];
+}>;
+
 export type PoseOutputSchema = "pose.v1";
 
 export type PoseAdapterCapabilities = {

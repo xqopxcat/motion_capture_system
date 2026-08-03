@@ -16,7 +16,7 @@ export type DisplayPoseLandmark = {
   presence?: number;
 };
 
-export type DisplayPoseSkeleton = { landmarks2D: DisplayPoseLandmark[] };
+export type DisplayPoseSkeleton = { landmarks2D: readonly DisplayPoseLandmark[] };
 export type SkeletonSourceViewport = { sourceWidth: number; sourceHeight: number };
 export type SkeletonObjectFit = "contain" | "cover";
 

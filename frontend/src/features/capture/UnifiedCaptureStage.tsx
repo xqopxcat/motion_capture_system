@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import type { PoseDetectionResult } from "../../engines/pose";
+import type { FilteredRuntimePose } from "../../engines/pose";
 import type { CameraStreamStatus } from "../../hooks";
 import { CameraPreview } from "../../components";
 import type {
@@ -19,7 +19,7 @@ export type UnifiedCaptureStageProps = {
   cameraStream: MediaStream | null;
   cameraStatus: CameraStreamStatus;
   cameraErrorMessage?: string | null;
-  currentPoseResult: PoseDetectionResult | null;
+  currentFilteredPose: FilteredRuntimePose | null;
   currentDisplayFrame: CapturePoseDisplayFrame | null;
   liveVideoElement: HTMLVideoElement | null;
   onLiveVideoElementChange: (videoElement: HTMLVideoElement | null) => void;
@@ -82,7 +82,7 @@ export function UnifiedCaptureStage({
   cameraStream,
   cameraStatus,
   cameraErrorMessage,
-  currentPoseResult,
+  currentFilteredPose,
   currentDisplayFrame,
   liveVideoElement,
   onLiveVideoElementChange,
@@ -145,7 +145,7 @@ export function UnifiedCaptureStage({
               />
               <CaptureSkeletonOverlay
                 displayFrame={currentDisplayFrame}
-                poseResult={currentPoseResult}
+                poseResult={currentFilteredPose}
                 videoElement={liveVideoElement}
                 visible={skeletonVisible}
               />

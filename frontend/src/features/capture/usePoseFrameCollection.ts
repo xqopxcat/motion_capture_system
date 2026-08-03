@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { PoseDetectionResult, PoseLandmark2D, PoseLandmark3D } from "../../engines/pose";
+import type { PoseLandmark2D, PoseLandmark3D, RawCanonicalPose } from "../../engines/pose";
 
 export type CapturePoseFrame = {
   frameIndex: number;
@@ -8,15 +8,17 @@ export type CapturePoseFrame = {
   landmarks3D: PoseLandmark3D[];
 };
 
-function copyLandmarks2D(landmarks: PoseLandmark2D[]) {
+export type RawPoseCollector = (poseResult: RawCanonicalPose | null) => void;
+
+function copyLandmarks2D(landmarks: readonly Readonly<PoseLandmark2D>[]) {
   return landmarks.map((landmark) => ({ ...landmark }));
 }
 
-function copyLandmarks3D(landmarks: PoseLandmark3D[]) {
+function copyLandmarks3D(landmarks: readonly Readonly<PoseLandmark3D>[]) {
   return landmarks.map((landmark) => ({ ...landmark }));
 }
 
-function getPoseResultKey(poseResult: PoseDetectionResult) {
+function getPoseResultKey(poseResult: RawCanonicalPose) {
   return poseResult.frameIndex ?? poseResult.timestampMs;
 }
 
@@ -46,7 +48,7 @@ export function usePoseFrameCollection() {
     isCollectingRef.current = false;
   }, []);
 
-  const collectPoseFrame = useCallback((poseResult: PoseDetectionResult | null) => {
+  const collectPoseFrame: RawPoseCollector = useCallback((poseResult: RawCanonicalPose | null) => {
     if (!isCollectingRef.current || !poseResult || poseResult.landmarks2D.length === 0) {
       return;
     }

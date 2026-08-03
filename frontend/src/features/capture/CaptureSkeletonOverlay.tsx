@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { PoseDetectionResult } from "../../engines/pose";
+import type { FilteredRuntimePose } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import { PRODUCTION_SKELETON_PROFILE, syncProductionCanvasSize } from "../../engines/visualization";
@@ -7,7 +7,7 @@ import styles from "./CaptureSkeletonOverlay.module.css";
 import type { CapturePoseDisplayFrame } from "./usePosePipeline";
 
 export type CaptureSkeletonOverlayProps = {
-  poseResult: PoseDetectionResult | null;
+  poseResult: FilteredRuntimePose | null;
   videoElement?: HTMLVideoElement | null;
   visible?: boolean;
   displayFrame?: CapturePoseDisplayFrame | null;

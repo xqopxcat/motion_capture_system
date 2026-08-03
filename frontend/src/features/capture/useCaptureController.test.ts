@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { classifySavingFailure, mapPublishProgressToSavingSubstate, normalizeCaptureTitle, shouldPreventCaptureUnload } from "./useCaptureController";
+import { classifySavingFailure, mapPublishProgressToSavingSubstate, normalizeCaptureTitle, shouldCollectRawPose, shouldPreventCaptureUnload } from "./useCaptureController";
 
 describe("capture controller policies", () => {
+  it("collects Raw Pose only during Recording, independent of display toggle state", () => {
+    expect(shouldCollectRawPose("Countdown")).toBe(false);
+    expect(shouldCollectRawPose("Recording")).toBe(true);
+    expect(shouldCollectRawPose("Reviewing")).toBe(false);
+  });
   it("maps publisher stages into approved Saving substates", () => {
     expect(mapPublishProgressToSavingSubstate({ stage: "preparing", message: "a" }).stage).toBe("Analyzing");
     expect(mapPublishProgressToSavingSubstate({ stage: "creating", message: "b" }).stage).toBe("CreatingRecord");

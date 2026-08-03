@@ -1,4 +1,4 @@
-import type { PoseDetectionResult, PoseLandmark2D } from "../../../engines/pose";
+import type { FilteredRuntimePose, PoseLandmark2D, RawCanonicalPose } from "../../../engines/pose";
 
 const DEFAULT_SAMPLE_CAPACITY = 300;
 const JITTER_LANDMARK_IDS = [11, 12, 23, 24, 25, 26, 27, 28] as const;
@@ -344,7 +344,7 @@ export class CaptureRuntimeInstrumentation {
   private readonly previewSyncErrors = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly inferenceWindows = new BoundedSampleBuffer<TimedWindow>(DEFAULT_SAMPLE_CAPACITY);
   private readonly renderWindows = new BoundedSampleBuffer<TimedWindow>(DEFAULT_SAMPLE_CAPACITY);
-  private readonly poseMetadata = new WeakMap<PoseDetectionResult, PoseResultMeasurement>();
+  private readonly poseMetadata = new WeakMap<object, PoseResultMeasurement>();
 
   constructor(enabled = detectDiagnosticsEnabled()) {
     this.enabled = enabled;
@@ -499,7 +499,7 @@ export class CaptureRuntimeInstrumentation {
       sourceFrameObservedAtMs: number;
       startedAtMs: number;
     } | null,
-    result: PoseDetectionResult,
+    result: RawCanonicalPose,
     endedAtMs: number,
   ) {
     if (!this.enabled || !token) return;
@@ -531,14 +531,20 @@ export class CaptureRuntimeInstrumentation {
     this.inferenceWindows.push({ startMs: token.startedAtMs, endMs: endedAtMs });
   }
 
-  getPoseResultMeasurement(result: PoseDetectionResult | null) {
+  associateRuntimePose(rawPose: RawCanonicalPose | null, filteredPose: FilteredRuntimePose | null) {
+    if (!rawPose || !filteredPose) return;
+    const metadata = this.poseMetadata.get(rawPose);
+    if (metadata) this.poseMetadata.set(filteredPose, metadata);
+  }
+
+  getPoseResultMeasurement(result: RawCanonicalPose | FilteredRuntimePose | null) {
     return result ? this.poseMetadata.get(result) ?? null : null;
   }
 
   recordCanvasRender(input: {
     startedAtMs: number;
     endedAtMs: number;
-    poseResult: PoseDetectionResult | null;
+    poseResult: RawCanonicalPose | FilteredRuntimePose | null;
     rendered: boolean;
   }) {
     if (!this.enabled) return;

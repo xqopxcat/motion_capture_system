@@ -50,7 +50,7 @@ function renderStage(state: CaptureProductState, skeletonVisible = true) {
       presentation={buildCapturePresentation(state, state.type === "Countdown" ? 3 : null, 4)}
       cameraStream={null}
       cameraStatus={state.type === "Ready" || state.type === "Countdown" || state.type === "Recording" ? "ready" : "idle"}
-      currentPoseResult={null}
+      currentFilteredPose={null}
       currentDisplayFrame={null}
       liveVideoElement={null}
       onLiveVideoElementChange={() => undefined}

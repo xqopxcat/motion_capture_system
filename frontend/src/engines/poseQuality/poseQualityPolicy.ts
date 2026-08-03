@@ -47,7 +47,7 @@ export const POSE_QUALITY_TARGETS: readonly QualityTarget[] = freeze([
 
 export const POSE_DATA_AUTHORITY = freeze({
   rawCanonicalPose: { authoritative: true, immutableAfterPublication: true, landmarkCount: 33, recordingInput: true },
-  filteredRuntimePose: { authoritative: false, runtimeOnly: true, persist: false, implemented: false, preservesSourceIdentity: true },
+  filteredRuntimePose: { authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: false, preservesSourceIdentity: true },
   persistedArtifact: { schemaVersion: "pose.v1", source: "raw-canonical-pose", filteredCoordinates: false, jointAngles: false, metricSeries: false },
 } as const);
 

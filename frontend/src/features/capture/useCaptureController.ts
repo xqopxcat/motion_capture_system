@@ -109,6 +109,10 @@ export function shouldPreventCaptureUnload(routeLeaveRequiresConfirmation: boole
   return routeLeaveRequiresConfirmation;
 }
 
+export function shouldCollectRawPose(productStateType: CaptureProductState["type"]) {
+  return productStateType === "Recording";
+}
+
 export function useCaptureController(options: CaptureControllerOptions = {}) {
   const now = options.now ?? (() => performance.now());
   const countdownDurationMs = options.countdownDurationMs ?? DEFAULT_CAPTURE_COUNTDOWN_MS;
@@ -267,10 +271,10 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   }, [pose.startPoseDetection, pose.stopPoseDetection, previewVideoElement, productState.type]);
 
   useEffect(() => {
-    if (productState.type === "Recording") {
-      poseCollection.collectPoseFrame(pose.currentPoseResult);
+    if (shouldCollectRawPose(productState.type)) {
+      poseCollection.collectPoseFrame(pose.currentRawPose);
     }
-  }, [pose.currentPoseResult, poseCollection.collectPoseFrame, productState.type]);
+  }, [pose.currentRawPose, poseCollection.collectPoseFrame, productState.type]);
 
   const startCountdown = useCallback(() => {
     const current = stateRef.current;
@@ -532,7 +536,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     skeletonVisible,
     setSkeletonVisible,
     cameraPreview: { ...camera, onVideoElementChange: setPreviewVideoElement },
-    currentPoseResult: pose.currentPoseResult,
+    currentFilteredPose: pose.currentFilteredPose,
     currentDisplayFrame: pose.currentDisplayFrame,
     localRecording: recorder,
     poseDatasetDraft: productState.type === "Reviewing" ? productState.snapshot.poseDraft : null,
