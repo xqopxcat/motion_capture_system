@@ -54,6 +54,19 @@ describe("production skeleton confidence policy", () => {
     expect(drawing.arc).toHaveBeenCalledOnce();
   });
 
+  it("skips an explicit unavailable slot without shifting later landmark IDs", () => {
+    const target = canvas();
+    const drawing = context();
+    const slots = Array.from({ length: 33 }, () => null as ReturnType<typeof landmark> | null);
+    slots[11] = landmark(11);
+    slots[13] = null;
+    slots[14] = landmark(14);
+    renderProductionSkeleton(target, drawing, { landmarks2D: slots });
+    expect(drawing.stroke).not.toHaveBeenCalled();
+    expect(drawing.arc).toHaveBeenCalledOnce();
+    expect(drawing.fillRect).toHaveBeenCalledOnce();
+  });
+
   it("clears missing and stale pose without drawing", () => {
     const target = canvas();
     const drawing = context();

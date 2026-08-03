@@ -11,7 +11,7 @@ function rawPose(timestampMs: number, options: { x?: number; y?: number; visibil
 }
 
 function landmarkX(pose: ReturnType<ReturnType<typeof createRuntimePoseQualityEngine>["transform"]>, id = 11) {
-  return pose?.landmarks2D.find((landmark) => landmark.id === id)?.x;
+  return pose?.landmarks2D.find((landmark) => landmark?.id === id)?.x;
 }
 
 function rms(values: number[]) {
@@ -97,9 +97,18 @@ describe("stabilized runtime Pose engine", () => {
       expect(held.landmarkQuality[11].sourceTimestampMs).toBe(0);
     }
     const unavailable = engine.transform(rawPose(132, { visibility: 0.1 }))!;
+    expect(unavailable.landmarks2D).toHaveLength(33);
+    expect(unavailable.landmarks3D).toHaveLength(33);
+    expect(unavailable.landmarks2D[13]?.id).toBe(13);
     expect(landmarkX(unavailable)).toBeUndefined();
+    expect(unavailable.landmarks2D[11]).toBeNull();
+    expect(unavailable.landmarks3D[11]).toBeNull();
     expect(unavailable.landmarkQuality[11].state).toBe("unavailable");
+    expect(unavailable.landmarkQuality3D[11].state).toBe("unavailable");
+    expect(unavailable.landmarks2D.every((landmark, index) => landmark === null || landmark.id === index)).toBe(true);
+    expect(unavailable.landmarks3D.every((landmark, index) => landmark === null || landmark.id === index)).toBe(true);
     const recovered = engine.transform(rawPose(165, { x: 0.55 }))!;
+    expect(recovered.landmarks2D[11]?.id).toBe(11);
     expect(landmarkX(recovered)).toBe(0.55);
     expect(recovered.landmarkQuality[11].state).toBe("filtered");
   });
@@ -108,9 +117,9 @@ describe("stabilized runtime Pose engine", () => {
     const engine = createRuntimePoseQualityEngine();
     engine.transform(rawPose(0, { x: 0.4, y: 0.4, worldX: 0.1, session: 1 }));
     const next = engine.transform(rawPose(33, { x: 0.42, y: 0.4, worldX: 0.12, session: 1 }))!;
-    expect(next.landmarks2D[12].x).toBe(0.5);
-    expect(next.landmarks2D[11].y).toBe(0.4);
-    expect(next.landmarks3D[11].x).not.toBe(next.landmarks2D[11].x);
+    expect(next.landmarks2D[12]!.x).toBe(0.5);
+    expect(next.landmarks2D[11]!.y).toBe(0.4);
+    expect(next.landmarks3D[11]!.x).not.toBe(next.landmarks2D[11]!.x);
     const changedSession = engine.transform(rawPose(66, { x: 0.8, session: 2 }))!;
     expect(landmarkX(changedSession)).toBe(0.8);
     expect(engine.snapshotDiagnostics().resets["session-change"]).toBe(1);
@@ -147,6 +156,8 @@ describe("stabilized runtime Pose engine", () => {
     expect(output.runtimeProfileId).toBe("runtime-visualization.stabilized.v1");
     expect(output.landmarks2D).toHaveLength(33);
     expect(output.landmarks3D).toHaveLength(33);
+    expect(output.landmarkQuality).toHaveLength(33);
+    expect(output.landmarkQuality3D).toHaveLength(33);
     expect(output).not.toHaveProperty("angles");
     expect(output).not.toHaveProperty("metricSeries");
     expect(diagnostics).toMatchObject({ rawInputCount: 1, stabilizedOutputCount: 1, landmarksFiltered: 66 });

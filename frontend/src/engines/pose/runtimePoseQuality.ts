@@ -167,8 +167,9 @@ export class RuntimePoseQualityEngine {
     this.lastTimestampMs = rawPose.timestampMs;
 
     const quality: Array<{ id: number; state: LandmarkStateName; sourceTimestampMs: number }> = [];
-    const landmarks2D: PoseLandmark2D[] = [];
-    const landmarks3D: PoseLandmark3D[] = [];
+    const quality3D: Array<{ id: number; state: LandmarkStateName; sourceTimestampMs: number }> = [];
+    const landmarks2D: Array<PoseLandmark2D | null> = [];
+    const landmarks3D: Array<PoseLandmark3D | null> = [];
     let frameFiltered = 0, frameHeld = 0, frameOutliers = 0, frameUnavailable = 0;
     for (let id = 0; id < MEDIAPIPE_POSE_LANDMARK_COUNT; id += 1) {
       const two = this.processLandmark("2d", rawPose.landmarks2D[id], id, rawPose.timestampMs);
@@ -176,7 +177,7 @@ export class RuntimePoseQualityEngine {
         landmarks2D.push(two.landmark as PoseLandmark2D);
         const raw = rawPose.landmarks2D[id];
         pushBounded(this.displacements2D, Math.hypot(two.landmark.x - raw.x, two.landmark.y - raw.y));
-      }
+      } else landmarks2D.push(null);
       quality.push({ id, state: two.state, sourceTimestampMs: two.sourceTimestampMs });
       if (two.state === "filtered") frameFiltered += 1;
       else if (two.state === "held") frameHeld += 1;
@@ -184,7 +185,8 @@ export class RuntimePoseQualityEngine {
       else frameUnavailable += 1;
       if (rawPose.landmarks3D.length > 0) {
         const three = this.processLandmark("3d", rawPose.landmarks3D[id], id, rawPose.timestampMs);
-        if (three.landmark) landmarks3D.push(three.landmark as PoseLandmark3D);
+        landmarks3D.push(three.landmark ? three.landmark as PoseLandmark3D : null);
+        quality3D.push({ id, state: three.state, sourceTimestampMs: three.sourceTimestampMs });
       }
     }
     this.stabilizedOutputCount += 1;
@@ -195,7 +197,7 @@ export class RuntimePoseQualityEngine {
       ...(rawPose.frameIndex === undefined ? {} : { frameIndex: rawPose.frameIndex }),
       ...(rawPose.cameraSessionId === undefined ? {} : { cameraSessionId: rawPose.cameraSessionId }),
       runtimeProfileId: this.profile.id,
-      landmarks2D, landmarks3D, landmarkQuality: quality,
+      landmarks2D, landmarks3D, landmarkQuality: quality, landmarkQuality3D: quality3D,
       qualityDiagnostics: { filtered: frameFiltered, held: frameHeld, outliers: frameOutliers, unavailable: frameUnavailable },
     } as unknown as FilteredRuntimePose;
   }

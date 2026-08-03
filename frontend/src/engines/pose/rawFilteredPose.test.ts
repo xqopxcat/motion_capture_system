@@ -134,11 +134,11 @@ describe("Task 76 Raw / Filtered runtime Pose quality boundary", () => {
     const engine = createRuntimePoseQualityEngine();
     const filtered = engine.transform(raw)!;
     const mutableFilteredCopy = {
-      landmarks2D: filtered.landmarks2D.map((landmark) => ({ ...landmark })),
-      landmarks3D: filtered.landmarks3D.map((landmark) => ({ ...landmark })),
+      landmarks2D: filtered.landmarks2D.map((landmark) => landmark ? { ...landmark } : null),
+      landmarks3D: filtered.landmarks3D.map((landmark) => landmark ? { ...landmark } : null),
     };
-    mutableFilteredCopy.landmarks2D[0].x = 123;
-    mutableFilteredCopy.landmarks3D[0].z = 456;
+    mutableFilteredCopy.landmarks2D[0]!.x = 123;
+    mutableFilteredCopy.landmarks3D[0]!.z = 456;
     expect(raw.landmarks2D[0].x).toBe(0);
     expect(raw.landmarks3D[0].z).toBe(2);
     expect(engine.transform(null)).toBeNull();

@@ -56,14 +56,19 @@ export type FilteredRuntimePose = Readonly<{
     state: "filtered" | "held" | "outlier-rejected" | "unavailable";
     sourceTimestampMs: number;
   }>[];
+  landmarkQuality3D: readonly Readonly<{
+    id: number;
+    state: "filtered" | "held" | "outlier-rejected" | "unavailable";
+    sourceTimestampMs: number;
+  }>[];
   qualityDiagnostics: Readonly<{
     filtered: number;
     held: number;
     outliers: number;
     unavailable: number;
   }>;
-  landmarks2D: readonly Readonly<PoseLandmark2D>[];
-  landmarks3D: readonly Readonly<PoseLandmark3D>[];
+  landmarks2D: readonly (Readonly<PoseLandmark2D> | null)[];
+  landmarks3D: readonly (Readonly<PoseLandmark3D> | null)[];
 }>;
 
 export type PoseOutputSchema = "pose.v1";

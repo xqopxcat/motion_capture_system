@@ -16,7 +16,7 @@ export type DisplayPoseLandmark = {
   presence?: number;
 };
 
-export type DisplayPoseSkeleton = { landmarks2D: readonly DisplayPoseLandmark[] };
+export type DisplayPoseSkeleton = { landmarks2D: readonly (DisplayPoseLandmark | null)[] };
 export type SkeletonSourceViewport = { sourceWidth: number; sourceHeight: number };
 export type SkeletonObjectFit = "contain" | "cover";
 
@@ -169,7 +169,10 @@ export function renderProductionSkeleton(
   if (options.clear !== false) clearProductionSkeleton(canvas, context);
   if (!pose || (options.poseAgeMs ?? 0) > profile.maximumPoseAgeMs) return;
 
-  const landmarksById = new Map(pose.landmarks2D.map((landmark) => [landmark.id, landmark]));
+  const landmarksById = new Map<number, DisplayPoseLandmark>();
+  pose.landmarks2D.forEach((landmark) => {
+    if (landmark) landmarksById.set(landmark.id, landmark);
+  });
   const scale = canvasDisplayScale(canvas, profile);
   context.save();
   context.lineCap = "round";

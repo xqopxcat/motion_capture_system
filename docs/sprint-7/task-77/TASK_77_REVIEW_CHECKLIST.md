@@ -5,6 +5,8 @@
 - [x] 2D/3D, landmark, side, and coordinate state are independent and bounded.
 - [x] Confidence gate reuses 0.35; outlier velocity is time-aware; hold is 120 ms/3 samples.
 - [x] Filtered metadata distinguishes filtered/held/outlier/unavailable without exposing scalar state.
+- [x] Valid Raw topology remains 33 fixed nullable slots; slot index, landmark ID, and 2D/3D quality metadata remain aligned.
+- [x] Hold expiry emits explicit `null`, recovery reuses the same slot, and the renderer skips unavailable slots without compressed-array inference.
 - [x] Raw arrays remain unchanged and independent; recording/`pose.v1`/metrics remain Raw-only.
 - [x] Accepted publications stabilize once; skipped/stale scheduler results do not enter the engine.
 - [x] Session, flip, restart, stop, dispose, error, regression, gap, and retake resets are explicit.

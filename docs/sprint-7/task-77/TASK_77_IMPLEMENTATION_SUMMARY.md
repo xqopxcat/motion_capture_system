@@ -3,6 +3,7 @@
 ## Changes
 
 - Added One Euro scalar primitive, canonical stabilized profile, stateful runtime Pose quality engine, runtime quality metadata, reset lifecycle, bounded diagnostics, and deterministic synthetic fixtures.
+- Preserved the approved fixed topology with 33 nullable runtime slots, index/ID-aligned 2D and optional 3D quality metadata, and explicit renderer handling for unavailable slots.
 - Updated `FilteredRuntimePose` and Task 75 runtime policy from identity to `runtime-visualization.stabilized.v1`.
 - Live Capture now transforms accepted Raw publications exactly once through the stateful engine. Capture instrumentation exports quality counters/timing in its development snapshot.
 - Updated only factual Task 76 identity-profile references.
@@ -16,8 +17,8 @@ Raw recording, `pose.v1`, current publisher, Capture Review, Viewer, Compare, fo
 
 ## Verification
 
-- Focused Task 77, Task 76 boundary, Capture lifecycle/instrumentation, scheduler/session, stale visualization, `pose.v1`, and publisher regressions: **PASS**, 11 files / 70 tests.
-- Complete frontend suite: **PASS**, 53 files / 299 tests.
+- Focused Task 77 topology, renderer, Task 76 boundary, and `pose.v1` regressions: **PASS**, 4 files / 36 tests.
+- Complete frontend suite: **PASS**, 53 files / 300 tests.
 - TypeScript project build: **PASS** (`tsc -b`).
 - Production build: **PASS**, Vite transformed 190 modules. The existing >500 kB chunk advisory remains non-failing.
 - Lint is not reported because no lint script exists.
