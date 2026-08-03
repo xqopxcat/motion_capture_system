@@ -39,13 +39,13 @@ describe("Task 75 quality policy", () => {
 
   it("locks authority, pose.v1, and the no-filter-persistence rule", () => {
     expect(POSE_DATA_AUTHORITY.rawCanonicalPose).toMatchObject({ authoritative: true, recordingInput: true, landmarkCount: 33 });
-    expect(POSE_DATA_AUTHORITY.filteredRuntimePose).toMatchObject({ authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: false });
+    expect(POSE_DATA_AUTHORITY.filteredRuntimePose).toMatchObject({ authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: true });
     expect(POSE_DATA_AUTHORITY.persistedArtifact).toMatchObject({ schemaVersion: "pose.v1", source: "raw-canonical-pose", filteredCoordinates: false });
   });
 
   it("has unique scenario IDs and separates display from analysis", () => {
     expect(new Set(BENCHMARK_SCENARIOS.map(([id]) => id)).size).toBe(BENCHMARK_SCENARIOS.length);
-    expect(POSE_CONSUMER_POLICIES.find(([name]) => name === "Live Capture Skeleton")).toEqual(["Live Capture Skeleton", "filtered-runtime-pose", "runtime-visualization", "identity-until-task-77", false]);
+    expect(POSE_CONSUMER_POLICIES.find(([name]) => name === "Live Capture Skeleton")).toEqual(["Live Capture Skeleton", "filtered-runtime-pose", "runtime-visualization", "stabilized.v1", false]);
     expect(POSE_CONSUMER_POLICIES.find(([name]) => name === "Metric Series")).toEqual(["Metric Series", "raw-canonical-pose", "formal-analysis", "versioned-analysis-policy", true]);
     expect(JSON.stringify(DEFAULT_SPRINT_7_QUALITY_POLICY)).not.toContain("filteredCoordinates\":true");
   });

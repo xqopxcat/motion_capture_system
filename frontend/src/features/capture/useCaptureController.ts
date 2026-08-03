@@ -169,11 +169,12 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     if (stateRef.current.type !== "Ready") return;
     const nextFacingMode = cameraFacingMode === "user" ? "environment" : "user";
     const token = newToken("camera");
+    pose.resetRuntimePoseQuality("camera-flip");
     pose.stopPoseDetection();
     setCameraFacingMode(nextFacingMode);
     dispatch({ type: "CAMERA_SWITCH", token, facingMode: nextFacingMode });
     void camera.startCamera({ facingMode: nextFacingMode });
-  }, [camera, cameraFacingMode, newToken, pose.stopPoseDetection]);
+  }, [camera, cameraFacingMode, newToken, pose.resetRuntimePoseQuality, pose.stopPoseDetection]);
 
   useEffect(() => {
     if (!previewVideoElement) return;
@@ -379,12 +380,13 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
 
   const retake = useCallback(() => {
     if (stateRef.current.type !== "Reviewing") return;
+    pose.resetRuntimePoseQuality("retake");
     recorder.resetRecordingResult();
     setRecordTitle("");
     const token = newToken("preparation");
     dispatch({ type: "RETAKE", token });
     void camera.startCamera();
-  }, [camera.startCamera, newToken, recorder.resetRecordingResult]);
+  }, [camera.startCamera, newToken, pose.resetRuntimePoseQuality, recorder.resetRecordingResult]);
 
   const save = useCallback(() => {
     const current = stateRef.current;

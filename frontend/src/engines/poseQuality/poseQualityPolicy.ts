@@ -5,7 +5,7 @@ export type QualityClassification = "pass" | "warning" | "fail" | "unavailable";
 export type QualityTarget = Readonly<{ id: QualityMetricId; name: string; definition: string; unit: string; aggregation: string; direction: "lower" | "higher"; passBoundary: number; failBoundary: number; scenarios: readonly string[]; platforms: readonly ("desktop" | "mobile" | "all")[]; evidence: string; status: "confirmed-existing-contract" | "initial-engineering-target" | "requires-physical-validation" }>;
 export type LandmarkQualityState = "available" | "low-confidence" | "missing" | "unavailable";
 export type PoseFrameQualityState = "available" | "partial" | "degraded" | "stale" | "unavailable";
-export type RuntimeQualityProfileId = "runtime-visualization.identity.v1";
+export type RuntimeQualityProfileId = "runtime-visualization.stabilized.v1";
 
 function freeze<T>(value: T): Readonly<T> {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -47,13 +47,13 @@ export const POSE_QUALITY_TARGETS: readonly QualityTarget[] = freeze([
 
 export const POSE_DATA_AUTHORITY = freeze({
   rawCanonicalPose: { authoritative: true, immutableAfterPublication: true, landmarkCount: 33, recordingInput: true },
-  filteredRuntimePose: { authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: false, preservesSourceIdentity: true },
+  filteredRuntimePose: { authoritative: false, runtimeOnly: true, persist: false, boundaryImplemented: true, stabilizationImplemented: true, preservesSourceIdentity: true },
   persistedArtifact: { schemaVersion: "pose.v1", source: "raw-canonical-pose", filteredCoordinates: false, jointAngles: false, metricSeries: false },
 } as const);
 
 export const POSE_CONSUMER_POLICIES = freeze([
-  ["Live Capture Skeleton", "filtered-runtime-pose", "runtime-visualization", "identity-until-task-77", false],
-  ["Live Capture future Angle Overlay", "filtered-runtime-pose", "runtime-visualization", "identity-until-task-77", false],
+  ["Live Capture Skeleton", "filtered-runtime-pose", "runtime-visualization", "stabilized.v1", false],
+  ["Live Capture future Angle Overlay", "filtered-runtime-pose", "runtime-visualization", "stabilized.v1", false],
   ["Countdown", "raw-canonical-pose", "control", "none", false],
   ["Recording collection", "raw-canonical-pose", "recording", "none", true],
   ["Capture Review", "persisted-raw-pose", "runtime-visualization", "visualization-quality-profile", false],
@@ -73,7 +73,7 @@ export const BENCHMARK_SCENARIOS = freeze([
   ["sync-playback", "sync", "60 s", "timestamped Capture Review fixture", "automated+manual"], ["sync-pause", "sync", "20 operations", "pause fixture", "automated+manual"], ["sync-seek", "sync", "20 operations", "timeline seek fixture", "automated+manual"], ["sync-next", "sync", "20 operations", "next-frame fixture", "automated+manual"], ["sync-previous", "sync", "20 operations", "previous-frame fixture", "automated+manual"],
 ] as const);
 
-export const DEFAULT_SPRINT_7_QUALITY_POLICY = freeze({ id: "sprint-7-quality.v1", visibilityThreshold: PRODUCTION_SKELETON_PROFILE.minimumVisibilityThreshold, maximumPoseAgeMs: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, benchmarkLandmarkIds: [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28], runtimeProfileId: "runtime-visualization.identity.v1" as RuntimeQualityProfileId, targets: POSE_QUALITY_TARGETS, authority: POSE_DATA_AUTHORITY, consumers: POSE_CONSUMER_POLICIES, scenarios: BENCHMARK_SCENARIOS });
+export const DEFAULT_SPRINT_7_QUALITY_POLICY = freeze({ id: "sprint-7-quality.v1", visibilityThreshold: PRODUCTION_SKELETON_PROFILE.minimumVisibilityThreshold, maximumPoseAgeMs: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, benchmarkLandmarkIds: [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28], runtimeProfileId: "runtime-visualization.stabilized.v1" as RuntimeQualityProfileId, targets: POSE_QUALITY_TARGETS, authority: POSE_DATA_AUTHORITY, consumers: POSE_CONSUMER_POLICIES, scenarios: BENCHMARK_SCENARIOS });
 
 export function classifyQuality(target: Pick<QualityTarget, "direction" | "passBoundary" | "failBoundary">, value: number): QualityClassification {
   assertBoundaryOrder(target, "classification");

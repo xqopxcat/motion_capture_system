@@ -2,7 +2,7 @@
 
 | Consumer | Current Task 76 state | Remaining owner |
 | --- | --- | --- |
-| Live Capture | Accepted Raw is transformed into independent Filtered identity Pose; overlay prop requires Filtered | Task 77 stabilization; Task 80 angle renderer; Task 81 Capture integration |
+| Live Capture | Accepted Raw is transformed into independent Filtered Pose; Task 77 now supplies stabilized output and the overlay still requires Filtered | Task 80 angle renderer; Task 81 Capture integration |
 | Skeleton toggle | Display-only; inference, Raw publication, transform, and recording effect do not depend on toggle | Aligned |
 | Recording | Collector accepts `RawCanonicalPose` only and runs only in `Recording`; Countdown excluded | Aligned |
 | Capture Review | Continues persisted-equivalent Raw draft through current renderer; no stabilization or sync redesign | Task 81 |

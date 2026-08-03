@@ -4,7 +4,7 @@
 
 - `engines/pose/types.ts`: added nominal readonly `RawCanonicalPose` and `FilteredRuntimePose`.
 - `engines/pose/rawCanonicalPose.ts`: added validated provider-to-Raw ownership mapper.
-- `engines/pose/runtimePoseQuality.ts`: added stateless identity runtime transform, canonical profile ID, and non-authoritative runtime policy view.
+- `engines/pose/runtimePoseQuality.ts`: Task 76 added the original identity boundary; Task 77 subsequently replaced its implementation with the stabilized engine while retaining the non-authoritative boundary.
 - `engines/poseQuality/poseQualityPolicy.ts`: records that the Raw/Filtered boundary now exists while stabilization remains unimplemented.
 - `usePosePipeline.ts`: scheduler now publishes Raw; accepted Raw independently feeds Raw state and Filtered visualization state.
 - `usePoseFrameCollection.ts` / controller: collector is Raw-only and still active only during Recording.
@@ -15,9 +15,9 @@
 
 ## Behavior and limitations
 
-Coordinates and rendered output remain identical. Arrays/objects are independently cloned, source identity is preserved, and no production deep-freeze cost is added per frame. Capture Review, Viewer, Compare, publisher calculations, persistence, scheduler cadence/session rejection, UI, and backend behavior are unchanged.
+At Task 76 completion coordinates and rendered output were identical. Task 77 now stabilizes runtime coordinates, while independent ownership, source identity, persistence, scheduler/session rejection, Capture Review, Viewer, Compare, publisher calculations, UI, and backend guarantees remain unchanged.
 
-Task 77 stabilization is not implemented. There is no confidence gate, smoothing, outlier rejection, missing recovery, interpolation, angle work, Worker work, or physical-device claim.
+Task 77 now owns stabilization at this boundary. Task 76 itself still introduced no algorithm, angle work, Worker work, or physical-device claim.
 
 ## Verification
 

@@ -1,11 +1,8 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { MEDIAPIPE_POSE_LANDMARK_COUNT } from "./mediaPipePoseLandmarks";
 import { mapPoseDetectionResultToRawCanonicalPose } from "./rawCanonicalPose";
-import {
-  IDENTITY_RUNTIME_POSE_PROFILE_ID,
-  RUNTIME_POSE_AUTHORITY,
-  transformRawPoseForRuntimeVisualization,
-} from "./runtimePoseQuality";
+import { createRuntimePoseQualityEngine, RUNTIME_POSE_AUTHORITY } from "./runtimePoseQuality";
+import { STABILIZED_RUNTIME_POSE_PROFILE } from "./stabilizationProfile";
 import type {
   FilteredRuntimePose,
   PoseDetectionResult,
@@ -98,7 +95,7 @@ describe("Task 76 Raw Canonical Pose", () => {
     const provider = providerResult();
     provider.landmarks3D = [];
     const raw = mapPoseDetectionResultToRawCanonicalPose(provider, { sourceTimestampMs: 12 });
-    const filtered = transformRawPoseForRuntimeVisualization(raw)!;
+    const filtered = createRuntimePoseQualityEngine().transform(raw)!;
     expect(raw.frameIndex).toBeUndefined();
     expect(raw.landmarks3D).toEqual([]);
     expect(filtered.frameIndex).toBeUndefined();
@@ -106,10 +103,10 @@ describe("Task 76 Raw Canonical Pose", () => {
   });
 });
 
-describe("Task 76 identity runtime Pose quality boundary", () => {
+describe("Task 76 Raw / Filtered runtime Pose quality boundary", () => {
   it("creates an independent Filtered Runtime Pose with equal values", () => {
     const raw = rawPose();
-    const filtered = transformRawPoseForRuntimeVisualization(raw)!;
+    const filtered = createRuntimePoseQualityEngine().transform(raw)!;
 
     expect(filtered).toMatchObject({
       timestampMs: raw.timestampMs,
@@ -117,7 +114,7 @@ describe("Task 76 identity runtime Pose quality boundary", () => {
       cameraSessionId: raw.cameraSessionId,
       engineName: raw.engineName,
       engineVersion: raw.engineVersion,
-      runtimeProfileId: IDENTITY_RUNTIME_POSE_PROFILE_ID,
+      runtimeProfileId: STABILIZED_RUNTIME_POSE_PROFILE.id,
     });
     expect(filtered.landmarks2D).toEqual(raw.landmarks2D);
     expect(filtered.landmarks3D).toEqual(raw.landmarks3D);
@@ -128,13 +125,14 @@ describe("Task 76 identity runtime Pose quality boundary", () => {
     expect(RUNTIME_POSE_AUTHORITY).toEqual({ authoritative: false, runtimeOnly: true, persist: false });
     expect(DEFAULT_SPRINT_7_QUALITY_POLICY.authority.filteredRuntimePose).toMatchObject({
       boundaryImplemented: true,
-      stabilizationImplemented: false,
+      stabilizationImplemented: true,
     });
   });
 
   it("isolates mutation of a test copy and handles unavailable input deterministically", () => {
     const raw = rawPose();
-    const filtered = transformRawPoseForRuntimeVisualization(raw)!;
+    const engine = createRuntimePoseQualityEngine();
+    const filtered = engine.transform(raw)!;
     const mutableFilteredCopy = {
       landmarks2D: filtered.landmarks2D.map((landmark) => ({ ...landmark })),
       landmarks3D: filtered.landmarks3D.map((landmark) => ({ ...landmark })),
@@ -143,12 +141,12 @@ describe("Task 76 identity runtime Pose quality boundary", () => {
     mutableFilteredCopy.landmarks3D[0].z = 456;
     expect(raw.landmarks2D[0].x).toBe(0);
     expect(raw.landmarks3D[0].z).toBe(2);
-    expect(transformRawPoseForRuntimeVisualization(null)).toBeNull();
+    expect(engine.transform(null)).toBeNull();
     const empty = mapPoseDetectionResultToRawCanonicalPose(
       { ...providerResult(), landmarks2D: [], landmarks3D: [] },
       { sourceTimestampMs: 1 },
     );
-    expect(transformRawPoseForRuntimeVisualization(empty)).toBeNull();
+    expect(engine.transform(empty)).toBeNull();
   });
 
   it("keeps Raw and Filtered nominally incompatible", () => {

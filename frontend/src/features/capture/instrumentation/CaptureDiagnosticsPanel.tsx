@@ -72,6 +72,8 @@ export function CaptureDiagnosticsPanel() {
         <div><dt>Producer pause / resume</dt><dd>{snapshot.inference.producerPauseCount} / {snapshot.inference.producerResumeCount}</dd></div>
         <div><dt>Long tasks</dt><dd>{snapshot.mainThread.supported === false ? "unsupported" : snapshot.mainThread.longTaskCount}</dd></div>
         <div><dt>Static jitter</dt><dd>{snapshot.jitter.status}: {format(snapshot.jitter.aggregateNormalizedRms)}</dd></div>
+        <div><dt>Filtered / held / outlier</dt><dd>{snapshot.runtimeQuality ? `${snapshot.runtimeQuality.landmarksFiltered} / ${snapshot.runtimeQuality.temporaryHolds} / ${snapshot.runtimeQuality.rejectedOutliers}` : "unavailable"}</dd></div>
+        <div><dt>Stabilization mean</dt><dd>{format(snapshot.runtimeQuality?.processingDurationMs.mean ?? null, " ms")}</dd></div>
         <div><dt>Preview sync mean / P95</dt><dd>{format(snapshot.previewSync.errorMs.mean, " ms")} / {format(snapshot.previewSync.errorMs.p95, " ms")}</dd></div>
         <div><dt>React renders</dt><dd>page {snapshot.react.CapturePage}, overlay {snapshot.react.CaptureSkeletonOverlay}, hook {snapshot.react.useCapturePipeline}</dd></div>
       </dl>

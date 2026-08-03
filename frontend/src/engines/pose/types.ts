@@ -50,7 +50,18 @@ export type FilteredRuntimePose = Readonly<{
   timestampMs: number;
   frameIndex?: number;
   cameraSessionId?: number;
-  runtimeProfileId: "runtime-visualization.identity.v1";
+  runtimeProfileId: "runtime-visualization.stabilized.v1";
+  landmarkQuality: readonly Readonly<{
+    id: number;
+    state: "filtered" | "held" | "outlier-rejected" | "unavailable";
+    sourceTimestampMs: number;
+  }>[];
+  qualityDiagnostics: Readonly<{
+    filtered: number;
+    held: number;
+    outliers: number;
+    unavailable: number;
+  }>;
   landmarks2D: readonly Readonly<PoseLandmark2D>[];
   landmarks3D: readonly Readonly<PoseLandmark3D>[];
 }>;

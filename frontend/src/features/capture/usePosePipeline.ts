@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPoseEngine, mapPoseDetectionResultToRawCanonicalPose, transformRawPoseForRuntimeVisualization } from "../../engines/pose";
-import type { FilteredRuntimePose, PoseEngine, PoseEngineStatus, RawCanonicalPose } from "../../engines/pose";
+import { createPoseEngine, createRuntimePoseQualityEngine, mapPoseDetectionResultToRawCanonicalPose } from "../../engines/pose";
+import type { FilteredRuntimePose, PoseEngine, PoseEngineStatus, RawCanonicalPose, RuntimePoseResetReason } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { captureVideoFrame, type CapturedVideoFrame } from "./capturedVideoFrame";
 import { LatestFrameScheduler } from "./latestFrameScheduler";
@@ -40,6 +40,7 @@ export function nextPoseEngineTimestamp(observedAtMs: number, previousTimestampM
 
 export function usePosePipeline() {
   const poseEngine = useMemo<PoseEngine>(() => createPoseEngine(), []);
+  const qualityEngineRef = useRef(createRuntimePoseQualityEngine());
   const [poseState, setPoseState] = useState<CapturePosePipelineState>({
     ...initialPosePipelineState,
     engineName: poseEngine.metadata.name,
@@ -70,6 +71,7 @@ export function usePosePipeline() {
     producerRef.current = null;
     schedulerRef.current?.dispose();
     schedulerRef.current = null;
+    qualityEngineRef.current.reset("stop");
     if (statusRef.current === "detecting") {
       statusRef.current = "ready";
     }
@@ -146,6 +148,7 @@ export function usePosePipeline() {
       isDetectionLoopRunningRef.current = true;
       cameraSessionIdRef.current += 1;
       const cameraSessionId = cameraSessionIdRef.current;
+      qualityEngineRef.current.reset("restart");
       lastAcceptedCandidateAtRef.current = Number.NEGATIVE_INFINITY;
       statusRef.current = "detecting";
       setPoseState((currentState) => ({
@@ -194,6 +197,7 @@ export function usePosePipeline() {
           if (!isMountedRef.current || !isDetectionLoopRunningRef.current) return;
           producerRef.current?.dispose();
           schedulerRef.current?.dispose();
+          qualityEngineRef.current.reset("inference-error");
           isDetectionLoopRunningRef.current = false;
           statusRef.current = "error";
           setCurrentRawPose(null);
@@ -215,7 +219,10 @@ export function usePosePipeline() {
               });
             } else replaceDisplayFrame(null);
             const acceptedRawPose = result.landmarks2D.length > 0 ? result : null;
-            const filteredPose = transformRawPoseForRuntimeVisualization(acceptedRawPose);
+            const filteredPose = qualityEngineRef.current.transform(acceptedRawPose);
+            captureRuntimeInstrumentation.recordRuntimePoseQualitySnapshot(
+              qualityEngineRef.current.snapshotDiagnostics(),
+            );
             captureRuntimeInstrumentation.associateRuntimePose(acceptedRawPose, filteredPose);
             setCurrentRawPose(acceptedRawPose);
             setCurrentFilteredPose(filteredPose);
@@ -274,6 +281,8 @@ export function usePosePipeline() {
     }
 
     stopPoseDetection();
+    qualityEngineRef.current.dispose();
+    qualityEngineRef.current = createRuntimePoseQualityEngine();
     poseEngine.dispose();
     statusRef.current = "disposed";
     setPoseState((currentState) => {
@@ -284,6 +293,15 @@ export function usePosePipeline() {
       };
     });
   }, [poseEngine, stopPoseDetection]);
+
+  const resetRuntimePoseQuality = useCallback((reason: RuntimePoseResetReason) => {
+    qualityEngineRef.current.reset(reason);
+  }, []);
+
+  const getRuntimePoseQualityDiagnostics = useCallback(
+    () => qualityEngineRef.current.snapshotDiagnostics(),
+    [],
+  );
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -303,7 +321,9 @@ export function usePosePipeline() {
     poseState,
     initializePosePipeline,
     disposePosePipeline,
+    getRuntimePoseQualityDiagnostics,
     startPoseDetection,
     stopPoseDetection,
+    resetRuntimePoseQuality,
   };
 }

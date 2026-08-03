@@ -25,6 +25,6 @@ provider result -> adapter-owned PoseDetectionResult
 
 The canonical mapper validates source identity, permits an empty no-Pose result or exactly 33 current-adapter landmarks, rejects nonfinite coordinates and invalid IDs, and clones every provider landmark. The source media timestamp, accepted frame identity, camera session identity, engine name, and engine version are retained.
 
-The runtime quality transform is pure, stateless, and identity-only. It returns `null` for null/empty Pose, rejects malformed input, creates independent 2D/3D collections, and attaches `runtime-visualization.identity.v1`. Task 77 replaces this transform's identity behavior with approved stabilization without changing recording or persistence paths.
+Task 76 initially supplied a pure identity transform. Task 77 subsequently replaced it with the stateful `runtime-visualization.stabilized.v1` engine at the same Raw-to-Filtered insertion point, without changing recording or persistence paths.
 
 Runtime visualization filtering is not formal-analysis preprocessing. Metric Series/Summary and the existing left-knee publisher remain on the persisted Raw dataset path; Task 79 owns the calculator migration.

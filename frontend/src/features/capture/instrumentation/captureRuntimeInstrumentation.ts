@@ -1,4 +1,4 @@
-import type { FilteredRuntimePose, PoseLandmark2D, RawCanonicalPose } from "../../../engines/pose";
+import type { FilteredRuntimePose, PoseLandmark2D, RawCanonicalPose, RuntimePoseQualityDiagnostics } from "../../../engines/pose";
 
 const DEFAULT_SAMPLE_CAPACITY = 300;
 const JITTER_LANDMARK_IDS = [11, 12, 23, 24, 25, 26, 27, 28] as const;
@@ -102,6 +102,7 @@ export type CaptureRuntimeSnapshot = {
     repeatedPoseFrameCount: number;
     unavailableSelectionCount: number;
   };
+  runtimeQuality: RuntimePoseQualityDiagnostics | null;
 };
 
 export class BoundedSampleBuffer<T> {
@@ -323,6 +324,7 @@ export class CaptureRuntimeInstrumentation {
   private previewRepeatedPoseFrameCount = 0;
   private previewUnavailableSelectionCount = 0;
   private lastPreviewPoseFrameIndex: number | null = null;
+  private runtimeQualitySnapshot: RuntimePoseQualityDiagnostics | null = null;
   private reactRenders = {
     CapturePage: 0,
     CaptureSkeletonOverlay: 0,
@@ -387,6 +389,7 @@ export class CaptureRuntimeInstrumentation {
     this.previewRepeatedPoseFrameCount = 0;
     this.previewUnavailableSelectionCount = 0;
     this.lastPreviewPoseFrameIndex = null;
+    this.runtimeQualitySnapshot = null;
     this.reactRenders = { CapturePage: 0, CaptureSkeletonOverlay: 0, useCapturePipeline: 0 };
     [
       this.cameraFrameTimestamps,
@@ -537,6 +540,10 @@ export class CaptureRuntimeInstrumentation {
     if (metadata) this.poseMetadata.set(filteredPose, metadata);
   }
 
+  recordRuntimePoseQualitySnapshot(snapshot: RuntimePoseQualityDiagnostics) {
+    if (this.enabled) this.runtimeQualitySnapshot = snapshot;
+  }
+
   getPoseResultMeasurement(result: RawCanonicalPose | FilteredRuntimePose | null) {
     return result ? this.poseMetadata.get(result) ?? null : null;
   }
@@ -682,6 +689,7 @@ export class CaptureRuntimeInstrumentation {
         repeatedPoseFrameCount: this.previewRepeatedPoseFrameCount,
         unavailableSelectionCount: this.previewUnavailableSelectionCount,
       },
+      runtimeQuality: this.runtimeQualitySnapshot,
     };
   }
 }

@@ -17,4 +17,9 @@ export type {
 } from "./types";
 export { mapPoseDetectionResultToRawCanonicalPose } from "./rawCanonicalPose";
 export type { RawCanonicalPoseSourceIdentity } from "./rawCanonicalPose";
-export { IDENTITY_RUNTIME_POSE_PROFILE_ID, RUNTIME_POSE_AUTHORITY, transformRawPoseForRuntimeVisualization } from "./runtimePoseQuality";
+export { createRuntimePoseQualityEngine, RUNTIME_POSE_AUTHORITY, RuntimePoseQualityEngine } from "./runtimePoseQuality";
+export type { RuntimePoseQualityDiagnostics, RuntimePoseResetReason } from "./runtimePoseQuality";
+export { lowPassAlpha, OneEuroScalarFilter } from "./oneEuroFilter";
+export type { OneEuroFilterParameters } from "./oneEuroFilter";
+export { STABILIZED_RUNTIME_POSE_PROFILE, validateRuntimePoseStabilizationProfile } from "./stabilizationProfile";
+export type { RuntimePoseStabilizationProfile } from "./stabilizationProfile";
