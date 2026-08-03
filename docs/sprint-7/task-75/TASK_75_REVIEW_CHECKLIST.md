@@ -12,8 +12,8 @@
 
 - [x] One engine-agnostic frontend policy owns metric IDs, targets, directions, platform categories, authority, consumers, profile identity and scenarios.
 - [x] Existing 300 ms stale age and 0.35 visibility threshold are reused.
-- [x] Objects are readonly and deeply frozen; helper is pure and treats nonfinite data as unavailable.
-- [x] Focused tests cover immutability, uniqueness, completeness, directions, authority, persistence prohibition and consumer separation.
+- [x] Objects are readonly and deeply frozen; the two-boundary classifier is pure and treats nonfinite data as unavailable.
+- [x] Focused tests cover immutability, uniqueness, completeness, boundary ordering/exact values/intermediate values, directions, authority, persistence prohibition and consumer separation.
 - [x] Final focused, full-suite, TypeScript, and build results are recorded in the implementation summary.
 
 ## Human approvals remaining

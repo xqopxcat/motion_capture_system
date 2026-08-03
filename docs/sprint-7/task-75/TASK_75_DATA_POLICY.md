@@ -21,7 +21,7 @@ Formal analysis never consumes incidental live-display output. Any analysis prep
 
 | Consumer | Approved input | Policy |
 | --- | --- | --- |
-| Live Capture Skeleton / future Angle Overlay | Filtered Runtime Pose | Identity through Task 76; visualization only |
+| Live Capture Skeleton / future Angle Overlay | Filtered Runtime Pose | Task 76 creates the Raw/Filtered boundary; visualization remains an identity transform until Task 77 implements stabilization |
 | Countdown | Raw Canonical Pose | Readiness/control only; never collected |
 | Recording / `pose.v1` serializer | Raw Canonical Pose | Only official-interval accepted frames; persistence allowed |
 | Capture Review | Persisted-equivalent Raw Pose | Shared visualization-quality profile; no captured filtered artifact |

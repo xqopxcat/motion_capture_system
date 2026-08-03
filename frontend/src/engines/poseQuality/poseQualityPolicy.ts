@@ -2,7 +2,7 @@ import { PRODUCTION_SKELETON_PROFILE } from "../visualization/productionSkeleton
 
 export type QualityMetricId = "jitter-2d" | "inference-latency" | "publication-latency" | "pose-age" | "stale-timeout" | "low-confidence-ratio" | "unavailable-frame-ratio" | "sync-error" | "publication-rate" | "resource-growth";
 export type QualityClassification = "pass" | "warning" | "fail" | "unavailable";
-export type QualityTarget = Readonly<{ id: QualityMetricId; name: string; definition: string; unit: string; aggregation: string; direction: "lower" | "higher"; target: number; warning: number; failure: number; scenarios: readonly string[]; platforms: readonly ("desktop" | "mobile" | "all")[]; evidence: string; status: "confirmed-existing-contract" | "initial-engineering-target" | "requires-physical-validation" }>;
+export type QualityTarget = Readonly<{ id: QualityMetricId; name: string; definition: string; unit: string; aggregation: string; direction: "lower" | "higher"; passBoundary: number; failBoundary: number; scenarios: readonly string[]; platforms: readonly ("desktop" | "mobile" | "all")[]; evidence: string; status: "confirmed-existing-contract" | "initial-engineering-target" | "requires-physical-validation" }>;
 export type LandmarkQualityState = "available" | "low-confidence" | "missing" | "unavailable";
 export type PoseFrameQualityState = "available" | "partial" | "degraded" | "stale" | "unavailable";
 export type RuntimeQualityProfileId = "runtime-visualization.identity.v1";
@@ -16,18 +16,33 @@ function freeze<T>(value: T): Readonly<T> {
 }
 
 const physical = ["desktop", "mobile"] as const;
-const target = (value: QualityTarget) => value;
+function assertBoundaryOrder(value: Pick<QualityTarget, "direction" | "passBoundary" | "failBoundary">, label: string) {
+  if (!Number.isFinite(value.passBoundary) || !Number.isFinite(value.failBoundary)) {
+    throw new Error(`Quality target ${label} boundaries must be finite.`);
+  }
+  const ordered = value.direction === "lower"
+    ? value.passBoundary <= value.failBoundary
+    : value.passBoundary >= value.failBoundary;
+  if (!ordered) throw new Error(`Quality target ${label} boundaries are out of order.`);
+}
+
+export function validateQualityTarget(value: QualityTarget) {
+  assertBoundaryOrder(value, value.id);
+  return value;
+}
+
+const target = (value: QualityTarget) => validateQualityTarget(value);
 export const POSE_QUALITY_TARGETS: readonly QualityTarget[] = freeze([
-  target({ id: "jitter-2d", name: "Stationary landmark jitter", definition: "P95 of per-landmark RMS radial displacement from the landmark median in a static sequence", unit: "normalized-coordinate", aggregation: "per-landmark RMS; sequence P95", direction: "lower", target: .012, warning: .02, failure: .03, scenarios: ["static-full-body", "static-upper-body", "static-seated-occluded"], platforms: physical, evidence: "Task 67 method; numeric target provisional", status: "requires-physical-validation" }),
-  target({ id: "inference-latency", name: "Inference latency", definition: "Inference completion minus inference start", unit: "ms", aggregation: "sequence P95", direction: "lower", target: 50, warning: 80, failure: 120, scenarios: ["slow-squat", "fast-arm", "inference-delay"], platforms: physical, evidence: "Initial responsiveness budget", status: "requires-physical-validation" }),
-  target({ id: "publication-latency", name: "Accepted publication latency", definition: "Accepted publication minus camera candidate observation", unit: "ms", aggregation: "sequence P95", direction: "lower", target: 80, warning: 120, failure: 200, scenarios: ["slow-arm-raise", "frame-replacement"], platforms: physical, evidence: "Task 73 instrumentation; provisional", status: "requires-physical-validation" }),
-  target({ id: "pose-age", name: "End-to-end Pose age", definition: "Render time minus source candidate observation time", unit: "ms", aggregation: "sequence P95", direction: "lower", target: 120, warning: 200, failure: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, scenarios: ["left-right", "fast-squat"], platforms: physical, evidence: "Frame-to-overlay proxy and stale boundary", status: "requires-physical-validation" }),
-  target({ id: "stale-timeout", name: "Stale Pose timeout", definition: "Maximum displayed Pose age before clear", unit: "ms", aggregation: "configured boundary", direction: "lower", target: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, warning: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, failure: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, scenarios: ["inference-delay", "tab-restore"], platforms: ["all"], evidence: "PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs", status: "confirmed-existing-contract" }),
-  target({ id: "low-confidence-ratio", name: "Low-confidence landmark ratio", definition: "Present benchmark landmark samples below visibility threshold divided by present benchmark landmark samples", unit: "ratio", aggregation: "per-frame; sequence mean and P95", direction: "lower", target: .05, warning: .15, failure: .3, scenarios: ["static-full-body", "static-seated-occluded", "low-light"], platforms: physical, evidence: "Existing 0.35 visibility threshold; ratio provisional", status: "requires-physical-validation" }),
-  target({ id: "unavailable-frame-ratio", name: "Unavailable Pose-frame ratio", definition: "Measurement candidates without a usable Pose divided by measurement candidates; interval skips excluded", unit: "ratio", aggregation: "whole-sequence ratio", direction: "lower", target: .02, warning: .05, failure: .1, scenarios: ["slow-knee-flexion", "temporary-occlusion"], platforms: physical, evidence: "Initial engineering target", status: "requires-physical-validation" }),
-  target({ id: "sync-error", name: "Video/Pose synchronization error", definition: "Absolute current-media-time minus selected-Pose-timestamp", unit: "ms", aggregation: "sequence P95", direction: "lower", target: 34, warning: 67, failure: 100, scenarios: ["sync-playback", "sync-pause", "sync-seek", "sync-next", "sync-previous"], platforms: physical, evidence: "Approximately one 30 FPS frame; provisional", status: "requires-physical-validation" }),
-  target({ id: "publication-rate", name: "Accepted Pose publication rate", definition: "Accepted non-stale publications per visible active second", unit: "Hz", aggregation: "whole-sequence rate", direction: "higher", target: 20, warning: 15, failure: 10, scenarios: ["left-right", "fast-arm"], platforms: physical, evidence: "Initial engineering target", status: "requires-physical-validation" }),
-  target({ id: "resource-growth", name: "Long-session resource growth", definition: "Retained runtime resource growth from stabilized baseline after 30 minutes", unit: "percent", aggregation: "end-minus-baseline plus leak count", direction: "lower", target: 5, warning: 10, failure: 20, scenarios: ["long-session"], platforms: physical, evidence: "Initial leak-detection budget", status: "requires-physical-validation" }),
+  target({ id: "jitter-2d", name: "Stationary landmark jitter", definition: "P95 of per-landmark RMS radial displacement from the landmark median in a static sequence", unit: "normalized-coordinate", aggregation: "per-landmark RMS; sequence P95", direction: "lower", passBoundary: .012, failBoundary: .03, scenarios: ["static-full-body", "static-upper-body", "static-seated-occluded"], platforms: physical, evidence: "Task 67 method; numeric target provisional", status: "requires-physical-validation" }),
+  target({ id: "inference-latency", name: "Inference latency", definition: "Inference completion minus inference start", unit: "ms", aggregation: "sequence P95", direction: "lower", passBoundary: 50, failBoundary: 120, scenarios: ["slow-squat", "fast-arm", "inference-delay"], platforms: physical, evidence: "Initial responsiveness budget", status: "requires-physical-validation" }),
+  target({ id: "publication-latency", name: "Accepted publication latency", definition: "Accepted publication minus camera candidate observation", unit: "ms", aggregation: "sequence P95", direction: "lower", passBoundary: 80, failBoundary: 200, scenarios: ["slow-arm-raise", "frame-replacement"], platforms: physical, evidence: "Task 73 instrumentation; provisional", status: "requires-physical-validation" }),
+  target({ id: "pose-age", name: "End-to-end Pose age", definition: "Render time minus source candidate observation time", unit: "ms", aggregation: "sequence P95", direction: "lower", passBoundary: 120, failBoundary: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, scenarios: ["left-right", "fast-squat"], platforms: physical, evidence: "Frame-to-overlay proxy and stale boundary", status: "requires-physical-validation" }),
+  target({ id: "stale-timeout", name: "Stale Pose timeout", definition: "Maximum displayed Pose age before clear", unit: "ms", aggregation: "configured boundary", direction: "lower", passBoundary: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, failBoundary: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, scenarios: ["inference-delay", "tab-restore"], platforms: ["all"], evidence: "PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs", status: "confirmed-existing-contract" }),
+  target({ id: "low-confidence-ratio", name: "Low-confidence landmark ratio", definition: "Present benchmark landmark samples below visibility threshold divided by present benchmark landmark samples", unit: "ratio", aggregation: "per-frame; sequence mean and P95", direction: "lower", passBoundary: .05, failBoundary: .3, scenarios: ["static-full-body", "static-seated-occluded", "low-light"], platforms: physical, evidence: "Existing 0.35 visibility threshold; ratio provisional", status: "requires-physical-validation" }),
+  target({ id: "unavailable-frame-ratio", name: "Unavailable Pose-frame ratio", definition: "Measurement candidates without a usable Pose divided by measurement candidates; interval skips excluded", unit: "ratio", aggregation: "whole-sequence ratio", direction: "lower", passBoundary: .02, failBoundary: .1, scenarios: ["slow-knee-flexion", "temporary-occlusion"], platforms: physical, evidence: "Initial engineering target", status: "requires-physical-validation" }),
+  target({ id: "sync-error", name: "Video/Pose synchronization error", definition: "Absolute current-media-time minus selected-Pose-timestamp", unit: "ms", aggregation: "sequence P95", direction: "lower", passBoundary: 34, failBoundary: 100, scenarios: ["sync-playback", "sync-pause", "sync-seek", "sync-next", "sync-previous"], platforms: physical, evidence: "Approximately one 30 FPS frame; provisional", status: "requires-physical-validation" }),
+  target({ id: "publication-rate", name: "Accepted Pose publication rate", definition: "Accepted non-stale publications per visible active second", unit: "Hz", aggregation: "whole-sequence rate", direction: "higher", passBoundary: 20, failBoundary: 10, scenarios: ["left-right", "fast-arm"], platforms: physical, evidence: "Initial engineering target", status: "requires-physical-validation" }),
+  target({ id: "resource-growth", name: "Long-session resource growth", definition: "Retained runtime resource growth from stabilized baseline after 30 minutes", unit: "percent", aggregation: "end-minus-baseline plus leak count", direction: "lower", passBoundary: 5, failBoundary: 20, scenarios: ["long-session"], platforms: physical, evidence: "Initial leak-detection budget", status: "requires-physical-validation" }),
 ]);
 
 export const POSE_DATA_AUTHORITY = freeze({
@@ -60,8 +75,13 @@ export const BENCHMARK_SCENARIOS = freeze([
 
 export const DEFAULT_SPRINT_7_QUALITY_POLICY = freeze({ id: "sprint-7-quality.v1", visibilityThreshold: PRODUCTION_SKELETON_PROFILE.minimumVisibilityThreshold, maximumPoseAgeMs: PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs, benchmarkLandmarkIds: [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28], runtimeProfileId: "runtime-visualization.identity.v1" as RuntimeQualityProfileId, targets: POSE_QUALITY_TARGETS, authority: POSE_DATA_AUTHORITY, consumers: POSE_CONSUMER_POLICIES, scenarios: BENCHMARK_SCENARIOS });
 
-export function classifyQuality(target: Pick<QualityTarget, "direction" | "target" | "warning">, value: number): QualityClassification {
+export function classifyQuality(target: Pick<QualityTarget, "direction" | "passBoundary" | "failBoundary">, value: number): QualityClassification {
+  assertBoundaryOrder(target, "classification");
   if (!Number.isFinite(value)) return "unavailable";
-  if (target.direction === "lower") return value <= target.target ? "pass" : value <= target.warning ? "warning" : "fail";
-  return value >= target.target ? "pass" : value >= target.warning ? "warning" : "fail";
+  if (target.direction === "lower") {
+    if (value <= target.passBoundary) return "pass";
+    return value < target.failBoundary ? "warning" : "fail";
+  }
+  if (value >= target.passBoundary) return "pass";
+  return value > target.failBoundary ? "warning" : "fail";
 }
