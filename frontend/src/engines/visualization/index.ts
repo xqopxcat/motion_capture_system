@@ -35,4 +35,9 @@ export type {
   ProductionSkeletonRenderOptions,
   SkeletonDisplayScale,
   SkeletonSourceViewport,
+  SkeletonObjectFit,
 } from "./renderProductionSkeleton";
+export { RUNTIME_ANGLE_OVERLAY_PROFILE } from "./runtimeAngleOverlayProfile";
+export type { RuntimeAngleOverlayDisplayProfile } from "./runtimeAngleOverlayProfile";
+export { formatRuntimeAngleLabel, getRuntimeAngleOverlayDisplayScale, prepareRuntimeAngleOverlay, renderRuntimeAngleOverlay } from "./renderRuntimeAngleOverlay";
+export type { PreparedRuntimeAngleOverlay, PreparedRuntimeAngleOverlayMetric, RuntimeAngleArcGeometry, RuntimeAngleOverlayDiagnostics, RuntimeAngleOverlayDisplayScale, RuntimeAngleOverlayOptions } from "./renderRuntimeAngleOverlay";
