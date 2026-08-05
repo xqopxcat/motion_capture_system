@@ -4,7 +4,8 @@ import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import { renderFormalAngleOverlay, syncProductionCanvasSize } from "../../engines/visualization";
-import { calculateSelectedFormalJointAngles } from "../../engines/motionModel";
+import { calculateSelectedFormalJointAngles, type FormalJointAngleResult } from "../../engines/motionModel";
+import type { CapturePoseDatasetDraftFrame } from "./buildPoseDatasetDraft";
 import { CAPTURE_ANGLE_INTEGRATION_PROFILE } from "./captureAngleIntegrationProfile";
 import styles from "./RecordedPosePreview.module.css";
 
@@ -17,6 +18,33 @@ export type RecordedPosePreviewProps = {
   skeletonVisible?: boolean;
   anglesVisible?: boolean;
 };
+
+export type RecordedFormalAngleCache = Readonly<{
+  dataset: CapturePoseDatasetDraft;
+  videoUrl: string;
+  profileKey: string;
+  frameIndex: number;
+  timestampMs: number;
+  results: readonly FormalJointAngleResult[];
+}>;
+
+const RECORDED_ANGLE_PROFILE_KEY = `${CAPTURE_ANGLE_INTEGRATION_PROFILE.id}@${CAPTURE_ANGLE_INTEGRATION_PROFILE.version}:${CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds.join(",")}`;
+
+export function resolveRecordedFormalAngles(
+  cache: RecordedFormalAngleCache | null,
+  dataset: CapturePoseDatasetDraft | null,
+  videoUrl: string,
+  frame: CapturePoseDatasetDraftFrame | null,
+  calculate: typeof calculateSelectedFormalJointAngles = calculateSelectedFormalJointAngles,
+): Readonly<{ cache: RecordedFormalAngleCache | null; results: readonly FormalJointAngleResult[] | null; computed: boolean }> {
+  if (!dataset || !frame) return { cache: null, results: null, computed: false };
+  if (cache && cache.dataset === dataset && cache.videoUrl === videoUrl && cache.profileKey === RECORDED_ANGLE_PROFILE_KEY && cache.frameIndex === frame.frameIndex && cache.timestampMs === frame.timestampMs) {
+    return { cache, results: cache.results, computed: false };
+  }
+  const results = calculate(frame, CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
+  const next = Object.freeze({ dataset, videoUrl, profileKey: RECORDED_ANGLE_PROFILE_KEY, frameIndex: frame.frameIndex, timestampMs: frame.timestampMs, results });
+  return { cache: next, results, computed: true };
+}
 
 function formatPreviewTime(seconds: number) {
   const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
@@ -48,6 +76,7 @@ export function RecordedPosePreview({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const formalAngleCacheRef = useRef<RecordedFormalAngleCache | null>(null);
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -78,6 +107,7 @@ export function RecordedPosePreview({
     const poseFrame = poseDatasetDraft
       ? findNearestPoseDatasetFrame(poseDatasetDraft.frames, currentTimeMs)
       : null;
+    if (!poseFrame) formalAngleCacheRef.current = null;
     captureRuntimeInstrumentation.recordPreviewSelection({
       poseFrameIndex: poseFrame?.frameIndex ?? null,
       poseTimestampMs: poseFrame?.timestampMs ?? null,
@@ -94,13 +124,14 @@ export function RecordedPosePreview({
     try {
       if (skeletonVisible) renderCaptureSkeleton(canvas, context, poseFrame, viewport, 0, "contain", false, false);
       if (anglesVisible) {
-        const results = calculateSelectedFormalJointAngles(poseFrame, CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
-        renderFormalAngleOverlay(canvas, context, poseFrame, results, { selectedMetricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds, sourceViewport: viewport, objectFit: "contain", mirror: false, clear: false });
+        const resolved = resolveRecordedFormalAngles(formalAngleCacheRef.current, poseDatasetDraft, videoUrl, poseFrame);
+        formalAngleCacheRef.current = resolved.cache;
+        if (resolved.results) renderFormalAngleOverlay(canvas, context, poseFrame, resolved.results, { selectedMetricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds, sourceViewport: viewport, objectFit: "contain", mirror: false, clear: false });
       }
     } catch {
       clearCaptureSkeleton(canvas, context);
     }
-  }, [anglesVisible, poseDatasetDraft, skeletonVisible]);
+  }, [anglesVisible, poseDatasetDraft, skeletonVisible, videoUrl]);
 
   const stopPlaybackSync = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -164,8 +195,9 @@ export function RecordedPosePreview({
   }, [renderCurrentFrame]);
 
   useEffect(() => {
+    formalAngleCacheRef.current = null;
     setVideoAspectRatio(16 / 9);
-  }, [videoUrl]);
+  }, [poseDatasetDraft, videoUrl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
