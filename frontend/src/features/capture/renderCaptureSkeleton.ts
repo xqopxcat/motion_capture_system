@@ -19,10 +19,14 @@ export function renderCaptureSkeleton(
   viewport?: CaptureSkeletonViewport,
   poseAgeMs = 0,
   objectFit: "contain" | "cover" = "contain",
+  clear = true,
+  mirror = false,
 ) {
   renderProductionSkeleton(canvas, context, poseResult, {
     poseAgeMs,
     sourceViewport: viewport,
     objectFit,
+    clear,
+    mirror,
   });
 }

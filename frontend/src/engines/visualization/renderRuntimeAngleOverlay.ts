@@ -1,5 +1,5 @@
 import type { FilteredRuntimePose } from "../pose";
-import { getJointAngleDefinition, type JointAngleMetricId, type RuntimeJointAngleResult } from "../motionModel";
+import { getJointAngleDefinition, type FormalJointAngleResult, type JointAngleMetricId, type RuntimeJointAngleResult } from "../motionModel";
 import { projectProductionSkeletonPoint, type SkeletonObjectFit, type SkeletonSourceViewport } from "./renderProductionSkeleton";
 import type { SkeletonSide } from "./productionSkeletonProfile";
 import { RUNTIME_ANGLE_OVERLAY_PROFILE, type RuntimeAngleOverlayDisplayProfile } from "./runtimeAngleOverlayProfile";
@@ -25,6 +25,8 @@ export type RuntimeAngleOverlayOptions = Readonly<{
   objectFit?: SkeletonObjectFit; poseAgeMs?: number; clear?: boolean; profile?: RuntimeAngleOverlayDisplayProfile;
 }>;
 export type RuntimeAngleOverlayDisplayScale = Readonly<{ devicePixelRatio: number; viewportScale: number; arcWidth: number; fontSize: number; labelOffset: number }>;
+export type AngleOverlayDisplayPose = Pick<FilteredRuntimePose, "timestampMs" | "frameIndex" | "cameraSessionId" | "landmarks2D">;
+type DisplayableAngleResult = Pick<RuntimeJointAngleResult | FormalJointAngleResult, "metricId" | "status" | "valueDegrees" | "coordinateSpace" | "frameIndex" | "cameraSessionId">;
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value));
 const distance = (a: OverlayPoint, b: OverlayPoint) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -72,13 +74,13 @@ function overlaps(a: RuntimeAngleLabelBounds, b: RuntimeAngleLabelBounds) {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
-export function prepareRuntimeAngleOverlay(canvas: HTMLCanvasElement, pose: FilteredRuntimePose, results: readonly RuntimeJointAngleResult[], options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
+function prepareAngleOverlay(canvas: HTMLCanvasElement, pose: AngleOverlayDisplayPose, results: readonly DisplayableAngleResult[], options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
   const profile = options.profile ?? RUNTIME_ANGLE_OVERLAY_PROFILE; const scale = getRuntimeAngleOverlayDisplayScale(canvas, profile);
   const byId = new Map(results.map((result) => [result.metricId, result])); const acceptedBounds: RuntimeAngleLabelBounds[] = []; const metrics: PreparedRuntimeAngleOverlayMetric[] = [];
   const counts = { unavailableSkipped: 0, missingDisplayLandmarksSkipped: 0, identityMismatchSkipped: 0, degenerateGeometrySkipped: 0, collisionSuppressedLabels: 0 };
   for (const metricId of options.selectedMetricIds) {
     const definition = getJointAngleDefinition(metricId); if (!definition) throw new Error(`Unknown joint-angle metric ID: ${metricId}`);
-    const result = byId.get(metricId); if (!result || result.status === "unavailable") { counts.unavailableSkipped += 1; continue; }
+    const result = byId.get(metricId); if (!result || result.status === "unavailable" || result.valueDegrees === null || result.coordinateSpace === null) { counts.unavailableSkipped += 1; continue; }
     if ((result.frameIndex !== undefined && pose.frameIndex !== undefined && result.frameIndex !== pose.frameIndex) || (result.cameraSessionId !== undefined && pose.cameraSessionId !== undefined && result.cameraSessionId !== pose.cameraSessionId) || (options.poseAgeMs ?? 0) > profile.maximumPoseAgeMs) { counts.identityMismatchSkipped += 1; continue; }
     const landmarks = definition.landmarks.map((id) => pose.landmarks2D[id]);
     if (landmarks.some((item, index) => !item || item.id !== definition.landmarks[index] || ![item.x, item.y].every(Number.isFinite))) { counts.missingDisplayLandmarksSkipped += 1; continue; }
@@ -101,9 +103,17 @@ export function prepareRuntimeAngleOverlay(canvas: HTMLCanvasElement, pose: Filt
   return Object.freeze({ metrics: Object.freeze(metrics), diagnostics: Object.freeze({ requestedMetricCount: options.selectedMetricIds.length, renderedArcCount: metrics.filter((item) => item.arc).length, renderedLabelCount: metrics.filter((item) => item.labelVisible).length, ...counts }) });
 }
 
-export function renderRuntimeAngleOverlay(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, pose: FilteredRuntimePose, results: readonly RuntimeJointAngleResult[], options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
+export function prepareRuntimeAngleOverlay(canvas: HTMLCanvasElement, pose: FilteredRuntimePose, results: readonly RuntimeJointAngleResult[], options: RuntimeAngleOverlayOptions) {
+  return prepareAngleOverlay(canvas, pose, results, options);
+}
+
+export function prepareFormalAngleOverlay(canvas: HTMLCanvasElement, pose: AngleOverlayDisplayPose, results: readonly FormalJointAngleResult[], options: RuntimeAngleOverlayOptions) {
+  return prepareAngleOverlay(canvas, pose, results, options);
+}
+
+function drawPreparedAngleOverlay(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, model: PreparedRuntimeAngleOverlay, options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
   if (options.clear !== false) context.clearRect(0, 0, canvas.width, canvas.height);
-  const profile = options.profile ?? RUNTIME_ANGLE_OVERLAY_PROFILE; const scale = getRuntimeAngleOverlayDisplayScale(canvas, profile); const model = prepareRuntimeAngleOverlay(canvas, pose, results, options);
+  const profile = options.profile ?? RUNTIME_ANGLE_OVERLAY_PROFILE; const scale = getRuntimeAngleOverlayDisplayScale(canvas, profile);
   context.save();
   for (const item of model.metrics) {
     const statusStyle = item.status === "degraded" ? profile.degraded : profile.available;
@@ -112,4 +122,12 @@ export function renderRuntimeAngleOverlay(canvas: HTMLCanvasElement, context: Ca
     if (item.labelVisible && item.labelAnchor && item.labelBounds) { context.setLineDash([]); context.globalAlpha = statusStyle.labelOpacity; context.fillStyle = profile.labelBackgroundColor; context.fillRect(item.labelBounds.x, item.labelBounds.y, item.labelBounds.width, item.labelBounds.height); context.font = `600 ${scale.fontSize}px system-ui, sans-serif`; context.textAlign = "center"; context.textBaseline = "middle"; context.fillStyle = profile.labelTextColor; context.fillText(item.displayValue, item.labelAnchor.x, item.labelAnchor.y); }
   }
   context.restore(); return model;
+}
+
+export function renderRuntimeAngleOverlay(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, pose: FilteredRuntimePose, results: readonly RuntimeJointAngleResult[], options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
+  return drawPreparedAngleOverlay(canvas, context, prepareRuntimeAngleOverlay(canvas, pose, results, options), options);
+}
+
+export function renderFormalAngleOverlay(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, pose: AngleOverlayDisplayPose, results: readonly FormalJointAngleResult[], options: RuntimeAngleOverlayOptions): PreparedRuntimeAngleOverlay {
+  return drawPreparedAngleOverlay(canvas, context, prepareFormalAngleOverlay(canvas, pose, results, options), options);
 }

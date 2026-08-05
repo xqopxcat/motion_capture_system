@@ -59,6 +59,8 @@ export function CapturePage() {
           onFlipCamera={controller.flipCamera}
           skeletonVisible={controller.skeletonVisible}
           onSkeletonVisibilityChange={controller.setSkeletonVisible}
+          anglesVisible={controller.anglesVisible}
+          onAnglesVisibilityChange={controller.setAnglesVisible}
         />
 
         <CaptureDiagnosticsPanel />

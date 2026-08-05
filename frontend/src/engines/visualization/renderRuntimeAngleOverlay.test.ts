@@ -3,7 +3,7 @@ import type { FilteredRuntimePose } from "../pose";
 import { JOINT_ANGLE_CONTRACT_VERSION, type FormalJointAngleResult, type RuntimeJointAngleResult } from "../motionModel";
 import { projectProductionSkeletonPoint } from "./renderProductionSkeleton";
 import { RUNTIME_ANGLE_OVERLAY_PROFILE } from "./runtimeAngleOverlayProfile";
-import { formatRuntimeAngleLabel, getRuntimeAngleOverlayDisplayScale, prepareRuntimeAngleOverlay, renderRuntimeAngleOverlay } from "./renderRuntimeAngleOverlay";
+import { formatRuntimeAngleLabel, getRuntimeAngleOverlayDisplayScale, prepareFormalAngleOverlay, prepareRuntimeAngleOverlay, renderFormalAngleOverlay, renderRuntimeAngleOverlay } from "./renderRuntimeAngleOverlay";
 
 const metricId = "joint-angle.left-knee.internal.v1" as const;
 function canvas(width = 400, height = 200, cssWidth = 200) { return { width, height, getBoundingClientRect: () => ({ width: cssWidth, height: height / (width / cssWidth) }) } as unknown as HTMLCanvasElement; }
@@ -83,6 +83,15 @@ describe("Task 80 runtime angle overlay preparation", () => {
 
   it("prevents formal results at the renderer type boundary", () => {
     expectTypeOf<FormalJointAngleResult>().not.toMatchTypeOf<Parameters<typeof renderRuntimeAngleOverlay>[3][number]>();
+  });
+
+  it("provides a formal Review entry point without weakening runtime provenance", () => {
+    const formal: FormalJointAngleResult = { metricId, contractVersion: JOINT_ANGLE_CONTRACT_VERSION, provenance: "formal-analysis", analysisProfileId: "joint-angle-analysis.v1", analysisProfileVersion: "1.0.0", status: "available", valueDegrees: 91, coordinateSpace: "world-3d", sourceTimestampMs: 100, frameIndex: 2, cameraSessionId: 3, inputLandmarkIds: [23, 25, 27], confidence: .9 };
+    const prepared = prepareFormalAngleOverlay(canvas(), pose(), [formal], { selectedMetricIds: [metricId] });
+    expect(prepared.metrics[0]).toMatchObject({ displayValue: "91°", computationCoordinateSpace: "world-3d" });
+    const drawing = context(); renderFormalAngleOverlay(canvas(), drawing, pose(), [formal], { selectedMetricIds: [metricId], clear: false });
+    expect(drawing.fillText).toHaveBeenCalledWith("91°", expect.any(Number), expect.any(Number));
+    expectTypeOf<FormalJointAngleResult>().toMatchTypeOf<Parameters<typeof renderFormalAngleOverlay>[3][number]>();
   });
 });
 

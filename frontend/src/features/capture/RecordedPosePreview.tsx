@@ -3,7 +3,9 @@ import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
 import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
-import { syncProductionCanvasSize } from "../../engines/visualization";
+import { renderFormalAngleOverlay, syncProductionCanvasSize } from "../../engines/visualization";
+import { calculateSelectedFormalJointAngles } from "../../engines/motionModel";
+import { CAPTURE_ANGLE_INTEGRATION_PROFILE } from "./captureAngleIntegrationProfile";
 import styles from "./RecordedPosePreview.module.css";
 
 export const MAXIMUM_RECORDED_PREVIEW_HEIGHT_PX = 560;
@@ -13,6 +15,7 @@ export type RecordedPosePreviewProps = {
   videoUrl: string;
   disabled?: boolean;
   skeletonVisible?: boolean;
+  anglesVisible?: boolean;
 };
 
 function formatPreviewTime(seconds: number) {
@@ -40,6 +43,7 @@ export function RecordedPosePreview({
   videoUrl,
   disabled = false,
   skeletonVisible = true,
+  anglesVisible = false,
 }: RecordedPosePreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -80,22 +84,23 @@ export function RecordedPosePreview({
       videoTimestampMs: currentTimeMs,
     });
 
-    if (!poseFrame || !skeletonVisible) {
-      clearCaptureSkeleton(canvas, context);
+    clearCaptureSkeleton(canvas, context);
+    if (!poseFrame || (!skeletonVisible && !anglesVisible)) {
       return;
     }
-
-    renderCaptureSkeleton(
-      canvas,
-      context,
-      poseFrame,
-      video.videoWidth > 0 && video.videoHeight > 0
+    const viewport = video.videoWidth > 0 && video.videoHeight > 0
         ? { sourceWidth: video.videoWidth, sourceHeight: video.videoHeight }
-        : undefined,
-      0,
-      "contain",
-    );
-  }, [poseDatasetDraft, skeletonVisible]);
+        : undefined;
+    try {
+      if (skeletonVisible) renderCaptureSkeleton(canvas, context, poseFrame, viewport, 0, "contain", false, false);
+      if (anglesVisible) {
+        const results = calculateSelectedFormalJointAngles(poseFrame, CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
+        renderFormalAngleOverlay(canvas, context, poseFrame, results, { selectedMetricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds, sourceViewport: viewport, objectFit: "contain", mirror: false, clear: false });
+      }
+    } catch {
+      clearCaptureSkeleton(canvas, context);
+    }
+  }, [anglesVisible, poseDatasetDraft, skeletonVisible]);
 
   const stopPlaybackSync = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -221,7 +226,7 @@ export function RecordedPosePreview({
           aria-label="Recorded pose skeleton overlay"
           width={1280}
           height={720}
-          hidden={!skeletonVisible}
+          hidden={!skeletonVisible && !anglesVisible}
         />
       </div>
 

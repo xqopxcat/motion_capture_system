@@ -43,7 +43,7 @@ const states: CaptureProductState[] = [
   { type: "Failed", stage: "device", safeMessage: "Camera lost.", retryable: true, recoveryTarget: "PermissionRequired", routeLeaveRequiresConfirmation: false },
 ];
 
-function renderStage(state: CaptureProductState, skeletonVisible = true) {
+function renderStage(state: CaptureProductState, skeletonVisible = true, anglesVisible = false) {
   return renderToStaticMarkup(
     <UnifiedCaptureStage
       productState={state}
@@ -62,6 +62,8 @@ function renderStage(state: CaptureProductState, skeletonVisible = true) {
       onFlipCamera={() => undefined}
       skeletonVisible={skeletonVisible}
       onSkeletonVisibilityChange={() => undefined}
+      anglesVisible={anglesVisible}
+      onAnglesVisibilityChange={() => undefined}
     />,
   );
 }
@@ -121,6 +123,20 @@ describe("UnifiedCaptureStage", () => {
     expect(live).toContain('aria-pressed="true"');
     expect(review).toContain('data-control="skeleton-toggle"');
     expect(review).not.toContain('data-control="camera-flip"');
+    expect(live).toContain('data-control="angles-toggle"');
+    expect(live).toContain("Angles Off");
+    expect(review).toContain('data-control="angles-toggle"');
+  });
+
+  it.each([
+    [true, true, "Skeleton On", "Angles On"],
+    [true, false, "Skeleton On", "Angles Off"],
+    [false, true, "Skeleton Off", "Angles On"],
+    [false, false, "Skeleton Off", "Angles Off"],
+  ] as const)("keeps Skeleton=%s and Angles=%s independent", (skeleton, angles, skeletonLabel, angleLabel) => {
+    const markup = renderStage(states.find((state) => state.type === "Ready")!, skeleton, angles);
+    expect(markup).toContain(skeletonLabel); expect(markup).toContain(angleLabel);
+    expect(markup).toContain(`data-control="angles-toggle"`);
   });
 
   it("hides only the skeleton canvas when the display preference is off", () => {

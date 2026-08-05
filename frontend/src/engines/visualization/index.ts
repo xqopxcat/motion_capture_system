@@ -39,5 +39,5 @@ export type {
 } from "./renderProductionSkeleton";
 export { RUNTIME_ANGLE_OVERLAY_PROFILE } from "./runtimeAngleOverlayProfile";
 export type { RuntimeAngleOverlayDisplayProfile } from "./runtimeAngleOverlayProfile";
-export { formatRuntimeAngleLabel, getRuntimeAngleOverlayDisplayScale, prepareRuntimeAngleOverlay, renderRuntimeAngleOverlay } from "./renderRuntimeAngleOverlay";
-export type { PreparedRuntimeAngleOverlay, PreparedRuntimeAngleOverlayMetric, RuntimeAngleArcGeometry, RuntimeAngleOverlayDiagnostics, RuntimeAngleOverlayDisplayScale, RuntimeAngleOverlayOptions } from "./renderRuntimeAngleOverlay";
+export { formatRuntimeAngleLabel, getRuntimeAngleOverlayDisplayScale, prepareFormalAngleOverlay, prepareRuntimeAngleOverlay, renderFormalAngleOverlay, renderRuntimeAngleOverlay } from "./renderRuntimeAngleOverlay";
+export type { AngleOverlayDisplayPose, PreparedRuntimeAngleOverlay, PreparedRuntimeAngleOverlayMetric, RuntimeAngleArcGeometry, RuntimeAngleOverlayDiagnostics, RuntimeAngleOverlayDisplayScale, RuntimeAngleOverlayOptions } from "./renderRuntimeAngleOverlay";

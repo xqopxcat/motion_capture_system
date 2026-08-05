@@ -31,6 +31,8 @@ export type UnifiedCaptureStageProps = {
   onFlipCamera: () => void;
   skeletonVisible: boolean;
   onSkeletonVisibilityChange: (visible: boolean) => void;
+  anglesVisible?: boolean;
+  onAnglesVisibilityChange?: (visible: boolean) => void;
 };
 
 function primaryActionLabel(action: CapturePresentationModel["primaryAction"]) {
@@ -94,6 +96,8 @@ export function UnifiedCaptureStage({
   onFlipCamera,
   skeletonVisible,
   onSkeletonVisibilityChange,
+  anglesVisible = false,
+  onAnglesVisibilityChange = () => undefined,
 }: UnifiedCaptureStageProps) {
   const [liveVideoAspectRatio, setLiveVideoAspectRatio] = useState(16 / 9);
 
@@ -148,6 +152,8 @@ export function UnifiedCaptureStage({
                 poseResult={currentFilteredPose}
                 videoElement={liveVideoElement}
                 visible={skeletonVisible}
+                anglesVisible={anglesVisible}
+                mirror={cameraFacingMode === "user"}
               />
             </div>
           </div>
@@ -160,6 +166,7 @@ export function UnifiedCaptureStage({
               videoUrl={snapshot.videoUrl}
               disabled={mode === "saving"}
               skeletonVisible={skeletonVisible}
+              anglesVisible={anglesVisible}
             />
           </div>
         )}
@@ -281,6 +288,17 @@ export function UnifiedCaptureStage({
             onClick={() => onSkeletonVisibilityChange(!skeletonVisible)}
           >
             Skeleton {skeletonVisible ? "On" : "Off"}
+          </button>
+        )}
+        {(mode === "live" || mode === "review") && (
+          <button
+            aria-pressed={anglesVisible}
+            data-control="angles-toggle"
+            className={styles.utilityAction}
+            type="button"
+            onClick={() => onAnglesVisibilityChange(!anglesVisible)}
+          >
+            Angles {anglesVisible ? "On" : "Off"}
           </button>
         )}
       </footer>

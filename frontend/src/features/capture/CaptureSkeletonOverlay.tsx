@@ -2,7 +2,9 @@ import { useEffect, useRef } from "react";
 import type { FilteredRuntimePose } from "../../engines/pose";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { renderCaptureSkeleton } from "./renderCaptureSkeleton";
-import { PRODUCTION_SKELETON_PROFILE, syncProductionCanvasSize } from "../../engines/visualization";
+import { PRODUCTION_SKELETON_PROFILE, renderRuntimeAngleOverlay, syncProductionCanvasSize } from "../../engines/visualization";
+import { calculateSelectedRuntimeJointAngles } from "../../engines/motionModel";
+import { CAPTURE_ANGLE_INTEGRATION_PROFILE } from "./captureAngleIntegrationProfile";
 import styles from "./CaptureSkeletonOverlay.module.css";
 import type { CapturePoseDisplayFrame } from "./usePosePipeline";
 
@@ -11,9 +13,11 @@ export type CaptureSkeletonOverlayProps = {
   videoElement?: HTMLVideoElement | null;
   visible?: boolean;
   displayFrame?: CapturePoseDisplayFrame | null;
+  anglesVisible?: boolean;
+  mirror?: boolean;
 };
 
-export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement, visible = true }: CaptureSkeletonOverlayProps) {
+export function CaptureSkeletonOverlay({ anglesVisible = false, displayFrame, mirror = false, poseResult, videoElement, visible = true }: CaptureSkeletonOverlayProps) {
   captureRuntimeInstrumentation.recordReactRender("CaptureSkeletonOverlay");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -33,7 +37,7 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
     }
 
     syncProductionCanvasSize(canvas);
-    if (!visible) {
+    if (!visible && !anglesVisible) {
       context.clearRect(0, 0, canvas.width, canvas.height);
       captureRuntimeInstrumentation.recordCanvasRender({
         endedAtMs: performance.now(),
@@ -43,21 +47,24 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
       });
       return;
     }
-    renderCaptureSkeleton(
-      canvas,
-      context,
-      poseResult,
-      displayFrame
+    const viewport = displayFrame
         ? { sourceWidth: displayFrame.sourceWidth, sourceHeight: displayFrame.sourceHeight }
         : videoElement
         ? {
             sourceWidth: videoElement.videoWidth,
             sourceHeight: videoElement.videoHeight,
           }
-        : undefined,
-      0,
-      "contain",
-    );
+        : undefined;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    try {
+      if (poseResult && visible) renderCaptureSkeleton(canvas, context, poseResult, viewport, 0, "contain", false, mirror);
+      if (poseResult && anglesVisible) {
+        const results = calculateSelectedRuntimeJointAngles(poseResult, CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
+        renderRuntimeAngleOverlay(canvas, context, poseResult, results, { selectedMetricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds, sourceViewport: viewport, objectFit: "contain", mirror, poseAgeMs: 0, clear: false });
+      }
+    } catch {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
     captureRuntimeInstrumentation.recordCanvasRender({
       endedAtMs: performance.now(),
       poseResult,
@@ -69,7 +76,7 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
       context.clearRect(0, 0, canvas.width, canvas.height);
     }, PRODUCTION_SKELETON_PROFILE.maximumPoseAgeMs);
     return () => window.clearTimeout(staleTimeout);
-  }, [displayFrame, poseResult, videoElement, visible]);
+  }, [anglesVisible, displayFrame, mirror, poseResult, videoElement, visible]);
 
   return (
     <canvas
@@ -78,7 +85,7 @@ export function CaptureSkeletonOverlay({ displayFrame, poseResult, videoElement,
       aria-label="Capture skeleton overlay"
       width={1280}
       height={720}
-      hidden={!visible}
+      hidden={!visible && !anglesVisible}
     />
   );
 }

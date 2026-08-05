@@ -134,6 +134,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
   const [recordTitle, setRecordTitle] = useState("");
   const [cameraFacingMode, setCameraFacingMode] = useState<"user" | "environment">("user");
   const [skeletonVisible, setSkeletonVisible] = useState(true);
+  const [anglesVisible, setAnglesVisible] = useState(false);
   const camera = useCameraStream();
   const recorder = useMediaRecorder(camera.stream);
   const pose = usePosePipeline();
@@ -537,6 +538,8 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
     flipCamera,
     skeletonVisible,
     setSkeletonVisible,
+    anglesVisible,
+    setAnglesVisible,
     cameraPreview: { ...camera, onVideoElementChange: setPreviewVideoElement },
     currentFilteredPose: pose.currentFilteredPose,
     currentDisplayFrame: pose.currentDisplayFrame,
