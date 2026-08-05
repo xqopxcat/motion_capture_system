@@ -19,11 +19,29 @@ describe("Task 79 pure unsigned internal-angle geometry", () => {
     expect(computeUnsignedInternalAngle(a, b, c, 1e-8).valueDegrees).toBeCloseTo(expected, 10);
   });
 
-  it("clamps near-parallel ratios and never returns NaN", () => {
-    const result = computeUnsignedInternalAngle([1e150, 1], [0, 0], [1e150, 0], 1e-8);
-    expect(result.valueDegrees).not.toBeNaN();
-    expect(result.valueDegrees).toBeGreaterThanOrEqual(0);
-    expect(result.valueDegrees).toBeLessThanOrEqual(180);
+  it("is geometrically correct for very large near-parallel and antiparallel vectors", () => {
+    const parallel = computeUnsignedInternalAngle([1e150, 1], [0, 0], [1e150, 0], 1e-8);
+    const antiparallel = computeUnsignedInternalAngle([-1e150, 1], [0, 0], [1e150, 0], 1e-8);
+    expect(parallel.valueDegrees).toBeCloseTo(0, 10);
+    expect(antiparallel.valueDegrees).toBeCloseTo(180, 10);
+    expect(Number.isFinite(parallel.valueDegrees)).toBe(true);
+    expect(Number.isFinite(antiparallel.valueDegrees)).toBe(true);
+  });
+
+  it("keeps large finite 3D geometry correct", () => {
+    const result = computeUnsignedInternalAngle([1e150, 0, 0], [0, 0, 0], [0, 1e150, 0], 1e-8);
+    expect(result.valueDegrees).toBeCloseTo(90, 10);
+    expect(Number.isFinite(result.valueDegrees)).toBe(true);
+  });
+
+  it("is invariant under very large and small above-epsilon scaling", () => {
+    const angleAtScale = (scale: number) => computeUnsignedInternalAngle(
+      [scale, 0], [0, 0], [scale * 0.5, scale * Math.sqrt(3) / 2], 1e-8,
+    ).valueDegrees;
+    const baseline = angleAtScale(1);
+    expect(baseline).toBeCloseTo(60, 10);
+    expect(angleAtScale(1e150)).toBeCloseTo(baseline!, 10);
+    expect(angleAtScale(1e-7)).toBeCloseTo(baseline!, 10);
   });
 
   it("rejects zero, tiny, and nonfinite vectors with explicit reasons", () => {

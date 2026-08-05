@@ -10,11 +10,12 @@ Publisher output is now world-3D `joint-angle.left-knee.internal.v1` / `joint-an
 
 ## Evidence
 
-Deterministic tests cover exact 0/90/180 degrees, 2D/3D, near-parallel finite output, nonfinite and epsilon rejection. The implementation performs one registry lookup and constant-size A/B/C work per metric, with no serialization, registry cloning or retained history. This is synthetic/test-environment evidence, not physical-device validation.
+Deterministic tests cover exact 0/90/180 degrees, 2D/3D, scale-stable large near-parallel/antiparallel vectors, large 3D coordinates, scaling invariance, nonfinite input and epsilon rejection. The implementation performs one registry lookup and constant-size A/B/C work per metric, with no serialization, registry cloning or retained history. This is synthetic/test-environment evidence, not physical-device validation.
 
 ## Verification
 
-- Focused Task 78/79, publisher, Pose/stabilization/serializer, lifecycle, Viewer and Compare regressions: **PASS**, 10 files / 79 tests.
-- Complete frontend suite: **PASS**, 55 files / 324 tests.
+- Focused Task 79 geometry: **PASS**, 1 file / 16 tests.
+- Combined Task 78/79 contract, computation and publisher regressions: **PASS**, 3 files / 32 tests.
+- Complete frontend suite: **PASS**, 55 files / 326 tests.
 - TypeScript project build: **PASS** (`tsc -b`).
 - Production build: **PASS**, Vite transformed 194 modules; the existing >500 kB chunk advisory remains non-failing.

@@ -32,18 +32,25 @@ export function computeUnsignedInternalAngle(
   if (![...a, ...b, ...c, epsilon].every(Number.isFinite) || epsilon <= 0) {
     return { valueDegrees: null, reason: "nonfinite-coordinate" };
   }
-  let dot = 0, baSquared = 0, bcSquared = 0;
+  const ba: number[] = [];
+  const bc: number[] = [];
   for (let index = 0; index < a.length; index += 1) {
-    const ba = a[index] - b[index];
-    const bc = c[index] - b[index];
-    dot += ba * bc;
-    baSquared += ba * ba;
-    bcSquared += bc * bc;
+    ba.push(a[index] - b[index]);
+    bc.push(c[index] - b[index]);
   }
-  if (Math.sqrt(baSquared) <= epsilon || Math.sqrt(bcSquared) <= epsilon) {
+  if (![...ba, ...bc].every(Number.isFinite)) {
+    return { valueDegrees: null, reason: "nonfinite-coordinate" };
+  }
+  const baMagnitude = Math.hypot(...ba);
+  const bcMagnitude = Math.hypot(...bc);
+  if (baMagnitude <= epsilon || bcMagnitude <= epsilon) {
     return { valueDegrees: null, reason: "zero-length-vector" };
   }
-  const cosine = Math.max(-1, Math.min(1, dot / Math.sqrt(baSquared * bcSquared)));
+  let normalizedDot = 0;
+  for (let index = 0; index < ba.length; index += 1) {
+    normalizedDot += (ba[index] / baMagnitude) * (bc[index] / bcMagnitude);
+  }
+  const cosine = Math.max(-1, Math.min(1, normalizedDot));
   const valueDegrees = Math.acos(cosine) * (180 / Math.PI);
   return Number.isFinite(valueDegrees)
     ? { valueDegrees, reason: null }
