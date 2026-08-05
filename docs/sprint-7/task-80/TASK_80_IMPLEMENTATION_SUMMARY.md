@@ -10,8 +10,8 @@ Projected 2D geometry controls arc shape/location while the displayed number rem
 
 ## Verification
 
-- Focused Task 80 renderer tests: **PASS**, 1 file / 10 tests.
-- Task 77–79, production skeleton and Capture overlay/layout regressions: **PASS**, 8 files / 80 tests.
-- Complete frontend suite: **PASS**, 56 files / 336 tests.
+- Focused Task 80 renderer tests: **PASS**, 1 file / 13 tests.
+- Task 77–79, production skeleton and Capture overlay/layout regressions: **PASS**, 8 files / 83 tests.
+- Complete frontend suite: **PASS**, 56 files / 339 tests.
 - TypeScript project build: **PASS** (`tsc -b`).
 - Production build: **PASS**, Vite transformed 196 modules; the existing >500 kB chunk advisory remains non-failing.

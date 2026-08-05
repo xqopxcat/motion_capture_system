@@ -10,13 +10,17 @@ function canvas(width = 400, height = 200, cssWidth = 200) { return { width, hei
 function pose(): FilteredRuntimePose {
   const landmarks2D = Array.from({ length: 33 }, (_, id) => ({ id, name: `joint_${id}`, x: .1, y: .1, visibility: 1 }));
   Object.assign(landmarks2D[23], { x: .5, y: .25 }); Object.assign(landmarks2D[25], { x: .5, y: .5 }); Object.assign(landmarks2D[27], { x: .75, y: .5 });
+  Object.assign(landmarks2D[24], { x: .2, y: .25 }); Object.assign(landmarks2D[26], { x: .2, y: .5 }); Object.assign(landmarks2D[28], { x: .45, y: .5 });
   return { engineName: "test", engineVersion: "1", timestampMs: 100, frameIndex: 2, cameraSessionId: 3, runtimeProfileId: "runtime-visualization.stabilized.v1", landmarks2D, landmarks3D: [], landmarkQuality: [], landmarkQuality3D: [], qualityDiagnostics: { filtered: 0, held: 0, outliers: 0, unavailable: 0 } } as unknown as FilteredRuntimePose;
 }
 function result(change: Partial<RuntimeJointAngleResult> = {}): RuntimeJointAngleResult {
   return { metricId, contractVersion: JOINT_ANGLE_CONTRACT_VERSION, provenance: "runtime-display", runtimeProfileId: "runtime-visualization.stabilized.v1", status: "available", valueDegrees: 123.4, coordinateSpace: "world-3d", sourceTimestampMs: 100, frameIndex: 2, cameraSessionId: 3, inputLandmarkIds: [23, 25, 27], confidence: .9, ...change } as RuntimeJointAngleResult;
 }
 function context() {
-  return { arc: vi.fn(), beginPath: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(), fillText: vi.fn(), restore: vi.fn(), save: vi.fn(), setLineDash: vi.fn(), stroke: vi.fn(), drawImage: vi.fn(), globalAlpha: 1, lineWidth: 1, strokeStyle: "", fillStyle: "", font: "", textAlign: "start", textBaseline: "alphabetic" } as unknown as CanvasRenderingContext2D;
+  let alpha = 1; const arcAlpha: number[] = []; const labelBackgroundAlpha: number[] = []; const labelTextAlpha: number[] = [];
+  const value = { arc: vi.fn(() => arcAlpha.push(alpha)), beginPath: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(() => labelBackgroundAlpha.push(alpha)), fillText: vi.fn(() => labelTextAlpha.push(alpha)), restore: vi.fn(), save: vi.fn(), setLineDash: vi.fn(), stroke: vi.fn(), drawImage: vi.fn(), lineWidth: 1, strokeStyle: "", fillStyle: "", font: "", textAlign: "start", textBaseline: "alphabetic", arcAlpha, labelBackgroundAlpha, labelTextAlpha,
+    set globalAlpha(next: number) { alpha = next; }, get globalAlpha() { return alpha; } };
+  return value as typeof value & CanvasRenderingContext2D;
 }
 
 describe("Task 80 runtime angle overlay preparation", () => {
@@ -83,11 +87,40 @@ describe("Task 80 runtime angle overlay preparation", () => {
 });
 
 describe("Task 80 Canvas rendering safety", () => {
-  it("draws available/degraded styles, balances state, composes without clear, and never draws images", () => {
+  it("uses centralized available arc and label opacity while preserving Canvas safety", () => {
     const target = canvas(); const drawing = context(); const original = result();
     renderRuntimeAngleOverlay(target, drawing, pose(), [original], { selectedMetricIds: [metricId], clear: false });
     expect(drawing.clearRect).not.toHaveBeenCalled(); expect(drawing.save).toHaveBeenCalledOnce(); expect(drawing.restore).toHaveBeenCalledOnce(); expect(drawing.arc).toHaveBeenCalledOnce(); expect(drawing.fillText).toHaveBeenCalledWith("123°", expect.any(Number), expect.any(Number)); expect(drawing.drawImage).not.toHaveBeenCalled(); expect(original.valueDegrees).toBe(123.4);
-    const degraded = context(); renderRuntimeAngleOverlay(target, degraded, pose(), [result({ status: "degraded", reason: "held-runtime-landmark" })], { selectedMetricIds: [metricId] }); expect(degraded.setLineDash).toHaveBeenCalledWith(expect.arrayContaining([expect.any(Number)]));
+    expect(drawing.arcAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.available.arcOpacity]);
+    expect(drawing.labelBackgroundAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.available.labelOpacity]);
+    expect(drawing.labelTextAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.available.labelOpacity]);
+  });
+
+  it("uses degraded opacity for arc, label background and text without resetting alpha", () => {
+    const degraded = context(); renderRuntimeAngleOverlay(canvas(), degraded, pose(), [result({ status: "degraded", reason: "held-runtime-landmark" })], { selectedMetricIds: [metricId] });
+    expect(degraded.arcAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.degraded.arcOpacity]);
+    expect(degraded.labelBackgroundAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.degraded.labelOpacity]);
+    expect(degraded.labelTextAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.degraded.labelOpacity]);
+    expect(degraded.labelTextAlpha).not.toContain(1);
+    expect(degraded.setLineDash).toHaveBeenCalledWith(expect.arrayContaining([expect.any(Number)]));
+    expect(degraded.setLineDash).toHaveBeenCalledWith([]);
+    expect(degraded.save).toHaveBeenCalledOnce(); expect(degraded.restore).toHaveBeenCalledOnce();
+  });
+
+  it("reapplies separate degraded then available styles without alpha or dash leakage", () => {
+    const rightMetricId = "joint-angle.right-knee.internal.v1" as const;
+    const right = result({ metricId: rightMetricId, inputLandmarkIds: [24, 26, 28], status: "available" });
+    const drawing = context(); renderRuntimeAngleOverlay(canvas(), drawing, pose(), [result({ status: "degraded", reason: "held-runtime-landmark" }), right], { selectedMetricIds: [metricId, rightMetricId] });
+    expect(drawing.arcAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.degraded.arcOpacity, RUNTIME_ANGLE_OVERLAY_PROFILE.available.arcOpacity]);
+    expect(drawing.labelTextAlpha).toEqual([RUNTIME_ANGLE_OVERLAY_PROFILE.degraded.labelOpacity, RUNTIME_ANGLE_OVERLAY_PROFILE.available.labelOpacity]);
+    expect(drawing.setLineDash).toHaveBeenNthCalledWith(1, expect.arrayContaining([expect.any(Number)]));
+    expect(drawing.setLineDash).toHaveBeenNthCalledWith(3, []);
+    expect(drawing.save).toHaveBeenCalledOnce(); expect(drawing.restore).toHaveBeenCalledOnce();
+  });
+
+  it("draws neither arc nor label for unavailable metrics", () => {
+    const drawing = context(); renderRuntimeAngleOverlay(canvas(), drawing, pose(), [result({ status: "unavailable", reason: "low-confidence", valueDegrees: null, coordinateSpace: "world-3d" })], { selectedMetricIds: [metricId] });
+    expect(drawing.arc).not.toHaveBeenCalled(); expect(drawing.fillRect).not.toHaveBeenCalled(); expect(drawing.fillText).not.toHaveBeenCalled();
   });
 
   it("never sends NaN or Infinity to Canvas calls", () => {

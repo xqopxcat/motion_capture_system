@@ -106,9 +106,10 @@ export function renderRuntimeAngleOverlay(canvas: HTMLCanvasElement, context: Ca
   const profile = options.profile ?? RUNTIME_ANGLE_OVERLAY_PROFILE; const scale = getRuntimeAngleOverlayDisplayScale(canvas, profile); const model = prepareRuntimeAngleOverlay(canvas, pose, results, options);
   context.save();
   for (const item of model.metrics) {
-    context.strokeStyle = profile.sideColors[item.side]; context.fillStyle = profile.labelTextColor; context.lineWidth = scale.arcWidth; context.globalAlpha = item.status === "degraded" ? profile.degraded.opacity : profile.availableOpacity; context.setLineDash(item.status === "degraded" ? profile.degraded.dashCssPx.map((value) => value * scale.devicePixelRatio) : []);
+    const statusStyle = item.status === "degraded" ? profile.degraded : profile.available;
+    context.strokeStyle = profile.sideColors[item.side]; context.fillStyle = profile.labelTextColor; context.lineWidth = scale.arcWidth; context.globalAlpha = statusStyle.arcOpacity; context.setLineDash(item.status === "degraded" ? profile.degraded.dashCssPx.map((value) => value * scale.devicePixelRatio) : []);
     if (item.arc) { context.beginPath(); context.arc(item.arc.center.x, item.arc.center.y, item.arc.radius, item.arc.startAngle, item.arc.endAngle, item.arc.anticlockwise); context.stroke(); }
-    if (item.labelVisible && item.labelAnchor && item.labelBounds) { context.setLineDash([]); context.globalAlpha = 1; context.fillStyle = profile.labelBackgroundColor; context.fillRect(item.labelBounds.x, item.labelBounds.y, item.labelBounds.width, item.labelBounds.height); context.font = `600 ${scale.fontSize}px system-ui, sans-serif`; context.textAlign = "center"; context.textBaseline = "middle"; context.fillStyle = profile.labelTextColor; context.fillText(item.displayValue, item.labelAnchor.x, item.labelAnchor.y); }
+    if (item.labelVisible && item.labelAnchor && item.labelBounds) { context.setLineDash([]); context.globalAlpha = statusStyle.labelOpacity; context.fillStyle = profile.labelBackgroundColor; context.fillRect(item.labelBounds.x, item.labelBounds.y, item.labelBounds.width, item.labelBounds.height); context.font = `600 ${scale.fontSize}px system-ui, sans-serif`; context.textAlign = "center"; context.textBaseline = "middle"; context.fillStyle = profile.labelTextColor; context.fillText(item.displayValue, item.labelAnchor.x, item.labelAnchor.y); }
   }
   context.restore(); return model;
 }
