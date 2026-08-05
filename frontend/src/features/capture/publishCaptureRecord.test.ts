@@ -39,16 +39,36 @@ describe("production capture artifact preparation", () => {
     const result = buildKneeMetricSeries(poseDataset());
 
     expect(result.series.series[0]).toMatchObject({
-      metricId: "knee_flexion",
+      metricId: "joint-angle.left-knee.internal.v1",
       unit: "degree",
       values: [90],
     });
     expect(result.summary[0]).toMatchObject({
       activityType: "motion_capture",
-      metricDefinitionVersion: "knee-flexion.v1",
+      metricDefinitionVersion: "joint-angle-contract.v1",
       side: "left",
       unit: "degree",
     });
+  });
+
+  it("excludes unavailable formal samples from numeric series and summaries without substituting zero", () => {
+    const pose = poseDataset();
+    const unavailable = structuredClone(pose.frames[0]);
+    unavailable.frameIndex = 1;
+    unavailable.timestamp = 1 / 30;
+    unavailable.landmarks3D[25].visibility = 0.1;
+    pose.frames.push(unavailable);
+    pose.frameCount = 2;
+    const result = buildKneeMetricSeries(pose);
+    expect(result.series.series[0].values).toEqual([90]);
+    expect(result.summary[0]).toMatchObject({ min: 90, max: 90, average: 90, rangeOfMotion: 0 });
+    expect(result.series.series[0].values).not.toContain(0);
+  });
+
+  it("fails deterministically when no formal left-knee sample is usable", () => {
+    const pose = poseDataset();
+    pose.frames[0].landmarks3D[25].visibility = 0.1;
+    expect(() => buildKneeMetricSeries(pose)).toThrow("No valid left-knee metric values were produced.");
   });
 });
 

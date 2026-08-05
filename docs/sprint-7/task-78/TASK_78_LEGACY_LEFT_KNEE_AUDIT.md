@@ -15,6 +15,8 @@ Current path: `publishCaptureRecord()` → `buildKneeMetricSeries()` → private
 
 Current publisher behavior is intentionally unchanged in Task 78. Task 79 must implement the approved calculator, migrate the publisher, explicitly handle the identity/semantic change, preserve timestamps and provenance, and add regression evidence.
 
+Task 79 follow-up: the publisher migration is now complete. The private normalized-2D formula was removed; formal world-3D calculation now resolves `joint-angle.left-knee.internal.v1` through the shared Motion Model engine. See `docs/sprint-7/task-79/TASK_79_LEFT_KNEE_MIGRATION.md` for compatibility details.
+
 Existing `metrics.v1` stores `metricId`, unit and numeric values, while summary metadata carries metric definition version and aggregate values. The future mapping must retain metric ID, timestamps/null samples, degrees, source/profile version, and versioned summary computation. No `metrics.v1`, backend, storage, or `pose.v1` change is made here.
 
 Current Review/record-detail surfaces consume persisted summary/artifact metadata; Viewer initializes a generic metric display collection; Compare parses persisted series by arbitrary string `metricId` and frame index. None currently resolves this Task 78 registry. Registry-aware Capture Review, Viewer, and Compare behavior is therefore not implied by this contract: Capture/Review runtime integration belongs to Task 81, while Viewer/Compare registry integration remains a future Sprint.

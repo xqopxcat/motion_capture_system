@@ -1,4 +1,5 @@
 import { buildPoseDatasetV1 } from "./poseDatasetV1";
+import { calculateFormalJointAngle } from "../../engines/motionModel";
 import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
 import type {
   ArtifactCompleteResponse,
@@ -339,7 +340,13 @@ function waitFor(element: HTMLVideoElement, event: "loadeddata" | "seeked") {
 
 export function buildKneeMetricSeries(pose: ReturnType<typeof buildPoseDatasetV1>) {
   const values = pose.frames
-    .map((frame) => jointAngle(frame.landmarks2D, 23, 25, 27))
+    .map((frame) => calculateFormalJointAngle({
+      timestampMs: frame.timestamp * 1000,
+      frameIndex: frame.frameIndex,
+      landmarks2D: frame.landmarks2D,
+      landmarks3D: frame.landmarks3D,
+    }, "joint-angle.left-knee.internal.v1"))
+    .map((result) => result.valueDegrees)
     .filter((value): value is number => value !== null);
   if (values.length === 0) {
     throw new Error("No valid left-knee metric values were produced.");
@@ -347,9 +354,9 @@ export function buildKneeMetricSeries(pose: ReturnType<typeof buildPoseDatasetV1
   const min = Math.min(...values);
   const max = Math.max(...values);
   const summary: MetricSummary[] = [{
-    metricId: "knee_flexion",
+    metricId: "joint-angle.left-knee.internal.v1",
     unit: "degree",
-    metricDefinitionVersion: "knee-flexion.v1",
+    metricDefinitionVersion: "joint-angle-contract.v1",
     activityType: "motion_capture",
     side: "left",
     min,
@@ -360,28 +367,8 @@ export function buildKneeMetricSeries(pose: ReturnType<typeof buildPoseDatasetV1
   return {
     series: {
       version: "1.0",
-      series: [{ metricId: "knee_flexion", unit: "degree", values }],
+      series: [{ metricId: "joint-angle.left-knee.internal.v1", unit: "degree", values }],
     },
     summary,
   };
-}
-
-function jointAngle(
-  landmarks: Array<{ id: number; x: number; y: number }>,
-  firstId: number,
-  vertexId: number,
-  thirdId: number,
-) {
-  const first = landmarks.find((item) => item.id === firstId);
-  const vertex = landmarks.find((item) => item.id === vertexId);
-  const third = landmarks.find((item) => item.id === thirdId);
-  if (!first || !vertex || !third) return null;
-  const ax = first.x - vertex.x;
-  const ay = first.y - vertex.y;
-  const bx = third.x - vertex.x;
-  const by = third.y - vertex.y;
-  const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by);
-  if (!Number.isFinite(denominator) || denominator === 0) return null;
-  const cosine = Math.min(1, Math.max(-1, (ax * bx + ay * by) / denominator));
-  return Math.acos(cosine) * (180 / Math.PI);
 }
