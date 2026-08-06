@@ -1,8 +1,10 @@
+import type { RuntimeJointAngleResult } from "../../../engines/motionModel";
 import type { FilteredRuntimePose, PoseLandmark2D, RawCanonicalPose, RuntimePoseQualityDiagnostics } from "../../../engines/pose";
 
 const DEFAULT_SAMPLE_CAPACITY = 300;
 const JITTER_LANDMARK_IDS = [11, 12, 23, 24, 25, 26, 27, 28] as const;
 const MIN_JITTER_VISIBILITY = 0.5;
+export const CAPTURE_DIAGNOSTICS_REFRESH_INTERVAL_MS = 500;
 
 export type NumericSummary = {
   count: number;
@@ -35,6 +37,15 @@ export type CaptureRuntimeSnapshot = {
   enabled: boolean;
   generatedAt: string;
   sessionStartedAtMs: number;
+  validation: {
+    cameraSessionId: number | null;
+    frameIndex: number | null;
+    poseTimestampMs: number | null;
+    angleCalculationDurationMs: NumericSummary;
+    selectedAngles: Array<{ metricId: string; status: string; valueDegrees: number | null; coordinateSpace: string | null }>;
+    renderingContext: { mirror: boolean; objectFit: "contain"; sourceWidth: number | null; sourceHeight: number | null; canvasWidth: number; canvasHeight: number; canvasCssWidth: number; canvasCssHeight: number; devicePixelRatio: number } | null;
+    sessionMismatchRejectedCount: null;
+  };
   camera: {
     cameraFrameCount: number;
     cameraFrameRate: number | null;
@@ -325,6 +336,11 @@ export class CaptureRuntimeInstrumentation {
   private previewUnavailableSelectionCount = 0;
   private lastPreviewPoseFrameIndex: number | null = null;
   private runtimeQualitySnapshot: RuntimePoseQualityDiagnostics | null = null;
+  private cameraSessionId: number | null = null;
+  private latestFrameIndex: number | null = null;
+  private latestPoseTimestampMs: number | null = null;
+  private selectedAngles: CaptureRuntimeSnapshot["validation"]["selectedAngles"] = [];
+  private renderingContext: CaptureRuntimeSnapshot["validation"]["renderingContext"] = null;
   private reactRenders = {
     CapturePage: 0,
     CaptureSkeletonOverlay: 0,
@@ -346,6 +362,7 @@ export class CaptureRuntimeInstrumentation {
   private readonly previewSyncErrors = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly inferenceWindows = new BoundedSampleBuffer<TimedWindow>(DEFAULT_SAMPLE_CAPACITY);
   private readonly renderWindows = new BoundedSampleBuffer<TimedWindow>(DEFAULT_SAMPLE_CAPACITY);
+  private readonly angleCalculationDurations = new BoundedSampleBuffer<number>(DEFAULT_SAMPLE_CAPACITY);
   private readonly poseMetadata = new WeakMap<object, PoseResultMeasurement>();
 
   constructor(enabled = detectDiagnosticsEnabled()) {
@@ -390,6 +407,10 @@ export class CaptureRuntimeInstrumentation {
     this.previewUnavailableSelectionCount = 0;
     this.lastPreviewPoseFrameIndex = null;
     this.runtimeQualitySnapshot = null;
+    this.latestFrameIndex = null;
+    this.latestPoseTimestampMs = null;
+    this.selectedAngles = [];
+    this.renderingContext = null;
     this.reactRenders = { CapturePage: 0, CaptureSkeletonOverlay: 0, useCapturePipeline: 0 };
     [
       this.cameraFrameTimestamps,
@@ -406,7 +427,27 @@ export class CaptureRuntimeInstrumentation {
       this.previewSyncErrors,
       this.inferenceWindows,
       this.renderWindows,
+      this.angleCalculationDurations,
     ].forEach((buffer) => buffer.clear());
+  }
+
+  rotateCameraSession(cameraSessionId: number, nowMs = typeof performance === "undefined" ? 0 : performance.now()) {
+    if (!this.enabled || this.cameraSessionId === cameraSessionId) return;
+    this.reset(nowMs);
+    this.cameraSessionId = cameraSessionId;
+  }
+
+  recordAngleCalculation(startedAtMs: number, endedAtMs: number, pose: FilteredRuntimePose, results: readonly RuntimeJointAngleResult[]) {
+    if (!this.enabled) return;
+    this.angleCalculationDurations.push(endedAtMs - startedAtMs);
+    this.cameraSessionId = pose.cameraSessionId ?? null;
+    this.latestFrameIndex = pose.frameIndex ?? null;
+    this.latestPoseTimestampMs = pose.timestampMs;
+    this.selectedAngles = results.map(({ metricId, status, valueDegrees, coordinateSpace }) => ({ metricId, status, valueDegrees, coordinateSpace }));
+  }
+
+  recordRenderingContext(input: NonNullable<CaptureRuntimeSnapshot["validation"]["renderingContext"]>) {
+    if (this.enabled) this.renderingContext = { ...input };
   }
 
   recordReactRender(name: keyof CaptureRuntimeSnapshot["react"]) {
@@ -622,6 +663,15 @@ export class CaptureRuntimeInstrumentation {
       enabled: this.enabled,
       generatedAt: new Date().toISOString(),
       sessionStartedAtMs: this.sessionStartedAtMs,
+      validation: {
+        cameraSessionId: this.cameraSessionId,
+        frameIndex: this.latestFrameIndex,
+        poseTimestampMs: this.latestPoseTimestampMs,
+        angleCalculationDurationMs: summarizeNumericSamples(this.angleCalculationDurations.getValues()),
+        selectedAngles: this.selectedAngles.map((item) => ({ ...item })),
+        renderingContext: this.renderingContext ? { ...this.renderingContext } : null,
+        sessionMismatchRejectedCount: null,
+      },
       camera: {
         cameraFrameCount: this.cameraFrameCount,
         cameraFrameRate: rateFromTimestamps(this.cameraFrameTimestamps.getValues()),
@@ -709,6 +759,10 @@ export function observeCaptureLongTasks(collector: CaptureRuntimeInstrumentation
   });
   observer.observe({ entryTypes: ["longtask"] });
   return () => observer.disconnect();
+}
+
+export function serializeCaptureDiagnosticsSnapshot(snapshot: CaptureRuntimeSnapshot) {
+  return JSON.stringify(snapshot, null, 2);
 }
 
 export const captureRuntimeInstrumentation = new CaptureRuntimeInstrumentation();

@@ -59,7 +59,9 @@ export function CaptureSkeletonOverlay({ anglesVisible = false, displayFrame, mi
     try {
       if (poseResult && visible) renderCaptureSkeleton(canvas, context, poseResult, viewport, 0, "contain", false, mirror);
       if (poseResult && anglesVisible) {
+        const angleStartedAtMs = performance.now();
         const results = calculateSelectedRuntimeJointAngles(poseResult, CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
+        captureRuntimeInstrumentation.recordAngleCalculation(angleStartedAtMs, performance.now(), poseResult, results);
         renderRuntimeAngleOverlay(canvas, context, poseResult, results, { selectedMetricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds, sourceViewport: viewport, objectFit: "contain", mirror, poseAgeMs: 0, clear: false });
       }
     } catch {
@@ -71,6 +73,8 @@ export function CaptureSkeletonOverlay({ anglesVisible = false, displayFrame, mi
       rendered: true,
       startedAtMs,
     });
+    const bounds = canvas.getBoundingClientRect();
+    captureRuntimeInstrumentation.recordRenderingContext({ mirror, objectFit: "contain", sourceWidth: viewport?.sourceWidth ?? null, sourceHeight: viewport?.sourceHeight ?? null, canvasWidth: canvas.width, canvasHeight: canvas.height, canvasCssWidth: bounds.width, canvasCssHeight: bounds.height, devicePixelRatio: window.devicePixelRatio });
     if (!poseResult) return;
     const staleTimeout = window.setTimeout(() => {
       context.clearRect(0, 0, canvas.width, canvas.height);

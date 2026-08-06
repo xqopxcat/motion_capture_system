@@ -1,0 +1,20 @@
+# Task 84 Sprint 7 Manual Acceptance Checklist
+
+- [ ] A Desktop Chrome完整12 scenarios與evidence
+- [ ] B Android Chrome front/rear、portrait/landscape、3-minute run
+- [ ] C iOS Safari front/rear、portrait/landscape、3-minute run
+- [ ] D front/rear mirror與metric identity正確
+- [ ] E rotation/resize後video、skeleton、angles仍對齊
+- [ ] F nose至ankles在center/edges/top/bottom與Review對齊
+- [ ] G arcs/labels/readability/degraded/unavailable/0°/near-180°正確
+- [ ] H short hold、long unavailable、stale clear、re-entry recovery正確
+- [ ] I camera switch清除舊session且無污染
+- [ ] J 30秒 recording、stop、artifact publication成功
+- [ ] K Review play/pause/forward/back seek、Raw formal、non-mirror正確
+- [ ] L controls responsive、continuous overlay、bounded queue、無sustained freeze/crash
+- [ ] M pose.v1/metrics.v1無display-result persistence regression
+- [ ] N keyboard/touch controls可用，mobile camera-first且controls可見
+- [ ] O 已記錄所有 concerns與deferred observations
+- [ ] P confirmed blocker list為空，或修復後相關scenario已重跑通過
+- [ ] Q 使用者已審閱device matrix、evidence與known issues
+- [ ] User manually accepts Sprint 7.

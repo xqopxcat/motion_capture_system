@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
+  CAPTURE_DIAGNOSTICS_REFRESH_INTERVAL_MS,
   captureRuntimeInstrumentation,
   observeCaptureLongTasks,
+  serializeCaptureDiagnosticsSnapshot,
 } from "./captureRuntimeInstrumentation";
 import styles from "./CaptureDiagnosticsPanel.module.css";
 
@@ -18,7 +20,7 @@ export function CaptureDiagnosticsPanel() {
     const stopLongTaskObserver = observeCaptureLongTasks(captureRuntimeInstrumentation);
     const interval = window.setInterval(() => {
       setSnapshot(captureRuntimeInstrumentation.snapshot());
-    }, 500);
+    }, CAPTURE_DIAGNOSTICS_REFRESH_INTERVAL_MS);
     return () => {
       window.clearInterval(interval);
       stopLongTaskObserver();
@@ -33,7 +35,7 @@ export function CaptureDiagnosticsPanel() {
     setCopyStatus("");
   };
   const copyReport = async () => {
-    const report = JSON.stringify(captureRuntimeInstrumentation.snapshot(), null, 2);
+    const report = serializeCaptureDiagnosticsSnapshot(captureRuntimeInstrumentation.snapshot());
     try {
       await navigator.clipboard.writeText(report);
       setCopyStatus("Copied");
@@ -74,6 +76,9 @@ export function CaptureDiagnosticsPanel() {
         <div><dt>Static jitter</dt><dd>{snapshot.jitter.status}: {format(snapshot.jitter.aggregateNormalizedRms)}</dd></div>
         <div><dt>Filtered / held / outlier</dt><dd>{snapshot.runtimeQuality ? `${snapshot.runtimeQuality.landmarksFiltered} / ${snapshot.runtimeQuality.temporaryHolds} / ${snapshot.runtimeQuality.rejectedOutliers}` : "unavailable"}</dd></div>
         <div><dt>Stabilization mean</dt><dd>{format(snapshot.runtimeQuality?.processingDurationMs.mean ?? null, " ms")}</dd></div>
+        <div><dt>Angle calculation P50 / P95</dt><dd>{format(snapshot.validation.angleCalculationDurationMs.p50, " ms")} / {format(snapshot.validation.angleCalculationDurationMs.p95, " ms")}</dd></div>
+        <div><dt>Session / frame</dt><dd>{snapshot.validation.cameraSessionId ?? "unavailable"} / {snapshot.validation.frameIndex ?? "unavailable"}</dd></div>
+        <div><dt>Mirror / source</dt><dd>{snapshot.validation.renderingContext ? `${snapshot.validation.renderingContext.mirror} / ${snapshot.validation.renderingContext.sourceWidth}×${snapshot.validation.renderingContext.sourceHeight}` : "unavailable"}</dd></div>
         <div><dt>Preview sync mean / P95</dt><dd>{format(snapshot.previewSync.errorMs.mean, " ms")} / {format(snapshot.previewSync.errorMs.p95, " ms")}</dd></div>
         <div><dt>React renders</dt><dd>page {snapshot.react.CapturePage}, overlay {snapshot.react.CaptureSkeletonOverlay}, hook {snapshot.react.useCapturePipeline}</dd></div>
       </dl>

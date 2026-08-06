@@ -3,10 +3,12 @@ import { mapPoseDetectionResultToRawCanonicalPose } from "../../../engines/pose"
 import type { PoseLandmark2D, RawCanonicalPose } from "../../../engines/pose";
 import {
   BoundedSampleBuffer,
+  CAPTURE_DIAGNOSTICS_REFRESH_INTERVAL_MS,
   CaptureRuntimeInstrumentation,
   calculatePreviewSyncErrorMs,
   calculateStaticJitter,
   resolveCaptureDiagnosticsEnabled,
+  serializeCaptureDiagnosticsSnapshot,
   summarizeNumericSamples,
 } from "./captureRuntimeInstrumentation";
 
@@ -149,5 +151,25 @@ describe("Capture runtime instrumentation", () => {
       resolveCaptureDiagnosticsEnabled({ isDevelopment: true, environmentValue: "true" }),
     ).toBe(true);
     expect(resolveCaptureDiagnosticsEnabled({ isDevelopment: true })).toBe(false);
+  });
+
+  it("uses a throttled readable panel cadence and exports no Raw landmark arrays", () => {
+    expect(CAPTURE_DIAGNOSTICS_REFRESH_INTERVAL_MS).toBeGreaterThanOrEqual(500);
+    const collector = new CaptureRuntimeInstrumentation(true);
+    const token = collector.beginInference({ sourceMediaTimestampMs: 1, sourceFrameObservedAtMs: 1, startedAtMs: 1 });
+    collector.completeInference(token, result(1), 2);
+    const exported = serializeCaptureDiagnosticsSnapshot(collector.snapshot());
+    expect(exported).not.toContain("landmarks2D");
+    expect(exported).not.toContain("landmarks3D");
+    expect(exported).toContain("inferenceDurationMs");
+  });
+
+  it("clears prior diagnostic state when the camera session rotates", () => {
+    const collector = new CaptureRuntimeInstrumentation(true);
+    collector.rotateCameraSession(1, 10);
+    collector.recordInferenceSkipped();
+    expect(collector.snapshot().inference.inferenceSkippedCount).toBe(1);
+    collector.rotateCameraSession(2, 20);
+    expect(collector.snapshot()).toMatchObject({ sessionStartedAtMs: 20, validation: { cameraSessionId: 2 }, inference: { inferenceSkippedCount: 0 } });
   });
 });

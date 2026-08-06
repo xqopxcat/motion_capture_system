@@ -230,6 +230,7 @@ export function usePosePipeline() {
         },
       });
       scheduler.rotateSession(cameraSessionId);
+      captureRuntimeInstrumentation.rotateCameraSession(cameraSessionId);
       schedulerRef.current = scheduler;
 
       const onCandidate = (candidate: VideoFrameCandidate) => {
