@@ -3,7 +3,9 @@ import type { PoseLandmark3D, RawCanonicalPose } from "../../engines/pose";
 import type { FinalAnalysisProfile } from "./candidateProfiles";
 
 export type CandidateAngleSample = Readonly<{ frameIndex: number; cameraSessionId: number; timestampMs: number; metricId: JointAngleMetricId; valueDegrees: number | null; status: "available" | "unavailable" }>;
-export type CandidateEvaluation = Readonly<{ profileId: string; samples: readonly CandidateAngleSample[]; validCount: number; unavailableCount: number; degradedCount: 0; meanAbsoluteError: number | null; maximumAbsoluteError: number | null; jitterStandardDeviation: number | null; transitionLagFrames: number | null; preprocessingDurationMs: number; metricDurationMs: number; totalDurationMs: number }>;
+export type TransitionEvaluationInput = Readonly<{ metricId: JointAngleMetricId; cameraSessionId: number; transitionFrameIndex: number; targetDegrees: number; toleranceDegrees: number }>;
+export type TransitionEvaluationResult = Readonly<{ evaluated: boolean; reachedTarget: boolean; lagFrames: number | null }>;
+export type CandidateEvaluation = Readonly<{ profileId: string; samples: readonly CandidateAngleSample[]; validCount: number; unavailableCount: number; degradedCount: 0; meanAbsoluteError: number | null; maximumAbsoluteError: number | null; jitterStandardDeviation: number | null; transition: TransitionEvaluationResult; preprocessingDurationMs: number; metricDurationMs: number; totalDurationMs: number }>;
 
 export function validateRawPoseSequence(frames: readonly RawCanonicalPose[]) {
   let previous: RawCanonicalPose | undefined;
@@ -49,7 +51,14 @@ function standardDeviation(values: readonly number[]) {
   return Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length);
 }
 
-export function evaluateFinalCandidate(profile: FinalAnalysisProfile, input: readonly RawCanonicalPose[], metricIds: readonly JointAngleMetricId[], truthDegrees?: readonly number[]): CandidateEvaluation {
+function evaluateTransition(samples: readonly CandidateAngleSample[], input?: TransitionEvaluationInput): TransitionEvaluationResult {
+  if (!input) return Object.freeze({ evaluated: false, reachedTarget: false, lagFrames: null });
+  if (!Number.isInteger(input.transitionFrameIndex) || !Number.isInteger(input.cameraSessionId) || !Number.isFinite(input.targetDegrees) || !Number.isFinite(input.toleranceDegrees) || input.toleranceDegrees < 0) throw new Error("Transition evaluation input is invalid");
+  const reached = samples.find((sample) => sample.metricId === input.metricId && sample.cameraSessionId === input.cameraSessionId && sample.frameIndex >= input.transitionFrameIndex && sample.valueDegrees !== null && Math.abs(sample.valueDegrees - input.targetDegrees) <= input.toleranceDegrees);
+  return Object.freeze(reached ? { evaluated: true, reachedTarget: true, lagFrames: reached.frameIndex - input.transitionFrameIndex } : { evaluated: true, reachedTarget: false, lagFrames: null });
+}
+
+export function evaluateFinalCandidate(profile: FinalAnalysisProfile, input: readonly RawCanonicalPose[], metricIds: readonly JointAngleMetricId[], truthDegrees?: readonly number[], transitionInput?: TransitionEvaluationInput): CandidateEvaluation {
   validateRawPoseSequence(input);
   const started = performance.now();
   const processed = profile.strategy === "causal-replay" ? causal(input, profile.smoothing.alpha) : profile.strategy === "non-causal-centered-average" ? centered(input) : [...input];
@@ -58,7 +67,7 @@ export function evaluateFinalCandidate(profile: FinalAnalysisProfile, input: rea
   const metricDone = performance.now();
   const values = samples.filter((sample): sample is CandidateAngleSample & { valueDegrees: number } => sample.valueDegrees !== null).map((sample) => sample.valueDegrees);
   const errors = truthDegrees ? samples.flatMap((sample, index) => sample.valueDegrees === null || truthDegrees[index] === undefined ? [] : [Math.abs(sample.valueDegrees - truthDegrees[index])]) : [];
-  return Object.freeze({ profileId: profile.id, samples: Object.freeze(samples), validCount: values.length, unavailableCount: samples.length - values.length, degradedCount: 0, meanAbsoluteError: errors.length ? errors.reduce((a, b) => a + b, 0) / errors.length : null, maximumAbsoluteError: errors.length ? Math.max(...errors) : null, jitterStandardDeviation: standardDeviation(values), transitionLagFrames: null, preprocessingDurationMs: preprocessingDone - started, metricDurationMs: metricDone - preprocessingDone, totalDurationMs: metricDone - started });
+  return Object.freeze({ profileId: profile.id, samples: Object.freeze(samples), validCount: values.length, unavailableCount: samples.length - values.length, degradedCount: 0, meanAbsoluteError: errors.length ? errors.reduce((a, b) => a + b, 0) / errors.length : null, maximumAbsoluteError: errors.length ? Math.max(...errors) : null, jitterStandardDeviation: standardDeviation(values), transition: evaluateTransition(samples, transitionInput), preprocessingDurationMs: preprocessingDone - started, metricDurationMs: metricDone - preprocessingDone, totalDurationMs: metricDone - started });
 }
 
 export function smoothAngleSeries(values: readonly (number | null)[]) {

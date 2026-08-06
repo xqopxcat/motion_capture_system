@@ -93,6 +93,48 @@ describe("Task 83 realtime and final fixtures", () => {
     expect(centered.samples.every(({ valueDegrees }) => valueDegrees === null || Number.isFinite(valueDegrees))).toBe(true);
   });
 
+  it("reports zero lag for an exact raw step and positive lag for causal replay", () => {
+    const sequence = [pose(30, 1), pose(150, 2), pose(150, 3), pose(150, 4), pose(150, 5), pose(150, 6), pose(150, 7), pose(150, 8)];
+    const transition = { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 2, targetDegrees: 150, toleranceDegrees: 5 } as const;
+    expect(evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition).toEqual({ evaluated: true, reachedTarget: true, lagFrames: 0 });
+    const causal = evaluateFinalCandidate(CAUSAL_REPLAY_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition;
+    expect(causal.reachedTarget).toBe(true);
+    expect(causal.lagFrames).toBeGreaterThan(0);
+  });
+
+  it("produces deterministic non-causal transition evaluation", () => {
+    const sequence = [pose(30, 1), pose(30, 2), pose(150, 3), pose(150, 4), pose(150, 5)];
+    const transition = { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 3, targetDegrees: 150, toleranceDegrees: 10 } as const;
+    const first = evaluateFinalCandidate(NON_CAUSAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition;
+    const second = evaluateFinalCandidate(NON_CAUSAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition;
+    expect(first).toEqual(second);
+    expect(first.evaluated).toBe(true);
+  });
+
+  it("ignores unavailable samples and applies an inclusive tolerance boundary", () => {
+    const sequence = [pose(90, 1, { world: false }), pose(0, 2)];
+    const transition = { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 1, targetDegrees: 0, toleranceDegrees: 0 } as const;
+    expect(evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition).toEqual({ evaluated: true, reachedTarget: true, lagFrames: 1 });
+  });
+
+  it("distinguishes not evaluated from evaluated but never reached", () => {
+    const sequence = [pose(30, 1), pose(40, 2)];
+    expect(evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, sequence, [METRIC]).transition).toEqual({ evaluated: false, reachedTarget: false, lagFrames: null });
+    expect(evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 1, targetDegrees: 150, toleranceDegrees: 1 }).transition).toEqual({ evaluated: true, reachedTarget: false, lagFrames: null });
+  });
+
+  it("does not use another camera session to satisfy a transition", () => {
+    const sequence = [pose(30, 1), pose(40, 2), pose(150, 1, { session: 2, timestampMs: 100 })];
+    const transition = { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 2, targetDegrees: 150, toleranceDegrees: 0 } as const;
+    expect(evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, sequence, [METRIC], undefined, transition).transition).toEqual({ evaluated: true, reachedTarget: false, lagFrames: null });
+  });
+
+  it("requires explicit transition metric ownership when evaluating multiple metrics", () => {
+    const right = "joint-angle.right-knee.internal.v1" satisfies JointAngleMetricId;
+    const report = evaluateFinalCandidate(RAW_FRAME_LOCAL_FINAL_CANDIDATE, [pose(90, 1)], [right, METRIC], undefined, { metricId: METRIC, cameraSessionId: 1, transitionFrameIndex: 1, targetDegrees: 90, toleranceDegrees: 0.000001 });
+    expect(report.transition).toEqual({ evaluated: true, reachedTarget: true, lagFrames: 0 });
+  });
+
   it("keeps interpolation separate and preserves missing samples in angle smoothing", () => {
     expect(smoothAngleSeries([90, null, 90])).toEqual([90, null, 90]);
     expect(smoothAngleSeries([0, 90, 180])).toEqual([45, 90, 135]);
