@@ -24,10 +24,11 @@ export type PoseExecutionResponse =
 
 /** Worker-side protocol core. It is deliberately not imported by production code. */
 export class PosePostProcessingExperiment {
-  private engine = createRuntimePoseQualityEngine();
   private metricIds: readonly JointAngleMetricId[] | null = null;
   private profileId: string | null = null;
   private disposed = false;
+
+  constructor(private readonly engine = createRuntimePoseQualityEngine()) {}
 
   tryHandle(request: unknown): PoseExecutionResponse {
     try {
@@ -58,6 +59,14 @@ export class PosePostProcessingExperiment {
     }
     if (!this.metricIds || !this.profileId) throw new Error("Pose execution experiment must be initialized");
     if (request.runtimeProfileId !== this.profileId || request.selectedMetricIds.join("\u0000") !== this.metricIds.join("\u0000")) throw new Error("Process profile does not match initialized profile");
+    const rawIdentity = {
+      cameraSessionId: request.rawPose.cameraSessionId,
+      frameIndex: request.rawPose.frameIndex,
+      timestampMs: request.rawPose.timestampMs,
+    };
+    if (rawIdentity.cameraSessionId !== request.identity.cameraSessionId || rawIdentity.frameIndex !== request.identity.frameIndex || rawIdentity.timestampMs !== request.identity.timestampMs) {
+      throw new Error("Process identity does not match RawCanonicalPose identity");
+    }
     const startedAtMs = performance.now();
     const filteredPose = this.engine.transform(request.rawPose);
     if (!filteredPose) throw new Error("A valid RawCanonicalPose must produce a filtered pose");
@@ -82,7 +91,11 @@ export class LatestFrameWinsExperimentQueue<T, R> {
   private sessionId = 0;
   private disposed = false;
 
-  constructor(private readonly process: (item: ExperimentQueueItem<T>) => Promise<R>, private readonly publish: (value: R, item: ExperimentQueueItem<T>) => void) {}
+  constructor(
+    private readonly process: (item: ExperimentQueueItem<T>) => Promise<R>,
+    private readonly publish: (value: R, item: ExperimentQueueItem<T>) => void,
+    private readonly onProcessingError: (error: unknown, item: ExperimentQueueItem<T>) => void = () => undefined,
+  ) {}
 
   accept(item: ExperimentQueueItem<T>) {
     if (this.disposed || item.identity.cameraSessionId !== this.sessionId) return false;
@@ -97,8 +110,16 @@ export class LatestFrameWinsExperimentQueue<T, R> {
 
   private start(item: ExperimentQueueItem<T>) {
     this.active = item;
-    void this.process(item).then((value) => {
+    let processing: Promise<R>;
+    try {
+      processing = this.process(item);
+    } catch (error) {
+      processing = Promise.reject(error);
+    }
+    void processing.then((value) => {
       if (!this.disposed && item.identity.cameraSessionId === this.sessionId) this.publish(value, item);
+    }, (error) => {
+      this.onProcessingError(error, item);
     }).finally(() => {
       if (this.active === item) this.active = null;
       const next = this.pending;

@@ -4,7 +4,9 @@
 - [x] 決策門檻先於結果定義
 - [x] 評估 A–E，沒有新增或改號 Sprint 7 task
 - [x] 隔離、版本化後處理協定與有界 queue
-- [x] 覆蓋 init/reset/dispose、stale session、fixed topology、metrics
+- [x] 覆蓋 init/reset/dispose、三欄 identity 先驗證、stale session、fixed topology、metrics
+- [x] identity 衝突不執行 stabilization、不污染下一合法 frame
+- [x] queue processing rejection 有 deterministic callback，並續行最新 pending frame
 - [x] production Capture、pose.v1、metrics.v1 未改動
 - [x] 記錄瀏覽器與物理裝置證據缺口
 - [x] 只有一個整體決策

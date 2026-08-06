@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mapPoseDetectionResultToRawCanonicalPose, type PoseDetectionResult } from "../../engines/pose";
+import { createRuntimePoseQualityEngine, mapPoseDetectionResultToRawCanonicalPose, type PoseDetectionResult } from "../../engines/pose";
 import { CAPTURE_ANGLE_INTEGRATION_PROFILE } from "../../features/capture/captureAngleIntegrationProfile";
 import { LatestFrameWinsExperimentQueue, measureSerializationExperiment, POSE_EXECUTION_EXPERIMENT_PROTOCOL, PosePostProcessingExperiment, summarizeBoundedTimings, type ExperimentFrameIdentity } from "./poseExecutionExperiment";
 
@@ -27,12 +27,37 @@ describe("Task 82 isolated pose execution experiment", () => {
     expect(response.type).toBe("result");
     if (response.type !== "result") throw new Error("expected result");
     expect(response.identity).toEqual(identity(7, 2));
+    expect(response.filteredPose).toMatchObject(identity(7, 2));
     expect(response.requestId).toBe(7);
     expect(response.timingDiagnostics.processingDurationMs).toBeGreaterThanOrEqual(0);
     expect(response.filteredPose.landmarks2D).toHaveLength(33);
     expect(response.filteredPose.landmarks3D).toHaveLength(33);
     expect(response.filteredPose.landmarks2D.every((point, index) => point === null || point.id === index)).toBe(true);
     expect(response.angles.map(({ metricId }) => metricId)).toEqual(CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds);
+    expect(response.angles.every((angle) => angle.frameIndex === 7 && angle.cameraSessionId === 2 && angle.sourceTimestampMs === 231)).toBe(true);
+  });
+
+  it.each([
+    ["cameraSessionId", { cameraSessionId: 8 }],
+    ["frameIndex", { frameIndex: 8 }],
+    ["timestampMs", { timestampMs: 8 }],
+  ] as const)("rejects a %s identity mismatch before stabilization", (_field, identityOverride) => {
+    const engine = createRuntimePoseQualityEngine();
+    const transform = vi.spyOn(engine, "transform");
+    const experiment = new PosePostProcessingExperiment(engine);
+    experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "init", profileId: CAPTURE_ANGLE_INTEGRATION_PROFILE.id, metricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds });
+    const request = processRequest(4, 3);
+    expect(experiment.tryHandle({ ...request, identity: { ...request.identity, ...identityOverride } })).toMatchObject({ type: "processing-error", requestId: 4, message: "Process identity does not match RawCanonicalPose identity" });
+    expect(transform).not.toHaveBeenCalled();
+    expect(experiment.tryHandle(processRequest(5, 3))).toMatchObject({ type: "result", requestId: 5 });
+    expect(transform).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not allow an old-session Raw Pose to be disguised by a new outer identity", () => {
+    const experiment = new PosePostProcessingExperiment();
+    experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "init", profileId: CAPTURE_ANGLE_INTEGRATION_PROFILE.id, metricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds });
+    const request = processRequest(3, 1);
+    expect(experiment.tryHandle({ ...request, identity: identity(3, 2) })).toMatchObject({ type: "processing-error", requestId: 3 });
   });
 
   it("represents malformed and processing failures without corrupting later requests", () => {
@@ -45,8 +70,10 @@ describe("Task 82 isolated pose execution experiment", () => {
 
   it("resets temporal state and prevents use after dispose", () => {
     const experiment = new PosePostProcessingExperiment();
-    experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "init", profileId: "test", metricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds });
+    experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "init", profileId: CAPTURE_ANGLE_INTEGRATION_PROFILE.id, metricIds: CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds });
+    expect(experiment.handle(processRequest(1, 0))).toMatchObject({ type: "result", requestId: 1 });
     expect(experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "reset", cameraSessionId: 4 })).toEqual({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "reset-complete", cameraSessionId: 4 });
+    expect(experiment.handle(processRequest(2, 4))).toMatchObject({ type: "result", requestId: 2, identity: identity(2, 4) });
     expect(experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "dispose" })).toMatchObject({ type: "disposed" });
     expect(() => experiment.handle({ protocol: POSE_EXECUTION_EXPERIMENT_PROTOCOL, type: "reset", cameraSessionId: 5 })).toThrow("disposed");
   });
@@ -65,6 +92,21 @@ describe("Task 82 isolated pose execution experiment", () => {
     await flush();
     expect(process.mock.calls.map(([item]) => item.identity.frameIndex)).toEqual([1, 3]);
     expect(publish.mock.calls.map(([, item]) => item.identity.frameIndex)).toEqual([1, 3]);
+  });
+
+  it("contains processing rejection and continues with the newest pending frame", async () => {
+    const process = vi.fn(({ identity: itemIdentity }: { identity: ExperimentFrameIdentity }) => itemIdentity.frameIndex === 1 ? Promise.reject(new Error("expected failure")) : Promise.resolve(itemIdentity.frameIndex));
+    const publish = vi.fn();
+    const failed = vi.fn();
+    const queue = new LatestFrameWinsExperimentQueue(process, publish, failed);
+    queue.accept({ identity: identity(1), payload: null });
+    queue.accept({ identity: identity(2), payload: null });
+    queue.accept({ identity: identity(3), payload: null });
+    await flush(); await flush();
+    expect(failed).toHaveBeenCalledOnce();
+    expect(failed.mock.calls[0][1].identity.frameIndex).toBe(1);
+    expect(publish.mock.calls.map(([, item]) => item.identity.frameIndex)).toEqual([3]);
+    expect(queue.snapshot()).toMatchObject({ active: 0, pending: 0 });
   });
 
   it("rejects stale sessions and suppresses an in-flight old-session result", async () => {
