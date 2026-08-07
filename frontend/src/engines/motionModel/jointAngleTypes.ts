@@ -2,7 +2,7 @@ export const JOINT_ANGLE_CONTRACT_VERSION = "joint-angle-contract.v1" as const;
 
 export type JointAngleContractVersion = typeof JOINT_ANGLE_CONTRACT_VERSION;
 export type JointAngleSide = "left" | "right" | "center";
-export type JointAngleJoint = "knee" | "hip" | "ankle" | "elbow" | "shoulder";
+export type JointAngleJoint = "knee" | "hip" | "ankle" | "elbow" | "shoulder" | "wrist";
 export type JointAngleCoordinateSpace = "world-3d" | "normalized-2d";
 export type JointAngleMetricId =
   | "joint-angle.left-knee.internal.v1"
@@ -14,7 +14,9 @@ export type JointAngleMetricId =
   | "joint-angle.left-elbow.internal.v1"
   | "joint-angle.right-elbow.internal.v1"
   | "joint-angle.left-shoulder.internal.v1"
-  | "joint-angle.right-shoulder.internal.v1";
+  | "joint-angle.right-shoulder.internal.v1"
+  | "joint-angle.left-wrist.internal.v1"
+  | "joint-angle.right-wrist.internal.v1";
 
 export type JointAngleAvailabilityReason =
   | "missing-landmark"

@@ -93,7 +93,10 @@ class MetricsUploadCompleteRequest(UploadCompleteIntegrity):
     recordId: str = Field(min_length=1)
     storagePath: str = Field(min_length=1)
     version: str = Field(min_length=1)
-    summary: list[MetricSummary] = Field(min_length=1)
+    # A recording remains persistable when no angle sample passes the approved
+    # confidence policy. The completed metrics artifact then carries an empty
+    # summary instead of blocking the video and Pose artifacts.
+    summary: list[MetricSummary]
 
 
 class ThumbnailUploadCompleteRequest(UploadCompleteIntegrity):

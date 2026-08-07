@@ -1,5 +1,5 @@
 import { buildPoseDatasetV1 } from "./poseDatasetV1";
-import { calculateFormalJointAngle } from "../../engines/motionModel";
+import { calculateFormalJointAngle, JOINT_ANGLE_REGISTRY } from "../../engines/motionModel";
 import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
 import type {
   ArtifactCompleteResponse,
@@ -26,7 +26,7 @@ export type CapturePublishProgress = {
   message: string;
 };
 
-export type CapturePreparationFailureCode = "pose-dataset" | "formal-metrics-unavailable" | "thumbnail-decode";
+export type CapturePreparationFailureCode = "pose-dataset" | "thumbnail-decode";
 
 export class CapturePreparationError extends Error {
   constructor(readonly code: CapturePreparationFailureCode, message: string, options?: ErrorOptions) {
@@ -87,12 +87,7 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
   input.onProgress({ stage: "preparing", message: "Preparing browser analysis artifacts…" });
 
   const pose = await prepareJsonArtifact(poseDataset);
-  let metricsPayload: ReturnType<typeof buildKneeMetricSeries>;
-  try {
-    metricsPayload = buildKneeMetricSeries(poseDataset);
-  } catch (error) {
-    throw new CapturePreparationError("formal-metrics-unavailable", "Formal metric preparation produced no usable samples.", { cause: error });
-  }
+  const metricsPayload = buildJointAngleMetricSeries(poseDataset);
   const metrics = await prepareJsonArtifact(metricsPayload.series);
   const videoContentType = normalizeVideoContentType(input.videoBlob.type);
   const videoBlob = new Blob([input.videoBlob], { type: videoContentType });
@@ -378,37 +373,29 @@ function waitFor(element: HTMLVideoElement, event: "loadeddata" | "seeked") {
   });
 }
 
-export function buildKneeMetricSeries(pose: ReturnType<typeof buildPoseDatasetV1>) {
-  const values = pose.frames
-    .map((frame) => calculateFormalJointAngle({
-      timestampMs: frame.timestamp * 1000,
-      frameIndex: frame.frameIndex,
-      landmarks2D: frame.landmarks2D,
-      landmarks3D: frame.landmarks3D,
-    }, "joint-angle.left-knee.internal.v1"))
-    .map((result) => result.valueDegrees)
-    .filter((value): value is number => value !== null);
-  if (values.length === 0) {
-    throw new Error("No valid left-knee metric values were produced.");
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const summary: MetricSummary[] = [{
-    metricId: "joint-angle.left-knee.internal.v1",
-    unit: "degree",
-    metricDefinitionVersion: "joint-angle-contract.v1",
-    activityType: "motion_capture",
-    side: "left",
-    min,
-    max,
-    average: values.reduce((total, value) => total + value, 0) / values.length,
-    rangeOfMotion: max - min,
-  }];
+export function buildJointAngleMetricSeries(pose: ReturnType<typeof buildPoseDatasetV1>) {
+  const series = JOINT_ANGLE_REGISTRY.map((definition) => {
+    const values = pose.frames.map((frame) => calculateFormalJointAngle({
+      timestampMs: frame.timestamp * 1000, frameIndex: frame.frameIndex,
+      landmarks2D: frame.landmarks2D, landmarks3D: frame.landmarks3D,
+    }, definition.metricId).valueDegrees).filter((value): value is number => value !== null);
+    return { definition, values };
+  });
+  const summary: MetricSummary[] = series.flatMap(({ definition, values }) => {
+    if (values.length === 0) return [];
+    const min = Math.min(...values); const max = Math.max(...values);
+    return [{ metricId: definition.metricId, unit: "degree", metricDefinitionVersion: definition.contractVersion,
+      activityType: "motion_capture", side: definition.side, min, max,
+      average: values.reduce((total, value) => total + value, 0) / values.length, rangeOfMotion: max - min }];
+  });
   return {
     series: {
       version: "1.0",
-      series: [{ metricId: "joint-angle.left-knee.internal.v1", unit: "degree", values }],
+      series: series.map(({ definition, values }) => ({ metricId: definition.metricId, unit: "degree", values })),
     },
     summary,
   };
 }
+
+/** @deprecated Use buildJointAngleMetricSeries. */
+export const buildKneeMetricSeries = buildJointAngleMetricSeries;

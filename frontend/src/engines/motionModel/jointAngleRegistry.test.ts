@@ -19,6 +19,7 @@ const requiredIds = [
   "joint-angle.left-ankle.internal.v1", "joint-angle.right-ankle.internal.v1",
   "joint-angle.left-elbow.internal.v1", "joint-angle.right-elbow.internal.v1",
   "joint-angle.left-shoulder.internal.v1", "joint-angle.right-shoulder.internal.v1",
+  "joint-angle.left-wrist.internal.v1", "joint-angle.right-wrist.internal.v1",
 ] as const;
 
 function changedDefinition(change: Record<string, unknown>): JointAngleDefinition {
@@ -50,6 +51,7 @@ describe("Task 78 joint-angle registry contract", () => {
       ["ankle", [25, 27, 31], [26, 28, 32]],
       ["elbow", [11, 13, 15], [12, 14, 16]],
       ["shoulder", [13, 11, 23], [14, 12, 24]],
+      ["wrist", [13, 15, 19], [14, 16, 20]],
     ] as const;
     for (const [joint, left, right] of expectedPairs) {
       expect(listJointAnglesByJoint(joint)).toHaveLength(2);
@@ -86,7 +88,7 @@ describe("Task 78 joint-angle registry contract", () => {
   it("provides deterministic pure lookup helpers without label-derived identity", () => {
     const metric = getJointAngleDefinition(requiredIds[0])!;
     expect(resolveRequiredLandmarkIds(requiredIds[0])).toEqual([23, 25, 27]);
-    expect(listJointAnglesBySide("left")).toHaveLength(5);
+    expect(listJointAnglesBySide("left")).toHaveLength(6);
     expect(getJointAngleDefinition("joint-angle.left-knee.internal.v1")).toBe(metric);
     expect({ ...metric, displayLabel: "Renamed label" }.metricId).toBe(metric.metricId);
   });

@@ -150,6 +150,25 @@ def test_complete_metrics_upload_persists_metric_summary() -> None:
     assert response.json()["summaryPersisted"] is True
 
 
+def test_complete_metrics_upload_accepts_explicit_empty_summary() -> None:
+    client = TestClient(app)
+    _login(client)
+    record_id = _create_record(client)
+
+    response = client.post(
+        "/api/uploads/metrics/complete",
+        json={
+            "recordId": record_id,
+            "storagePath": f"metrics/{record_id}/metric-series.v1.json",
+            "version": "1.0",
+            "summary": [],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["summaryPersisted"] is True
+
+
 def test_complete_metrics_upload_persists_trend_compatibility_metadata(
     explicit_unit_repository_bundle: RepositoryBundle,
 ) -> None:

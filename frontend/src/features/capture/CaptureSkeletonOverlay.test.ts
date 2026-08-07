@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { FilteredRuntimePose } from "../../engines/pose";
 import { renderCapturePoseLayers } from "./CaptureSkeletonOverlay";
+import { CAPTURE_ANGLE_INTEGRATION_PROFILE } from "./captureAngleIntegrationProfile";
 
 function pose(): FilteredRuntimePose {
   const landmarks2D = Array.from({ length: 33 }, (_, id) => ({ id, name: `joint_${id}`, x: 0.1, y: 0.1, visibility: 1 }));
@@ -37,7 +38,10 @@ describe("Task 84 live Skeleton/Angle composition", () => {
     expect(context.lineTo.mock.calls.length > 0).toBe(expectSkeleton);
     expect(result.angleOverlay !== null).toBe(expectAngles);
     expect(context.fillText.mock.calls.length > 0).toBe(expectAngles);
-    if (expectAngles) expect(result.angleResults.every((angle) => angle.status === "available")).toBe(true);
+    if (expectAngles) {
+      expect(result.angleResults).toHaveLength(CAPTURE_ANGLE_INTEGRATION_PROFILE.selectedMetricIds.length);
+      expect(result.angleResults.some((angle) => angle.status === "available")).toBe(true);
+    }
   });
 
   it("clears and draws no stale angle when current results are unavailable", () => {

@@ -13,6 +13,7 @@ const ids = {
   leftWrist: 15, rightWrist: 16, leftHip: 23, rightHip: 24,
   leftKnee: 25, rightKnee: 26, leftAnkle: 27, rightAnkle: 28,
   leftFootIndex: 31, rightFootIndex: 32,
+  leftIndex: 19, rightIndex: 20,
 } as const;
 
 const coordinatePolicy = Object.freeze({
@@ -65,6 +66,8 @@ const builtInDefinitions = [
   definition("joint-angle.right-elbow.internal.v1", "Right elbow internal angle", "right", "elbow", [ids.rightShoulder, ids.rightElbow, ids.rightWrist], ["upper-body", "elbow"]),
   definition("joint-angle.left-shoulder.internal.v1", "Left shoulder internal angle", "left", "shoulder", [ids.leftElbow, ids.leftShoulder, ids.leftHip], ["upper-body", "shoulder"]),
   definition("joint-angle.right-shoulder.internal.v1", "Right shoulder internal angle", "right", "shoulder", [ids.rightElbow, ids.rightShoulder, ids.rightHip], ["upper-body", "shoulder"]),
+  definition("joint-angle.left-wrist.internal.v1", "Left wrist internal angle", "left", "wrist", [ids.leftElbow, ids.leftWrist, ids.leftIndex], ["upper-body", "wrist"]),
+  definition("joint-angle.right-wrist.internal.v1", "Right wrist internal angle", "right", "wrist", [ids.rightElbow, ids.rightWrist, ids.rightIndex], ["upper-body", "wrist"]),
 ] as const;
 
 export function validateJointAngleRegistry(definitions: readonly JointAngleDefinition[]): void {

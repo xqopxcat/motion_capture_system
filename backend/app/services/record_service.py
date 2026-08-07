@@ -196,8 +196,8 @@ class RecordService:
         if settings.app_env == "test":
             return None
         summary = self.metric_summaries.get_summary(record_id)
-        if summary is None or not summary.items:
-            return "Metric Summary is empty."
+        if summary is None:
+            return "Metric Summary is missing."
         for item in summary.items:
             if not all((item.unit, item.metric_definition_version, item.activity_type, item.side)):
                 return "Every Metric Summary item requires unit, definition version, activity type, and side."

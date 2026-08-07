@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CapturePreparationError, buildCapturePublishRecoveryPlan, buildKneeMetricSeries, capturePreparationFailureCode, seekVideoForThumbnail, sha256Hex, waitForVideoLoadedData } from "./publishCaptureRecord";
 import type { PoseDataset } from "../../types";
+import { JOINT_ANGLE_REGISTRY } from "../../engines/motionModel";
 
 function landmark(id: number, x = id / 100, y = id / 100) {
   return { id, name: `joint_${id}`, visibility: 1, x, y, z: 0 };
@@ -81,10 +82,13 @@ describe("production capture artifact preparation", () => {
     expect(result.series.series[0].values).not.toContain(0);
   });
 
-  it("fails deterministically when no formal left-knee sample is usable", () => {
+  it("keeps the recording persistable when no formal angle sample is usable", () => {
     const pose = poseDataset();
-    pose.frames[0].landmarks3D[25].visibility = 0.1;
-    expect(() => buildKneeMetricSeries(pose)).toThrow("No valid left-knee metric values were produced.");
+    pose.frames[0].landmarks3D.forEach((landmark) => { landmark.visibility = 0.1; });
+    const result = buildKneeMetricSeries(pose);
+    expect(result.summary).toEqual([]);
+    expect(result.series.series).toHaveLength(JOINT_ANGLE_REGISTRY.length);
+    expect(result.series.series.every(({ values }) => values.length === 0)).toBe(true);
   });
 });
 

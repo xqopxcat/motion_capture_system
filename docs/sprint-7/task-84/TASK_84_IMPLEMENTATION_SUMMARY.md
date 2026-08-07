@@ -6,4 +6,4 @@
 
 Physical status：三個原始Desktop findings仍是實際blockers；code remediation完成但rerun pending。其他Desktop未判定，Android/iOS not-run。Sprint 7 remains open；Task 84未完成。
 
-Automated verification：focused camera/flip/angles/recording/Tasks77–84為18 files／168 tests；完整frontend為61 files／397 tests；TypeScript與production build通過。Analysis failure在frontend artifact preparation、record/API/storage呼叫之前，因此本次沒有backend變更或backend suite需求。
+Desktop diagnostics confirmed that inference succeeded while every selected knee result was unavailable because required landmarks were below the approved confidence boundary. Save had incorrectly treated an empty formal-angle result as fatal. Metrics completion now accepts an explicit empty summary, so video, pose.v1, thumbnail, and an empty metrics.v1 analysis can still be persisted without fabricating values. Capture and Review select the complete joint-angle registry; the registry now includes bilateral wrist internal angles using elbow–wrist–index triplets in addition to bilateral shoulder, elbow, hip, knee, and ankle metrics. Physical-device rerun remains required.
