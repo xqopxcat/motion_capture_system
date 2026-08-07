@@ -21,3 +21,21 @@ export function findNearestPoseDatasetFrame(
 
   return nearestDistanceMs <= thresholdMs ? nearestFrame : null;
 }
+
+/**
+ * Resolves the authoritative recorded Pose that is active at a playback time.
+ * Recorded inference cadence may be much lower than video refresh cadence, so
+ * an already-published frame remains active until the next frame timestamp.
+ */
+export function findActivePoseDatasetFrame(
+  frames: CapturePoseDatasetDraftFrame[],
+  timestampMs: number,
+): CapturePoseDatasetDraftFrame | null {
+  if (frames.length === 0 || !Number.isFinite(timestampMs)) return null;
+  let active: CapturePoseDatasetDraftFrame | null = null;
+  for (const frame of frames) {
+    if (frame.timestampMs > timestampMs) break;
+    active = frame;
+  }
+  return active;
+}

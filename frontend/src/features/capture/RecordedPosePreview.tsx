@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CapturePoseDatasetDraft } from "./buildPoseDatasetDraft";
-import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
+import { findActivePoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
 import { clearCaptureSkeleton, renderCaptureSkeleton } from "./renderCaptureSkeleton";
 import { renderFormalAngleOverlay, syncProductionCanvasSize } from "../../engines/visualization";
@@ -105,7 +105,7 @@ export function RecordedPosePreview({
     const currentTimeMs = video.currentTime * 1000;
     setCurrentTimeSeconds(video.currentTime);
     const poseFrame = poseDatasetDraft
-      ? findNearestPoseDatasetFrame(poseDatasetDraft.frames, currentTimeMs)
+      ? findActivePoseDatasetFrame(poseDatasetDraft.frames, currentTimeMs)
       : null;
     if (!poseFrame) formalAngleCacheRef.current = null;
     captureRuntimeInstrumentation.recordPreviewSelection({

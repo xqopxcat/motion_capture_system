@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
+import { findActivePoseDatasetFrame, findNearestPoseDatasetFrame } from "./findNearestPoseDatasetFrame";
 import type { CapturePoseDatasetDraftFrame } from "./buildPoseDatasetDraft";
 
 function createFrame(frameIndex: number, timestampMs: number): CapturePoseDatasetDraftFrame {
@@ -26,5 +26,25 @@ describe("findNearestPoseDatasetFrame", () => {
 
   it("handles an empty frame list safely", () => {
     expect(findNearestPoseDatasetFrame([], 0)).toBeNull();
+  });
+});
+
+describe("findActivePoseDatasetFrame", () => {
+  const frames = [createFrame(0, 0), createFrame(1, 134), createFrame(2, 500)];
+
+  it("holds the latest published frame across sparse inference gaps", () => {
+    expect(findActivePoseDatasetFrame(frames, 133)?.frameIndex).toBe(0);
+    expect(findActivePoseDatasetFrame(frames, 300)?.frameIndex).toBe(1);
+    expect(findActivePoseDatasetFrame(frames, 499)?.frameIndex).toBe(1);
+    expect(findActivePoseDatasetFrame(frames, 900)?.frameIndex).toBe(2);
+  });
+
+  it("does not show a future frame before it becomes active", () => {
+    expect(findActivePoseDatasetFrame([createFrame(0, 50)], 49)).toBeNull();
+  });
+
+  it("handles empty and nonfinite input safely", () => {
+    expect(findActivePoseDatasetFrame([], 0)).toBeNull();
+    expect(findActivePoseDatasetFrame(frames, Number.NaN)).toBeNull();
   });
 });
