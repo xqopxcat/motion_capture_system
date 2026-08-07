@@ -90,6 +90,7 @@ export function useCameraStream() {
         video: {
           ...(options.deviceId ? { deviceId: { exact: options.deviceId } } : {}),
           facingMode: { ideal: options.facingMode ?? "user" },
+          frameRate: { ideal: 30 },
         },
       });
 

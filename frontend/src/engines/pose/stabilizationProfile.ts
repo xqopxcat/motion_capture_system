@@ -23,7 +23,9 @@ export const STABILIZED_RUNTIME_POSE_PROFILE = Object.freeze({
   algorithm: "one-euro.v1",
   minimumVisibility: DEFAULT_SPRINT_7_QUALITY_POLICY.visibilityThreshold,
   confidencePolicy: "bounded-hold",
-  oneEuro: Object.freeze({ minCutoffHz: 1.2, beta: 0.08, derivativeCutoffHz: 1 }),
+  // Task 84 physical evidence showed 7.4 FPS input and visibly delayed motion.
+  // Preserve low-speed smoothing while responding much faster to movement.
+  oneEuro: Object.freeze({ minCutoffHz: 2, beta: 0.3, derivativeCutoffHz: 1 }),
   maximumVelocity2DPerSecond: 8,
   maximumVelocity3DMetresPerSecond: 12,
   maximumConsecutiveOutliers: 2,
