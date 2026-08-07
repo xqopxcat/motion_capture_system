@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export const CAMERA_FRAME_RATE_CONSTRAINT = Object.freeze({ ideal: 30 });
+
 export type CameraStreamStatus =
   | "idle"
   | "unsupported"
@@ -90,7 +92,7 @@ export function useCameraStream() {
         video: {
           ...(options.deviceId ? { deviceId: { exact: options.deviceId } } : {}),
           facingMode: { ideal: options.facingMode ?? "user" },
-          frameRate: { ideal: 30 },
+          frameRate: CAMERA_FRAME_RATE_CONSTRAINT,
         },
       });
 
