@@ -12,6 +12,7 @@ import { CaptureSkeletonOverlay } from "./CaptureSkeletonOverlay";
 import { RecordedPosePreview } from "./RecordedPosePreview";
 import styles from "./UnifiedCaptureStage.module.css";
 import type { CapturePoseDisplayFrame } from "./usePosePipeline";
+import { cameraPresentationMirror } from "./cameraPresentation";
 
 export type UnifiedCaptureStageProps = {
   productState: CaptureProductState;
@@ -146,6 +147,7 @@ export function UnifiedCaptureStage({
                 onVideoElementChange={onLiveVideoElementChange}
                 onVideoDimensionsChange={(width, height) => setLiveVideoAspectRatio(width / height)}
                 showControls={false}
+                mirror={cameraPresentationMirror(cameraFacingMode)}
               />
               <CaptureSkeletonOverlay
                 displayFrame={currentDisplayFrame}
@@ -153,7 +155,7 @@ export function UnifiedCaptureStage({
                 videoElement={liveVideoElement}
                 visible={skeletonVisible}
                 anglesVisible={anglesVisible}
-                mirror={cameraFacingMode === "user"}
+                mirror={cameraPresentationMirror(cameraFacingMode)}
               />
             </div>
           </div>

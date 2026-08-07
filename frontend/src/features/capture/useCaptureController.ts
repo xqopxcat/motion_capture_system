@@ -22,10 +22,11 @@ import {
   DEFAULT_CAPTURE_COUNTDOWN_MS,
 } from "./captureStateMachine";
 import { captureRuntimeInstrumentation } from "./instrumentation/captureRuntimeInstrumentation";
-import { publishCaptureRecord } from "./publishCaptureRecord";
+import { capturePreparationFailureCode, publishCaptureRecord } from "./publishCaptureRecord";
 import { validateCaptureReviewCandidate } from "./captureReviewValidation";
 import { usePoseFrameCollection } from "./usePoseFrameCollection";
 import { usePosePipeline } from "./usePosePipeline";
+import { oppositeCameraFacingMode } from "./cameraPresentation";
 
 export type CaptureControllerOptions = {
   countdownDurationMs?: number;
@@ -168,7 +169,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
 
   const flipCamera = useCallback(() => {
     if (stateRef.current.type !== "Ready") return;
-    const nextFacingMode = cameraFacingMode === "user" ? "environment" : "user";
+    const nextFacingMode = oppositeCameraFacingMode(cameraFacingMode);
     const token = newToken("camera");
     pose.resetRuntimePoseQuality("camera-flip");
     pose.stopPoseDetection();
@@ -434,6 +435,7 @@ export function useCaptureController(options: CaptureControllerOptions = {}) {
       })
       .catch((error) => {
         if (!mountedRef.current) return;
+        captureRuntimeInstrumentation.recordSavingFailure(savingSubstateRef.current.stage, capturePreparationFailureCode(error));
         dispatch({ type: "SAVE_FAILED", token, resume, ...classifySavingFailure(error, resume, savingSubstateRef.current) });
       });
   }, [productState]);

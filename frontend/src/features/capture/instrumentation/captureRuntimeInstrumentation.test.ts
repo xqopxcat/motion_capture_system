@@ -172,4 +172,12 @@ describe("Capture runtime instrumentation", () => {
     collector.rotateCameraSession(2, 20);
     expect(collector.snapshot()).toMatchObject({ sessionStartedAtMs: 20, validation: { cameraSessionId: 2 }, inference: { inferenceSkippedCount: 0 } });
   });
+
+  it("records only a bounded save failure stage/code and clears it with the session", () => {
+    const collector = new CaptureRuntimeInstrumentation(true);
+    collector.recordSavingFailure("Analyzing", "thumbnail-decode");
+    expect(collector.snapshot().validation.lastSavingFailure).toEqual({ stage: "Analyzing", code: "thumbnail-decode" });
+    collector.rotateCameraSession(9, 20);
+    expect(collector.snapshot().validation.lastSavingFailure).toBeNull();
+  });
 });

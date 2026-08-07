@@ -11,6 +11,7 @@ export type CameraPreviewProps = {
   showControls?: boolean;
   onVideoElementChange?: (videoElement: HTMLVideoElement | null) => void;
   onVideoDimensionsChange?: (width: number, height: number) => void;
+  mirror?: boolean;
 };
 
 export function CameraPreview({
@@ -22,6 +23,7 @@ export function CameraPreview({
   showControls = true,
   onVideoElementChange,
   onVideoDimensionsChange,
+  mirror = false,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isReady = status === "ready";
@@ -48,6 +50,7 @@ export function CameraPreview({
         <video
           ref={videoRef}
           className={styles.video}
+          data-mirror={mirror ? "true" : "false"}
           autoPlay
           muted
           playsInline

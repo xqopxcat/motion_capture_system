@@ -24,6 +24,10 @@
   width: 100%;
 }
 
+.video[data-mirror="true"] {
+  transform: scaleX(-1);
+}
+
 .placeholder {
   align-items: center;
   background: #101820;

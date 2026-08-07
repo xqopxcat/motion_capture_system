@@ -117,6 +117,12 @@ describe("Task 79 runtime computation", () => {
     expect(calculateRuntimeJointAngle(fallback, JOINT_ANGLE_REGISTRY[0].metricId)).toMatchObject({ status: "available", coordinateSpace: "normalized-2d", valueDegrees: 90 });
   });
 
+  it("falls back to normalized 2D when preferred world geometry is degenerate", () => {
+    const pose = runtimePose();
+    const collapsed = pose.landmarks3D.map((point) => point && [23, 25, 27].includes(point.id) ? { ...point, x: 0, y: 0, z: 0 } : point);
+    expect(calculateRuntimeJointAngle({ ...pose, landmarks3D: collapsed } as unknown as FilteredRuntimePose, JOINT_ANGLE_REGISTRY[0].metricId)).toMatchObject({ status: "available", coordinateSpace: "normalized-2d", valueDegrees: 90 });
+  });
+
   it("applies held/outlier priority and oldest required source timestamp", () => {
     const pose = runtimePose();
     const [a, b] = JOINT_ANGLE_REGISTRY[0].landmarks;

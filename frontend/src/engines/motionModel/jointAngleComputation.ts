@@ -140,7 +140,11 @@ export function calculateRuntimeJointAngle(pose: FilteredRuntimePose, metricId: 
       continue;
     }
     const geometry = computeUnsignedInternalAngle(...selected.points, JOINT_ANGLE_VECTOR_EPSILON[space]);
-    if (geometry.valueDegrees === null) return { ...base, sourceTimestampMs: selected.sourceTimestampMs, status: "unavailable", reason: geometry.reason, valueDegrees: null, coordinateSpace: space, confidence: selected.confidence };
+    if (geometry.valueDegrees === null) {
+      const geometryFailure: SelectionFailure = { reason: geometry.reason, confidence: selected.confidence, coordinateSpace: space };
+      failure = geometryFailure;
+      continue;
+    }
     if (selected.degradedReason) return { ...base, sourceTimestampMs: selected.sourceTimestampMs, status: "degraded", reason: selected.degradedReason, valueDegrees: geometry.valueDegrees, coordinateSpace: space, confidence: selected.confidence };
     return { ...base, sourceTimestampMs: selected.sourceTimestampMs, status: "available", valueDegrees: geometry.valueDegrees, coordinateSpace: space, confidence: selected.confidence };
   }

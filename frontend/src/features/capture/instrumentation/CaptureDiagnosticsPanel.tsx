@@ -79,6 +79,7 @@ export function CaptureDiagnosticsPanel() {
         <div><dt>Angle calculation P50 / P95</dt><dd>{format(snapshot.validation.angleCalculationDurationMs.p50, " ms")} / {format(snapshot.validation.angleCalculationDurationMs.p95, " ms")}</dd></div>
         <div><dt>Session / frame</dt><dd>{snapshot.validation.cameraSessionId ?? "unavailable"} / {snapshot.validation.frameIndex ?? "unavailable"}</dd></div>
         <div><dt>Mirror / source</dt><dd>{snapshot.validation.renderingContext ? `${snapshot.validation.renderingContext.mirror} / ${snapshot.validation.renderingContext.sourceWidth}×${snapshot.validation.renderingContext.sourceHeight}` : "unavailable"}</dd></div>
+        <div><dt>Last save failure</dt><dd>{snapshot.validation.lastSavingFailure ? `${snapshot.validation.lastSavingFailure.stage} / ${snapshot.validation.lastSavingFailure.code}` : "unavailable"}</dd></div>
         <div><dt>Preview sync mean / P95</dt><dd>{format(snapshot.previewSync.errorMs.mean, " ms")} / {format(snapshot.previewSync.errorMs.p95, " ms")}</dd></div>
         <div><dt>React renders</dt><dd>page {snapshot.react.CapturePage}, overlay {snapshot.react.CaptureSkeletonOverlay}, hook {snapshot.react.useCapturePipeline}</dd></div>
       </dl>

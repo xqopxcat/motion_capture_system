@@ -1,7 +1,11 @@
 # Task 84 Known Issues
 
-Confirmed blockers：none recorded；尚未執行實體裝置，因此不是「無 blocker」結論。
+| ID | Severity | Confirmed observation | Root cause | Status |
+|---|---|---|---|---|
+| T84-B1 | blocker | 初始preview/Skeleton mirror相反；一次flip後對齊 | overlay依front policy mirror，但video從未套用同一presentation mirror | fixed in code；Desktop front/rear/flip rerun required |
+| T84-B2 | blocker | Angles toggle無visible arc/label | runtime calculator在preferred world-3D幾何退化時直接unavailable，未繼續已核准normalized-2D fallback | fixed in code；Desktop available/degraded/unavailable與四toggle states rerun required |
+| T84-B3 | blocker | Save顯示Analysis failed | thumbnail preparation在設定`src/currentTime`後才等待事件，可漏接already-fired loadeddata/seeked並timeout；preparation failure以前也沒有可辨識dev code | fixed in code；同一local recording/retry/save flow rerun required |
 
-Open concerns／evidence gaps：正式browser support matrix缺失；mobile需要核准HTTPS preview；nose/philtrum歷史alignment問題待重測；Task 80 minimum arc radius待遠距/mobile觀察；Task 82 main-thread blocking與Task 83 tuning皆待device metrics；session-mismatch沒有獨立counter，diagnostics明示 unavailable。
+Metric policy：部分formal unavailable frames本來就排除且不代入0；至少一個usable sample可正常summary。完全沒有usable Pose仍是正確、可重試的analysis failure。Malformed Pose、API/storage/lifecycle錯誤仍正確失敗。
 
-Follow-up status：Phase B pending。任何實測 blocker 留在 Task 84 修復並重跑。
+Open evidence gaps：三個fix尚未physical rerun；其餘Desktop未判定；Android/iOS not-run；nose/philtrum alignment、arc radius、Task82/83 device evidence仍pending。

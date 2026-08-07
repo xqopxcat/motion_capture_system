@@ -45,6 +45,7 @@ export type CaptureRuntimeSnapshot = {
     selectedAngles: Array<{ metricId: string; status: string; valueDegrees: number | null; coordinateSpace: string | null }>;
     renderingContext: { mirror: boolean; objectFit: "contain"; sourceWidth: number | null; sourceHeight: number | null; canvasWidth: number; canvasHeight: number; canvasCssWidth: number; canvasCssHeight: number; devicePixelRatio: number } | null;
     sessionMismatchRejectedCount: null;
+    lastSavingFailure: { stage: string; code: string } | null;
   };
   camera: {
     cameraFrameCount: number;
@@ -341,6 +342,7 @@ export class CaptureRuntimeInstrumentation {
   private latestPoseTimestampMs: number | null = null;
   private selectedAngles: CaptureRuntimeSnapshot["validation"]["selectedAngles"] = [];
   private renderingContext: CaptureRuntimeSnapshot["validation"]["renderingContext"] = null;
+  private lastSavingFailure: CaptureRuntimeSnapshot["validation"]["lastSavingFailure"] = null;
   private reactRenders = {
     CapturePage: 0,
     CaptureSkeletonOverlay: 0,
@@ -411,6 +413,7 @@ export class CaptureRuntimeInstrumentation {
     this.latestPoseTimestampMs = null;
     this.selectedAngles = [];
     this.renderingContext = null;
+    this.lastSavingFailure = null;
     this.reactRenders = { CapturePage: 0, CaptureSkeletonOverlay: 0, useCapturePipeline: 0 };
     [
       this.cameraFrameTimestamps,
@@ -448,6 +451,10 @@ export class CaptureRuntimeInstrumentation {
 
   recordRenderingContext(input: NonNullable<CaptureRuntimeSnapshot["validation"]["renderingContext"]>) {
     if (this.enabled) this.renderingContext = { ...input };
+  }
+
+  recordSavingFailure(stage: string, code: string | null) {
+    if (this.enabled) this.lastSavingFailure = { stage, code: code ?? "unclassified" };
   }
 
   recordReactRender(name: keyof CaptureRuntimeSnapshot["react"]) {
@@ -671,6 +678,7 @@ export class CaptureRuntimeInstrumentation {
         selectedAngles: this.selectedAngles.map((item) => ({ ...item })),
         renderingContext: this.renderingContext ? { ...this.renderingContext } : null,
         sessionMismatchRejectedCount: null,
+        lastSavingFailure: this.lastSavingFailure ? { ...this.lastSavingFailure } : null,
       },
       camera: {
         cameraFrameCount: this.cameraFrameCount,

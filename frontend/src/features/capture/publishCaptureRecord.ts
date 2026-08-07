@@ -26,6 +26,19 @@ export type CapturePublishProgress = {
   message: string;
 };
 
+export type CapturePreparationFailureCode = "pose-dataset" | "formal-metrics-unavailable" | "thumbnail-decode";
+
+export class CapturePreparationError extends Error {
+  constructor(readonly code: CapturePreparationFailureCode, message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "CapturePreparationError";
+  }
+}
+
+export function capturePreparationFailureCode(error: unknown) {
+  return error instanceof CapturePreparationError ? error.code : null;
+}
+
 export type CapturePublishResumeState = {
   recordId?: string;
   completedArtifacts: Set<"video" | "pose" | "metrics" | "thumbnail">;
@@ -65,11 +78,21 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
   if (recoveryPlan.duplicateCreationBlocked) {
     throw new Error("Record creation outcome is ambiguous; duplicate creation is blocked.");
   }
-  const poseDataset = buildPoseDatasetV1(input.poseDraft);
+  let poseDataset: ReturnType<typeof buildPoseDatasetV1>;
+  try {
+    poseDataset = buildPoseDatasetV1(input.poseDraft);
+  } catch (error) {
+    throw new CapturePreparationError("pose-dataset", "Pose dataset preparation failed.", { cause: error });
+  }
   input.onProgress({ stage: "preparing", message: "Preparing browser analysis artifacts…" });
 
   const pose = await prepareJsonArtifact(poseDataset);
-  const metricsPayload = buildKneeMetricSeries(poseDataset);
+  let metricsPayload: ReturnType<typeof buildKneeMetricSeries>;
+  try {
+    metricsPayload = buildKneeMetricSeries(poseDataset);
+  } catch (error) {
+    throw new CapturePreparationError("formal-metrics-unavailable", "Formal metric preparation produced no usable samples.", { cause: error });
+  }
   const metrics = await prepareJsonArtifact(metricsPayload.series);
   const videoContentType = normalizeVideoContentType(input.videoBlob.type);
   const videoBlob = new Blob([input.videoBlob], { type: videoContentType });
@@ -78,7 +101,12 @@ export async function publishCaptureRecord(input: PublishInput): Promise<Finaliz
     checksum: await sha256Hex(videoBlob),
     contentType: videoContentType,
   };
-  const thumbnailBlob = await createThumbnail(input.videoBlob);
+  let thumbnailBlob: Blob;
+  try {
+    thumbnailBlob = await createThumbnail(input.videoBlob);
+  } catch (error) {
+    throw new CapturePreparationError("thumbnail-decode", "Recorded video thumbnail preparation failed.", { cause: error });
+  }
   const thumbnail: PreparedArtifact = {
     blob: thumbnailBlob,
     checksum: await sha256Hex(thumbnailBlob),
@@ -299,10 +327,9 @@ async function createThumbnail(videoBlob: Blob): Promise<Blob> {
   video.preload = "metadata";
   video.src = url;
   try {
-    await waitFor(video, "loadeddata");
+    await waitForVideoLoadedData(video);
     if (Number.isFinite(video.duration) && video.duration > 0.1) {
-      video.currentTime = Math.min(video.duration * 0.25, 1);
-      await waitFor(video, "seeked");
+      await seekVideoForThumbnail(video, Math.min(video.duration * 0.25, 1));
     }
     const width = video.videoWidth || 640;
     const height = video.videoHeight || 360;
@@ -324,15 +351,28 @@ async function createThumbnail(videoBlob: Blob): Promise<Blob> {
   }
 }
 
+export function waitForVideoLoadedData(video: HTMLVideoElement) {
+  if (video.readyState >= 2) return Promise.resolve();
+  return waitFor(video, "loadeddata");
+}
+
+export function seekVideoForThumbnail(video: HTMLVideoElement, targetTimeSeconds: number) {
+  if (!Number.isFinite(targetTimeSeconds) || targetTimeSeconds < 0) return Promise.reject(new Error("Thumbnail seek target is invalid."));
+  if (Math.abs(video.currentTime - targetTimeSeconds) <= 1e-6) return Promise.resolve();
+  const pending = waitFor(video, "seeked");
+  video.currentTime = targetTimeSeconds;
+  return pending;
+}
+
 function waitFor(element: HTMLVideoElement, event: "loadeddata" | "seeked") {
   return new Promise<void>((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(new Error(`Video ${event} timed out.`)), 10000);
+    const timeout = globalThis.setTimeout(() => reject(new Error(`Video ${event} timed out.`)), 10000);
     element.addEventListener(event, () => {
-      window.clearTimeout(timeout);
+      globalThis.clearTimeout(timeout);
       resolve();
     }, { once: true });
     element.addEventListener("error", () => {
-      window.clearTimeout(timeout);
+      globalThis.clearTimeout(timeout);
       reject(new Error("Recorded video could not be decoded."));
     }, { once: true });
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCapturePublishRecoveryPlan, buildKneeMetricSeries, sha256Hex } from "./publishCaptureRecord";
+import { CapturePreparationError, buildCapturePublishRecoveryPlan, buildKneeMetricSeries, capturePreparationFailureCode, seekVideoForThumbnail, sha256Hex, waitForVideoLoadedData } from "./publishCaptureRecord";
 import type { PoseDataset } from "../../types";
 
 function landmark(id: number, x = id / 100, y = id / 100) {
@@ -29,6 +29,22 @@ function poseDataset(): PoseDataset {
 }
 
 describe("production capture artifact preparation", () => {
+  it("does not miss an already-fired loadeddata state", async () => {
+    await expect(waitForVideoLoadedData({ readyState: 2 } as HTMLVideoElement)).resolves.toBeUndefined();
+  });
+
+  it("attaches the seek listener before changing currentTime", async () => {
+    const target = new EventTarget() as EventTarget & { currentTime: number };
+    let currentTime = 0;
+    Object.defineProperty(target, "currentTime", { get: () => currentTime, set: (value: number) => { currentTime = value; target.dispatchEvent(new Event("seeked")); } });
+    await expect(seekVideoForThumbnail(target as HTMLVideoElement, 0.5)).resolves.toBeUndefined();
+    expect(target.currentTime).toBe(0.5);
+  });
+
+  it("exposes only bounded preparation failure codes for development diagnostics", () => {
+    expect(capturePreparationFailureCode(new CapturePreparationError("thumbnail-decode", "safe"))).toBe("thumbnail-decode");
+    expect(capturePreparationFailureCode(new Error("backend secret"))).toBeNull();
+  });
   it("produces a lowercase SHA-256 hex checksum", async () => {
     await expect(sha256Hex(new Blob(["motion"]))).resolves.toBe(
       "305238273bb0fac2a73b43256e38d1515fdf61ec1d30ef161446c3588b93a97b",

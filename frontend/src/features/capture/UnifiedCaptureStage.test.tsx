@@ -43,7 +43,7 @@ const states: CaptureProductState[] = [
   { type: "Failed", stage: "device", safeMessage: "Camera lost.", retryable: true, recoveryTarget: "PermissionRequired", routeLeaveRequiresConfirmation: false },
 ];
 
-function renderStage(state: CaptureProductState, skeletonVisible = true, anglesVisible = false) {
+function renderStage(state: CaptureProductState, skeletonVisible = true, anglesVisible = false, cameraFacingMode: "user" | "environment" = "user") {
   return renderToStaticMarkup(
     <UnifiedCaptureStage
       productState={state}
@@ -58,7 +58,7 @@ function renderStage(state: CaptureProductState, skeletonVisible = true, anglesV
       onRetake={() => undefined}
       recordTitle=""
       onRecordTitleChange={() => undefined}
-      cameraFacingMode="user"
+      cameraFacingMode={cameraFacingMode}
       onFlipCamera={() => undefined}
       skeletonVisible={skeletonVisible}
       onSkeletonVisibilityChange={() => undefined}
@@ -126,6 +126,17 @@ describe("UnifiedCaptureStage", () => {
     expect(live).toContain('data-control="angles-toggle"');
     expect(live).toContain("Angles Off");
     expect(review).toContain('data-control="angles-toggle"');
+  });
+
+  it("keeps preview and overlay mirror presentation atomic for front and rear modes", () => {
+    const ready = states.find((state) => state.type === "Ready")!;
+    const front = renderStage(ready, true, false, "user");
+    const rear = renderStage(ready, true, false, "environment");
+    expect(front).toContain('data-mirror="true"');
+    expect(rear).toContain('data-mirror="false"');
+    expect((front.match(/data-mirror="true"/g) ?? [])).toHaveLength(2);
+    expect((rear.match(/data-mirror="false"/g) ?? [])).toHaveLength(2);
+    expect((rear.match(/data-mirror="true"/g) ?? [])).toHaveLength(0);
   });
 
   it.each([

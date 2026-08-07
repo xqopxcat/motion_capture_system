@@ -1,5 +1,8 @@
 # Task 84 Sprint 7 Manual Acceptance Checklist
 
+- [ ] Desktop rerun B1：初始front preview/overlay一致，rear一致，flip兩次正確還原且無stale session
+- [ ] Desktop rerun B2：四種Skeleton/Angles toggle組合；available/degraded visible、unavailable clears
+- [ ] Desktop rerun B3：原local recording或新30秒recording可Save；失敗時local recording/retry仍保留
 - [ ] A Desktop Chrome完整12 scenarios與evidence
 - [ ] B Android Chrome front/rear、portrait/landscape、3-minute run
 - [ ] C iOS Safari front/rear、portrait/landscape、3-minute run
