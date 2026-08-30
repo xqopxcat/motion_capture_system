@@ -1,21 +1,17 @@
 .authStatus {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #d8dee8;
+  background: transparent;
+  border: 0;
   border-radius: 6px;
-  box-shadow: 0 4px 14px rgb(32 36 42 / 10%);
+  box-shadow: none;
   display: flex;
   gap: 10px;
-  max-width: calc(100vw - 24px);
-  padding: 8px 10px;
-  position: fixed;
-  right: 12px;
-  top: 12px;
-  z-index: 100;
+  max-width: 100%;
+  padding: 8px;
 }
 
 .userName {
-  color: #4c5664;
+  color: #cbd5e1;
   font-size: 13px;
   font-weight: 600;
   max-width: 160px;
@@ -25,8 +21,8 @@
 }
 
 .logoutButton {
-  background: #29313d;
-  border: 1px solid #29313d;
+  background: #26334a;
+  border: 1px solid #3b4a63;
   border-radius: 4px;
   color: #ffffff;
   cursor: pointer;

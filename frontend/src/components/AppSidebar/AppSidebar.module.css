@@ -1,0 +1,186 @@
+.sidebar {
+  background: #101828;
+  border-right: 1px solid #26334a;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  inset: 0 auto 0 0;
+  padding: 24px 16px 16px;
+  position: fixed;
+  width: 232px;
+  z-index: 90;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  padding: 0 8px 24px;
+}
+
+.brandMark {
+  align-items: center;
+  background: #2d8c78;
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 900;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.brand div {
+  display: grid;
+  line-height: 1.1;
+}
+
+.brand strong {
+  font-size: 0.95rem;
+}
+
+.brand span:last-child {
+  color: #98a2b3;
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+.navigation {
+  display: grid;
+  gap: 6px;
+}
+
+.navigationLabel {
+  color: #7f8da3;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 0 10px 6px;
+  text-transform: uppercase;
+}
+
+.navigationItem {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #cbd5e1;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 9px 10px;
+  text-decoration: none;
+}
+
+.navigationItem:hover {
+  background: #18243a;
+  color: #ffffff;
+}
+
+.navigationItem.active {
+  background: #1d493f;
+  border-color: #357565;
+  color: #ffffff;
+}
+
+.navigationIcon {
+  align-items: center;
+  background: rgb(255 255 255 / 7%);
+  border-radius: 7px;
+  display: flex;
+  font-size: 0.83rem;
+  font-weight: 900;
+  height: 32px;
+  justify-content: center;
+}
+
+.navigationItem > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.navigationItem strong {
+  font-size: 0.87rem;
+}
+
+.navigationItem small {
+  color: #98a2b3;
+  font-size: 0.7rem;
+}
+
+.account {
+  border-top: 1px solid #26334a;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.mobileHeader,
+.backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobileHeader {
+    align-items: center;
+    background: rgb(255 255 255 / 94%);
+    border-bottom: 1px solid #d8dee8;
+    display: flex;
+    gap: 12px;
+    height: 58px;
+    left: 0;
+    padding: max(8px, env(safe-area-inset-top)) 14px 8px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 89;
+  }
+
+  .menuButton {
+    align-items: center;
+    background: #101828;
+    border: 0;
+    border-radius: 8px;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    font-size: 1.25rem;
+    height: 38px;
+    justify-content: center;
+    width: 40px;
+  }
+
+  .mobileBrand {
+    color: #101828;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .sidebar {
+    box-shadow: 18px 0 40px rgb(15 23 42 / 28%);
+    max-width: calc(100vw - 48px);
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    width: 260px;
+    z-index: 101;
+  }
+
+  .sidebar[data-open="true"] {
+    transform: translateX(0);
+  }
+
+  .backdrop {
+    background: rgb(15 23 42 / 44%);
+    border: 0;
+    display: block;
+    inset: 0;
+    padding: 0;
+    position: fixed;
+    z-index: 100;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}

@@ -34,3 +34,18 @@
     animation: none;
   }
 }
+
+@media (max-width: 767px) {
+  .routeContent {
+    margin-left: 0;
+    padding-top: 58px;
+  }
+}
+.applicationShell {
+  min-height: 100vh;
+}
+
+.routeContent {
+  margin-left: 232px;
+  min-width: 0;
+}
