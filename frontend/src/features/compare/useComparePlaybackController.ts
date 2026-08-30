@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePlaybackController } from "../../hooks";
-import { clampFrameIndex } from "../viewer/playbackFrameMath";
+import { clampFrameIndex, timestampToFrameIndex } from "../viewer/playbackFrameMath";
 
 export const DEFAULT_COMPARE_SYNC_OFFSET_FRAMES = 0;
 
@@ -11,6 +11,8 @@ export type UseComparePlaybackControllerInput = {
   rightDuration?: number;
   rightFps?: number;
   rightFrameCount?: number;
+  leftFrameTimestamps?: number[];
+  rightFrameTimestamps?: number[];
 };
 
 function getSafePositiveNumber(value: number | undefined, fallback: number): number {
@@ -73,6 +75,25 @@ export function mapCompareSyncFrames({
   };
 }
 
+export function mapCompareSyncFramesByTime({
+  currentTime,
+  leftFrameTimestamps = [],
+  rightFrameTimestamps = [],
+  syncOffsetFrames,
+}: {
+  currentTime: number;
+  leftFrameTimestamps?: number[];
+  rightFrameTimestamps?: number[];
+  syncOffsetFrames: number;
+}) {
+  const leftFrame = timestampToFrameIndex(currentTime, leftFrameTimestamps);
+  const rightBaseFrame = timestampToFrameIndex(currentTime, rightFrameTimestamps);
+  return {
+    leftFrame: clampFrameIndex(leftFrame, leftFrameTimestamps.length),
+    rightFrame: clampFrameIndex(rightBaseFrame + syncOffsetFrames, rightFrameTimestamps.length),
+  };
+}
+
 export function applyCompareSyncOffsetDelta(currentOffset: number, frameDelta: number) {
   return currentOffset + frameDelta;
 }
@@ -95,8 +116,8 @@ export function useComparePlaybackController(input: UseComparePlaybackController
   } = controller;
 
   useEffect(() => {
-    setPlaybackBounds(bounds);
-  }, [bounds.duration, bounds.fps, bounds.totalFrames, setPlaybackBounds]);
+    setPlaybackBounds({ ...bounds, frameTimestamps: input.leftFrameTimestamps });
+  }, [bounds.duration, bounds.fps, bounds.totalFrames, input.leftFrameTimestamps, setPlaybackBounds]);
 
   const requestJumpFrames = useCallback(
     (frameDelta: number) => {
@@ -110,10 +131,10 @@ export function useComparePlaybackController(input: UseComparePlaybackController
   const requestSyncOffsetReset = useCallback(() => {
     setSyncOffsetFrames(resetCompareSyncOffset());
   }, []);
-  const frameMapping = mapCompareSyncFrames({
-    leftFrameCount: input.leftFrameCount,
-    rightFrameCount: input.rightFrameCount,
-    sharedFrame: frameState.currentFrame,
+  const frameMapping = mapCompareSyncFramesByTime({
+    currentTime: controller.playbackState.currentTime,
+    leftFrameTimestamps: input.leftFrameTimestamps,
+    rightFrameTimestamps: input.rightFrameTimestamps,
     syncOffsetFrames,
   });
 

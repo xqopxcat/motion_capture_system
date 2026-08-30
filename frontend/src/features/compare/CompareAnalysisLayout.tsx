@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { PlaybackControls, SkeletonCanvas, Timeline, VideoPlayer } from "../../components";
-import type { CompareRecordRuntimeState, PlaybackState, RecordListItem } from "../../types";
-import { frameIndexToTime } from "../viewer/playbackFrameMath";
+import type { CompareRecordRuntimeState, PlaybackState, PoseDataset, RecordListItem } from "../../types";
+import { frameIndexToTime, frameTimestamp } from "../viewer/playbackFrameMath";
 import styles from "./CompareAnalysisLayout.module.css";
 import { createCompareRenderContext } from "./compareRenderContext";
 import { CompareMetricDifferencePanel } from "./CompareMetricDifferencePanel";
@@ -23,6 +24,14 @@ export function CompareAnalysisLayout({
   rightRecord,
   rightRuntime,
 }: CompareAnalysisLayoutProps) {
+  const leftFrameTimestamps = useMemo(
+    () => leftRuntime.poseDataset?.frames.map((frame) => frame.timestamp) ?? [],
+    [leftRuntime.poseDataset],
+  );
+  const rightFrameTimestamps = useMemo(
+    () => rightRuntime.poseDataset?.frames.map((frame) => frame.timestamp) ?? [],
+    [rightRuntime.poseDataset],
+  );
   const comparePlayback = useComparePlaybackController({
     leftDuration: leftRuntime.poseDataset?.duration ?? leftRuntime.recordDetail?.video?.duration ?? undefined,
     leftFps: leftRuntime.poseDataset?.fps ?? leftRuntime.recordDetail?.video?.fps ?? undefined,
@@ -30,6 +39,8 @@ export function CompareAnalysisLayout({
     rightDuration: rightRuntime.poseDataset?.duration ?? rightRuntime.recordDetail?.video?.duration ?? undefined,
     rightFps: rightRuntime.poseDataset?.fps ?? rightRuntime.recordDetail?.video?.fps ?? undefined,
     rightFrameCount: rightRuntime.poseDataset?.frameCount,
+    leftFrameTimestamps,
+    rightFrameTimestamps,
   });
   const canUseSharedPlayback =
     leftRuntime.status === "ready" &&
@@ -56,8 +67,7 @@ export function CompareAnalysisLayout({
           playback={createPanelPlaybackState(
             sharedPlaybackState,
             comparePlayback.frameMapping.leftFrame,
-            leftRuntime.poseDataset?.fps,
-            leftRuntime.poseDataset?.frameCount,
+            leftRuntime.poseDataset,
           )}
           record={leftRecord}
           runtime={leftRuntime}
@@ -70,8 +80,7 @@ export function CompareAnalysisLayout({
           playback={createPanelPlaybackState(
             sharedPlaybackState,
             comparePlayback.frameMapping.rightFrame,
-            rightRuntime.poseDataset?.fps,
-            rightRuntime.poseDataset?.frameCount,
+            rightRuntime.poseDataset,
           )}
           record={rightRecord}
           runtime={rightRuntime}
@@ -277,11 +286,13 @@ function CompareViewerPanel({
 function createPanelPlaybackState(
   playback: PlaybackState,
   frameIndex: number,
-  fps = 30,
-  frameCount = 0,
+  poseDataset: PoseDataset | null,
 ): PlaybackState {
+  const timestamps = poseDataset?.frames.map((frame) => frame.timestamp) ?? [];
   return {
     ...playback,
-    currentTime: frameIndexToTime(frameIndex, fps, frameCount),
+    currentTime: timestamps.length > 0
+      ? frameTimestamp(frameIndex, timestamps)
+      : frameIndexToTime(frameIndex, poseDataset?.fps ?? 30, poseDataset?.frameCount ?? 0),
   };
 }

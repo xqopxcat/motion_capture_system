@@ -4,6 +4,7 @@ import {
   applyCompareSyncOffsetDelta,
   deriveComparePlaybackBounds,
   mapCompareSyncFrames,
+  mapCompareSyncFramesByTime,
   resetCompareSyncOffset,
 } from "./useComparePlaybackController";
 
@@ -118,6 +119,32 @@ describe("mapCompareSyncFrames", () => {
       leftFrame: 0,
       rightFrame: 0,
     });
+  });
+});
+
+describe("mapCompareSyncFramesByTime", () => {
+  it("resolves each skeleton from its own irregular pose timestamps", () => {
+    expect(mapCompareSyncFramesByTime({
+      currentTime: 0.24,
+      leftFrameTimestamps: [0, 0.1, 0.2, 0.3],
+      rightFrameTimestamps: [0, 0.15, 0.31],
+      syncOffsetFrames: 0,
+    })).toEqual({ leftFrame: 2, rightFrame: 2 });
+  });
+
+  it("applies offset after timestamp alignment and clamps the right frame", () => {
+    expect(mapCompareSyncFramesByTime({
+      currentTime: 0.16,
+      leftFrameTimestamps: [0, 0.1, 0.2],
+      rightFrameTimestamps: [0, 0.12, 0.27, 0.4],
+      syncOffsetFrames: 1,
+    })).toEqual({ leftFrame: 2, rightFrame: 2 });
+    expect(mapCompareSyncFramesByTime({
+      currentTime: 0.4,
+      leftFrameTimestamps: [0, 0.2, 0.4],
+      rightFrameTimestamps: [0, 0.2, 0.4],
+      syncOffsetFrames: 10,
+    }).rightFrame).toBe(2);
   });
 });
 
