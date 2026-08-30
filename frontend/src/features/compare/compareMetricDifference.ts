@@ -123,52 +123,6 @@ export function buildCompareMetricDifferenceRows({
   });
 }
 
-function resolvePoseFrame(dataset: PoseDataset | null, frameIndex: number): PoseDatasetFrame | null {
-  if (!dataset || !Number.isInteger(frameIndex) || frameIndex < 0) return null;
-  return dataset.frames.find((frame) => frame.frameIndex === frameIndex) ?? dataset.frames[frameIndex] ?? null;
-}
-
-function calculatePoseFrameMetrics(dataset: PoseDataset | null, frameIndex: number) {
-  const frame = resolvePoseFrame(dataset, frameIndex);
-  if (!frame) return new Map<string, number>();
-  const results = calculateSelectedFormalJointAngles({
-    frameIndex: frame.frameIndex,
-    timestampMs: frame.timestamp * 1000,
-    landmarks2D: frame.landmarks2D,
-    landmarks3D: frame.landmarks3D,
-  }, JOINT_ANGLE_REGISTRY.map(({ metricId }) => metricId));
-  return new Map(results.flatMap((result) => result.valueDegrees === null ? [] : [[result.metricId, result.valueDegrees]]));
-}
-
-/** Derives frame-aligned values from authoritative pose.v1 instead of compressed metrics.v1 arrays. */
-export function buildPoseFrameMetricDifferenceRows({
-  leftFrame,
-  leftPoseDataset,
-  rightFrame,
-  rightPoseDataset,
-}: {
-  leftFrame: number;
-  leftPoseDataset: PoseDataset | null;
-  rightFrame: number;
-  rightPoseDataset: PoseDataset | null;
-}): CompareMetricDifferenceRow[] {
-  const leftValues = calculatePoseFrameMetrics(leftPoseDataset, leftFrame);
-  const rightValues = calculatePoseFrameMetrics(rightPoseDataset, rightFrame);
-
-  return JOINT_ANGLE_REGISTRY.map((definition) => {
-    const leftValue = leftValues.get(definition.metricId) ?? null;
-    const rightValue = rightValues.get(definition.metricId) ?? null;
-    return {
-      difference: leftValue === null || rightValue === null ? null : rightValue - leftValue,
-      label: definition.displayLabel,
-      leftValue,
-      metricId: definition.metricId,
-      rightValue,
-      unit: "degree",
-    };
-  });
-}
-
 export function formatCompareMetricValue(value: number | null, unit: string | null) {
   if (value === null) {
     return "Missing";
@@ -176,7 +130,5 @@ export function formatCompareMetricValue(value: number | null, unit: string | nu
 
   const formattedValue = Number.isInteger(value) ? String(value) : value.toFixed(2);
 
-  return unit === "degree" || unit === "degrees" ? `${formattedValue}°` : unit ? `${formattedValue} ${unit}` : formattedValue;
+  return unit ? `${formattedValue} ${unit}` : formattedValue;
 }
-import { calculateSelectedFormalJointAngles, JOINT_ANGLE_REGISTRY } from "../../engines/motionModel";
-import type { PoseDataset, PoseDatasetFrame } from "../../types";

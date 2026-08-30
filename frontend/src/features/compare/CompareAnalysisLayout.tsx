@@ -156,9 +156,9 @@ export function CompareAnalysisLayout({
       <section className={styles.sharedArea} aria-label="Shared compare analysis placeholders">
         <CompareMetricDifferencePanel
           leftFrame={comparePlayback.frameMapping.leftFrame}
-          leftPoseDataset={leftRuntime.poseDataset}
+          leftMetricSeries={leftRuntime.metricSeries}
           rightFrame={comparePlayback.frameMapping.rightFrame}
-          rightPoseDataset={rightRuntime.poseDataset}
+          rightMetricSeries={rightRuntime.metricSeries}
         />
       </section>
     </section>

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PoseDataset } from "../../types";
 import {
   buildCompareMetricDifferenceRows,
-  buildPoseFrameMetricDifferenceRows,
   formatCompareMetricValue,
   getCompareMetricSeriesDiagnostics,
   parseCompareMetricSeries,
@@ -135,20 +133,6 @@ describe("compareMetricDifference", () => {
 
   it("formats missing and numeric values", () => {
     expect(formatCompareMetricValue(null, "degree")).toBe("Missing");
-    expect(formatCompareMetricValue(12.3456, "degree")).toBe("12.35°");
-  });
-
-  it("calculates frame-aligned formal values directly from pose.v1", () => {
-    const dataset = (kneeX: number): PoseDataset => {
-      const landmarks = Array.from({ length: 33 }, (_, id) => ({ id, name: `joint_${id}`, x: id / 100 + 0.1, y: id / 120 + 0.1, z: id / 140 + 0.1, visibility: 1 }));
-      landmarks[23] = { ...landmarks[23], x: 0, y: 0, z: 0 };
-      landmarks[25] = { ...landmarks[25], x: 0, y: 1, z: 0 };
-      landmarks[27] = { ...landmarks[27], x: kneeX, y: 1, z: 0 };
-      return { version: "1.0", poseEngine: "test", poseEngineVersion: "1", fps: 30, frameCount: 1, duration: 0, generatedAt: "2026-08-31T00:00:00Z", frames: [{ frameIndex: 0, timestamp: 0, landmarks2D: landmarks, landmarks3D: landmarks }] };
-    };
-    const rows = buildPoseFrameMetricDifferenceRows({ leftFrame: 0, leftPoseDataset: dataset(1), rightFrame: 0, rightPoseDataset: dataset(-1) });
-    const knee = rows.find(({ metricId }) => metricId === "joint-angle.left-knee.internal.v1");
-
-    expect(knee).toMatchObject({ label: "Left knee internal angle", leftValue: 90, rightValue: 90, difference: 0, unit: "degree" });
+    expect(formatCompareMetricValue(12.3456, "degree")).toBe("12.35 degree");
   });
 });

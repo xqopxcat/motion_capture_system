@@ -1,44 +1,60 @@
-import { useMemo } from "react";
-import type { PoseDataset } from "../../types";
 import styles from "./CompareMetricDifferencePanel.module.css";
 import {
-  buildPoseFrameMetricDifferenceRows,
+  buildCompareMetricDifferenceRows,
   formatCompareMetricValue,
+  getCompareMetricSeriesDiagnostics,
 } from "./compareMetricDifference";
 
 export type CompareMetricDifferencePanelProps = {
   leftFrame: number;
-  leftPoseDataset: PoseDataset | null;
+  leftMetricSeries: unknown;
   rightFrame: number;
-  rightPoseDataset: PoseDataset | null;
+  rightMetricSeries: unknown;
 };
 
 export function CompareMetricDifferencePanel({
   leftFrame,
-  leftPoseDataset,
+  leftMetricSeries,
   rightFrame,
-  rightPoseDataset,
+  rightMetricSeries,
 }: CompareMetricDifferencePanelProps) {
-  const rows = useMemo(() => buildPoseFrameMetricDifferenceRows({
+  const rows = buildCompareMetricDifferenceRows({
     leftFrame,
-    leftPoseDataset,
+    leftMetricSeries,
     rightFrame,
-    rightPoseDataset,
-  }), [leftFrame, leftPoseDataset, rightFrame, rightPoseDataset]);
+    rightMetricSeries,
+  });
+  const leftDiagnostics = getCompareMetricSeriesDiagnostics(leftMetricSeries);
+  const rightDiagnostics = getCompareMetricSeriesDiagnostics(rightMetricSeries);
+  const diagnostics = [
+    leftDiagnostics.message ? `Left: ${leftDiagnostics.message}` : null,
+    rightDiagnostics.message ? `Right: ${rightDiagnostics.message}` : null,
+  ].filter((message): message is string => message !== null);
 
   return (
     <section className={styles.panel} aria-label="Basic metric difference">
       <header className={styles.header}>
         <div>
           <h2>Basic metric difference</h2>
-          <p>Frame-aligned formal angles from pose.v1. Difference: right minus left.</p>
+          <p>Difference convention: right value minus left value.</p>
         </div>
         <span>
           Left frame {leftFrame} / Right frame {rightFrame}
         </span>
       </header>
 
-      {rows.length > 0 && (
+      {rows.length === 0 ? (
+        <div className={styles.empty}>
+          <p>No comparable Metric Series values are available.</p>
+          {diagnostics.length > 0 && (
+            <ul>
+              {diagnostics.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
