@@ -3,6 +3,43 @@
   gap: 20px;
 }
 
+.selectionHeader {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.selectionHeader p {
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.selectionHeader h2 {
+  color: #101828;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.changeRecordsButton {
+  background: #ffffff;
+  border: 1px solid #98a2b3;
+  border-radius: 8px;
+  color: #172033;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 9px 12px;
+}
+
+.changeRecordsButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .slots {
   display: grid;
   gap: 16px;
@@ -24,6 +61,28 @@
   justify-content: space-between;
   min-width: 0;
   padding: 18px;
+}
+
+.selector[data-analysis-ready="true"] {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  gap: 14px;
+  padding: 16px;
+}
+
+.selector[data-analysis-ready="true"] .slot {
+  background: #f8fafc;
+  border-color: #e1e6ef;
+  padding: 14px;
+}
+
+.selector[data-analysis-ready="true"] .slot > div > p:last-child {
+  display: none;
+}
+
+.selector[data-analysis-ready="true"] .slot h2 {
+  margin-bottom: 0;
 }
 
 .slotLabel {
@@ -102,6 +161,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .recordItem {
@@ -203,5 +264,10 @@
 
   .recordActions {
     justify-content: flex-start;
+  }
+
+  .selectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

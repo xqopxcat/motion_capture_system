@@ -2,20 +2,37 @@ import type { CompareRouteSelection, CompareSelectionSide, RecordListItem } from
 import styles from "./CompareRecordSelector.module.css";
 
 export type CompareRecordSelectorProps = {
+  analysisReady: boolean;
   records: RecordListItem[];
   selection: CompareRouteSelection;
+  showRecordList: boolean;
   onClearSelection: (side: CompareSelectionSide) => void;
   onSelectRecord: (side: CompareSelectionSide, recordId: string) => void;
+  onToggleRecordList: () => void;
 };
 
 export function CompareRecordSelector({
+  analysisReady,
   records,
   selection,
+  showRecordList,
   onClearSelection,
   onSelectRecord,
+  onToggleRecordList,
 }: CompareRecordSelectorProps) {
   return (
-    <section className={styles.selector} aria-label="Compare record selection">
+    <section className={styles.selector} data-analysis-ready={analysisReady} aria-label="Compare record selection">
+      {analysisReady && (
+        <header className={styles.selectionHeader}>
+          <div>
+            <p>Comparing</p>
+            <h2>Selected records</h2>
+          </div>
+          <button className={styles.changeRecordsButton} type="button" onClick={onToggleRecordList} aria-expanded={showRecordList}>
+            {showRecordList ? "Hide records" : "Change records"}
+          </button>
+        </header>
+      )}
       <div className={styles.slots}>
         <SelectionSlot
           label="Left record"
@@ -31,7 +48,7 @@ export function CompareRecordSelector({
         />
       </div>
 
-      <section className={styles.recordListPanel} aria-label="Available records">
+      {showRecordList && <section className={styles.recordListPanel} aria-label="Available records">
         <header className={styles.listHeader}>
           <h2>Available records</h2>
           <p>Only Ready records can be selected for Compare.</p>
@@ -46,7 +63,7 @@ export function CompareRecordSelector({
             />
           ))}
         </ul>
-      </section>
+      </section>}
     </section>
   );
 }

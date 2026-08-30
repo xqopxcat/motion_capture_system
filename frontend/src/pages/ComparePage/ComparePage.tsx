@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   CompareAnalysisLayout,
@@ -16,6 +16,7 @@ import type { CompareSelectionSide } from "../../types";
 import styles from "./ComparePage.module.css";
 
 export function ComparePage() {
+  const [recordListExpanded, setRecordListExpanded] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isError, isLoading } = useGetRecordsQuery();
   const records = data?.items ?? [];
@@ -57,6 +58,7 @@ export function ComparePage() {
     }
 
     setSearchParams(updateCompareRouteSelectionParam(searchParams, side, recordId));
+    setRecordListExpanded(false);
   };
   const handleClearSelection = (side: CompareSelectionSide) => {
     setSearchParams(updateCompareRouteSelectionParam(searchParams, side, null));
@@ -73,22 +75,24 @@ export function ComparePage() {
           </p>
         </header>
 
-        <section className={styles.selectionPanel} aria-label="Compare selection status">
-          <h2>Selection status</h2>
-          <p>{selectionStateMessage}</p>
-          {apiParams && validationMessages.length === 0 && (
-            <p className={styles.taskNote}>
-              Prepared API mapping: recordA={apiParams.recordA}, recordB={apiParams.recordB}.
-            </p>
-          )}
-          {validationMessages.length > 0 && (
-            <ul className={styles.validationList} role="alert">
-              {validationMessages.map((message) => (
-                <li key={message}>{message}</li>
-              ))}
-            </ul>
-          )}
-        </section>
+        {!canShowAnalysisLayout && (
+          <section className={styles.selectionPanel} aria-label="Compare selection status">
+            <h2>Choose two records</h2>
+            <p>{selectionStateMessage}</p>
+            {apiParams && validationMessages.length === 0 && (
+              <p className={styles.taskNote}>
+                Prepared API mapping: recordA={apiParams.recordA}, recordB={apiParams.recordB}.
+              </p>
+            )}
+            {validationMessages.length > 0 && (
+              <ul className={styles.validationList} role="alert">
+                {validationMessages.map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         {isLoading && (
           <section className={styles.statePanel} aria-live="polite">
@@ -113,10 +117,13 @@ export function ComparePage() {
 
         {!isLoading && !isError && records.length > 0 && (
           <CompareRecordSelector
+            analysisReady={canShowAnalysisLayout}
             records={records}
             selection={routeSelection}
+            showRecordList={!canShowAnalysisLayout || recordListExpanded}
             onClearSelection={handleClearSelection}
             onSelectRecord={handleSelectRecord}
+            onToggleRecordList={() => setRecordListExpanded((value) => !value)}
           />
         )}
 

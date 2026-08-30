@@ -48,6 +48,8 @@ export function CompareAnalysisLayout({
       <p className={styles.mobileNotice}>
         Compare MVP is optimized for desktop. Use a wider viewport for side-by-side analysis.
       </p>
+      <div className={styles.workspaceGrid}>
+        <div className={styles.motionWorkspace}>
       <div className={styles.viewerGrid}>
         <CompareViewerPanel
           label="Left"
@@ -78,6 +80,13 @@ export function CompareAnalysisLayout({
         />
       </div>
       <section className={styles.sharedPlaybackArea} aria-label="Shared compare playback">
+        <header className={styles.playbackHeader}>
+          <div>
+            <p>Playback & alignment</p>
+            <h2>Review both records together</h2>
+          </div>
+          <span>Left is the timeline reference</span>
+        </header>
         <Timeline
           frame={comparePlayback.frameState}
           onSeekFrame={canUseSharedPlayback ? comparePlayback.requestSeekFrame : undefined}
@@ -109,9 +118,9 @@ export function CompareAnalysisLayout({
         </div>
         <section className={styles.syncControls} aria-label="Sync offset controls">
           <div>
-            <h2>Sync offset</h2>
+            <h2>Right record alignment</h2>
             <p>
-              Current offset: <strong>{comparePlayback.syncOffsetFrames}</strong> frames
+              Right is <strong>{comparePlayback.syncOffsetFrames >= 0 ? "+" : ""}{comparePlayback.syncOffsetFrames} frames</strong> relative to Left.
             </p>
           </div>
           <div className={styles.syncButtons}>
@@ -153,14 +162,16 @@ export function CompareAnalysisLayout({
           </div>
         </section>
       </section>
-      <section className={styles.sharedArea} aria-label="Shared compare analysis placeholders">
+        </div>
+      <aside className={styles.metricRail} aria-label="Current frame metrics">
         <CompareMetricDifferencePanel
           leftFrame={comparePlayback.frameMapping.leftFrame}
           leftMetricSeries={leftRuntime.metricSeries}
           rightFrame={comparePlayback.frameMapping.rightFrame}
           rightMetricSeries={rightRuntime.metricSeries}
         />
-      </section>
+      </aside>
+      </div>
     </section>
   );
 }

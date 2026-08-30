@@ -5,6 +5,26 @@
   min-width: 0;
 }
 
+.workspaceGrid {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.48fr);
+  min-width: 0;
+}
+
+.motionWorkspace {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.metricRail {
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+
 .mobileNotice {
   background: #fff7ed;
   border: 1px solid #fed7aa;
@@ -241,6 +261,40 @@
   padding: 18px;
 }
 
+.playbackHeader {
+  align-items: start;
+  border-bottom: 1px solid #e1e6ef;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 14px;
+}
+
+.playbackHeader p {
+  color: #667085;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.playbackHeader h2 {
+  color: #101828;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.playbackHeader span {
+  background: #eef7f4;
+  border: 1px solid #b5d8ce;
+  border-radius: 999px;
+  color: #176b5b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+
 .jumpControls,
 .syncButtons {
   display: flex;
@@ -290,6 +344,16 @@
   overflow-wrap: anywhere;
 }
 
+@media (max-width: 1240px) {
+  .workspaceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metricRail {
+    position: static;
+  }
+}
+
 @media (max-width: 900px) {
   .mobileNotice {
     display: block;
@@ -303,6 +367,10 @@
   .syncControls {
     align-items: start;
     grid-template-columns: 1fr;
+  }
+
+  .playbackHeader {
+    flex-direction: column;
   }
 }
 
