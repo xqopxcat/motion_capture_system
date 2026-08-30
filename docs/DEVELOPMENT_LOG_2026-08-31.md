@@ -1,64 +1,64 @@
-# 2026-08-31 — Navigation and Compare implementation notes
+# 2026-08-31 — 導航與 Compare 實作紀錄
 
-## Scope
+## 範圍
 
-This note records the product changes made during the 2026-08-31 review session. It describes the current implementation, not final visual-design acceptance. Capture, Records, Viewer, Compare, Dashboard and Authentication layouts will be reviewed separately before a shared style system is finalized.
+本文件記錄 2026-08-31 檢視期間完成的產品修改，描述的是目前實作狀態，不代表視覺設計已完成最終驗收。在確立共用視覺風格之前，仍會分別檢視 Capture、Records、Viewer、Compare、Dashboard 與 Authentication 頁面的排版。
 
-## Application navigation
+## 應用程式導航
 
-- Added a responsive application Sidebar so primary routes can be opened without manually entering URLs.
-- The navigation exposes Capture, Records, Compare, Dashboard and Authentication destinations.
-- Desktop uses persistent navigation; smaller viewports use the responsive navigation treatment.
-- Route ownership and existing page behavior were not moved into the Sidebar.
+- 新增響應式應用程式 Sidebar，使用者不再需要手動輸入網址才能前往主要頁面。
+- 導航提供 Capture、Records、Compare、Dashboard 與 Authentication 入口。
+- 桌面版使用常駐導航；較小的檢視區域使用響應式導航方式。
+- Route 的責任歸屬及既有頁面行為沒有移入 Sidebar。
 
-Implementation baseline: `fea766cd7f8a4b0cdaa55e1e367b7e225fc58854`.
+實作基準：`fea766cd7f8a4b0cdaa55e1e367b7e225fc58854`。
 
-## Compare workspace
+## Compare 工作區
 
-### Record selection and page structure
+### Record 選擇與頁面結構
 
-- The page keeps Left and Right Record selection explicit.
-- Available Records remain selectable without leaving Compare.
-- Once both Records are available, Compare presents two side-by-side viewers, shared playback controls, manual Right offset controls and a full-width Basic metric difference section.
-- Metrics remain full-width below the viewers so the table does not require horizontal scrolling merely because it was placed in a narrow side column.
-- The present layout is functional and remains subject to the later page-layout review.
+- 頁面明確區分 Left Record 與 Right Record 的選擇。
+- 使用者可以留在 Compare 頁面內選擇 Available Records。
+- 兩筆 Record 都可使用後，Compare 會顯示左右並排的兩個 Viewer、共用播放控制、Right 手動 Offset 控制，以及全寬的 Basic metric difference 區塊。
+- Metrics 維持在 Viewer 下方並使用完整寬度，避免表格因被放進狹窄側欄而必須水平捲動才能閱讀。
+- 目前排版可供功能操作，但仍需納入後續頁面排版檢視。
 
-### Video and Canvas composition
+### Video 與 Canvas 合成
 
-- Each viewer composes the recording video underneath a transparent skeleton Canvas.
-- The Canvas no longer supplies an opaque background that hides the `<video>` element.
-- The overlay does not intercept pointer input.
-- The shared production skeleton renderer, landmark projection and skeleton connection definitions were not changed by this work.
+- 每個 Viewer 都會將錄製影片放在下層，透明 Skeleton Canvas 疊在上層。
+- Canvas 不再使用會遮住 `<video>` 元素的不透明背景。
+- Overlay 不會攔截指標輸入。
+- 本次修改沒有變更共用的正式 Skeleton Renderer、Landmark 投影或 Skeleton 連線定義。
 
-### Playback and synchronization
+### 播放與同步
 
-- The Left recording is the authoritative shared playback clock.
-- Each skeleton resolves its frame independently from that Record's Pose timestamps; the implementation no longer assumes that both Pose datasets have identical frame indices or cadence.
-- Manual Sync Offset is applied to the resolved Right Pose frame.
-- The Right video is the follower. During playback it is corrected only when its drift from the requested Right time exceeds the bounded tolerance.
-- Repeated render ticks continue to redraw as required without changing the persisted Pose or Metric artifacts.
-- The current Compare skeleton behavior was visually reviewed and considered acceptable for continued page review. This is not a physical-device performance claim.
+- Left Record 是共用播放時鐘的權威來源。
+- 左右 Skeleton 會分別依各自 Record 的 Pose timestamp 解析 Frame；實作不再假設兩份 Pose Dataset 具有相同的 Frame index 或取樣頻率。
+- 手動 Sync Offset 會套用到已解析的 Right Pose Frame。
+- Right video 是跟隨端。播放期間，只有當它與要求的 Right time 之間的偏移超過限定容差時，才會進行校正。
+- 重複的 Render tick 仍可依需求重繪，但不會修改已保存的 Pose 或 Metric Artifact。
+- 目前 Compare Skeleton 行為已完成目視檢查，可繼續進行其他頁面的檢視；這不構成實體裝置效能聲明。
 
-Current implementation: `56628c5fa96ef887d61c516b933fa5a55fe886c0`.
+目前實作：`56628c5fa96ef887d61c516b933fa5a55fe886c0`。
 
 ### Metrics
 
-- Compare continues to read the persisted Metric Series supplied by each Record.
-- The attempted fallback that recomputed missing Compare metrics from Pose data was reverted. Compare must not silently replace persisted analysis artifacts with a second calculation path.
-- Existing populated metrics therefore remain available, including elbow and wrist values in the reviewed Records.
-- Metric identifiers have human-readable labels where the registry provides them, and degree values use the `°` presentation.
-- `Missing` still means that the selected Record's persisted Metric Series does not contain a comparable value for that metric. Resolving missing knee, hip, ankle or shoulder series requires an explicit analysis/publication contract rather than a Compare-only UI fallback.
+- Compare 繼續讀取各 Record 所提供的已保存 Metric Series。
+- 先前曾嘗試以 Pose 資料重新計算缺少的 Compare Metrics，但該 fallback 已撤回。Compare 不應以第二條計算路徑默默取代已保存的分析 Artifact。
+- 因此，受檢視 Record 原本已有的 Metrics（包含 Elbow 與 Wrist 數值）會繼續保留。
+- Metric Registry 提供名稱時，Metric identifier 會顯示為人類可讀標籤；角度數值使用 `°` 顯示。
+- `Missing` 仍表示所選 Record 的已保存 Metric Series 中沒有該項可比較數值。若要補齊 Knee、Hip、Ankle 或 Shoulder Series，必須明確處理分析與發布契約，而不是只在 Compare UI 加入 fallback。
 
-## Verification completed during implementation
+## 實作期間完成的驗證
 
-- Focused Compare record-selection, metric-difference, playback-controller and VideoPlayer tests were added or updated.
-- The complete frontend suite passed at 64 test files / 408 tests.
-- TypeScript and the production build passed.
-- These automated checks cover state and mapping behavior; they do not replace browser/device visual review for letterboxing, decoder seeking or perceived synchronization.
+- 已新增或更新 Compare Record 選擇、Metric difference、Playback controller 與 VideoPlayer 的聚焦測試。
+- 完整前端測試套件通過，共 64 個測試檔案、408 項測試。
+- TypeScript Build 與 Production Build 均通過。
+- 自動化測試涵蓋狀態與映射行為，但不能取代瀏覽器／裝置上的 Letterboxing、Decoder seek 或主觀同步感受檢查。
 
-## Deferred review
+## 後續檢視項目
 
-- Review the layout of Capture, Records, Viewer, Compare, Dashboard and Authentication pages individually.
-- Discuss and define the shared visual style only after the page layouts are understood.
-- Revisit Compare metric publication at the analysis pipeline boundary so expected joint metrics are produced and persisted consistently.
-- Continue visual synchronization checks with recordings that have different video aspect ratios and irregular Pose cadence.
+- 分別檢視 Capture、Records、Viewer、Compare、Dashboard 與 Authentication 頁面的排版。
+- 了解各頁面排版後，再討論並定義共用視覺風格。
+- 從分析管線邊界重新檢視 Compare Metric 的發布方式，使預期的 Joint Metrics 能一致地產生並保存。
+- 使用影片長寬比不同且 Pose 取樣頻率不規則的 Record，繼續進行 Compare 視覺同步檢查。
