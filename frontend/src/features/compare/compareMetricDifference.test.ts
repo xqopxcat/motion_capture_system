@@ -118,6 +118,18 @@ describe("compareMetricDifference", () => {
     ).toBe("ankle_speed");
   });
 
+  it("uses the registered human-readable label without changing persisted values", () => {
+    const row = buildCompareMetricDifferenceRows({
+      leftFrame: 0,
+      leftMetricSeries: [{ metricId: "joint-angle.left-elbow.internal.v1", unit: "degree", values: [132.74] }],
+      rightFrame: 0,
+      rightMetricSeries: [{ metricId: "joint-angle.left-elbow.internal.v1", unit: "degree", values: [114.19] }],
+    })[0];
+
+    expect(row).toMatchObject({ label: "Left elbow internal angle", leftValue: 132.74, rightValue: 114.19 });
+    expect(row.difference).toBeCloseTo(-18.55);
+  });
+
   it("reports missing or invalid metric series diagnostics", () => {
     expect(getCompareMetricSeriesDiagnostics(null)).toEqual({
       hasInput: false,
@@ -133,6 +145,6 @@ describe("compareMetricDifference", () => {
 
   it("formats missing and numeric values", () => {
     expect(formatCompareMetricValue(null, "degree")).toBe("Missing");
-    expect(formatCompareMetricValue(12.3456, "degree")).toBe("12.35 degree");
+    expect(formatCompareMetricValue(12.3456, "degree")).toBe("12.35°");
   });
 });

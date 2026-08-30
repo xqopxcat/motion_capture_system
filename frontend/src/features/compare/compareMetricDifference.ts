@@ -1,3 +1,5 @@
+import { getJointAngleDefinition, type JointAngleMetricId } from "../../engines/motionModel";
+
 export type CompareMetricSeriesItem = {
   label?: string;
   metricId: string;
@@ -86,6 +88,11 @@ function getFrameValue(metric: CompareMetricSeriesItem | undefined, frameIndex: 
   return Number.isFinite(value) ? value : null;
 }
 
+function getMetricDisplayLabel(metricId: string, seriesLabel?: string) {
+  if (seriesLabel) return seriesLabel;
+  return getJointAngleDefinition(metricId as JointAngleMetricId)?.displayLabel ?? metricId;
+}
+
 export function buildCompareMetricDifferenceRows({
   leftFrame,
   leftMetricSeries,
@@ -114,7 +121,7 @@ export function buildCompareMetricDifferenceRows({
 
     return {
       difference: leftValue === null || rightValue === null ? null : rightValue - leftValue,
-      label: leftMetric?.label ?? rightMetric?.label ?? metricId,
+      label: getMetricDisplayLabel(metricId, leftMetric?.label ?? rightMetric?.label),
       leftValue,
       metricId,
       rightValue,
@@ -130,5 +137,5 @@ export function formatCompareMetricValue(value: number | null, unit: string | nu
 
   const formattedValue = Number.isInteger(value) ? String(value) : value.toFixed(2);
 
-  return unit ? `${formattedValue} ${unit}` : formattedValue;
+  return unit === "degree" || unit === "degrees" ? `${formattedValue}°` : unit ? `${formattedValue} ${unit}` : formattedValue;
 }
