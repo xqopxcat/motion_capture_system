@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldReportMediaTime, videoNeedsSeek } from "./VideoPlayer";
+import { shouldReportMediaTime, videoNeedsPlaybackSync, videoNeedsSeek } from "./VideoPlayer";
 
 describe("VideoPlayer frame seeking", () => {
   it("does not swallow a 30 fps next-frame seek", () => {
@@ -18,5 +18,11 @@ describe("VideoPlayer frame seeking", () => {
 
   it("allows playback callbacks again after the paused seek is complete", () => {
     expect(shouldReportMediaTime(7 / 30, null, true)).toBe(true);
+  });
+
+  it("corrects material follower drift during synchronized playback", () => {
+    expect(videoNeedsPlaybackSync(1, 1.2)).toBe(true);
+    expect(videoNeedsPlaybackSync(1, 1.05)).toBe(false);
+    expect(videoNeedsPlaybackSync(2, 1.8)).toBe(true);
   });
 });

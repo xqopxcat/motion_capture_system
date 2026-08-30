@@ -77,6 +77,7 @@ export function CompareAnalysisLayout({
           runtime={rightRuntime}
           frameIndex={comparePlayback.frameMapping.rightFrame}
           onEnded={comparePlayback.handleVideoEnded}
+          syncWhilePlaying
         />
       </div>
       <section className={styles.sharedPlaybackArea} aria-label="Shared compare playback">
@@ -184,6 +185,7 @@ function CompareViewerPanel({
   frameIndex,
   onEnded,
   onTimeChange,
+  syncWhilePlaying = false,
 }: {
   label: "Left" | "Right";
   playback: PlaybackState;
@@ -192,6 +194,7 @@ function CompareViewerPanel({
   frameIndex: number;
   onEnded?: () => void;
   onTimeChange?: (currentTime: number) => void;
+  syncWhilePlaying?: boolean;
 }) {
   const renderContext = createCompareRenderContext({
     canvasId: runtime.renderContext.canvasId,
@@ -231,6 +234,7 @@ function CompareViewerPanel({
               title={`${label} record video`}
               onEnded={onEnded}
               onTimeChange={onTimeChange}
+              syncWhilePlaying={syncWhilePlaying}
             />
             <SkeletonCanvas renderContext={renderContext} />
           </>

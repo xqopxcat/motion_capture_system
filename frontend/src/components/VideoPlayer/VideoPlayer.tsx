@@ -11,10 +11,15 @@ export type VideoPlayerProps = {
   onEnded?: () => void;
   onFrameChange?: (frameIndex: number) => void;
   onTimeChange?: (currentTime: number) => void;
+  syncWhilePlaying?: boolean;
 };
 
 export function videoNeedsSeek(currentTime: number, requestedTime: number) {
   return Math.abs(currentTime - requestedTime) >= 0.001;
+}
+
+export function videoNeedsPlaybackSync(currentTime: number, requestedTime: number, toleranceSeconds = 0.075) {
+  return Math.abs(currentTime - requestedTime) > toleranceSeconds;
 }
 
 export function shouldReportMediaTime(
@@ -34,6 +39,7 @@ export function VideoPlayer({
   onVideoDimensionsChange,
   onEnded,
   onTimeChange,
+  syncWhilePlaying = false,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const pendingSeekTimeRef = useRef<number | null>(null);
@@ -66,13 +72,18 @@ export function VideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
 
-    if (!video || playback.isPlaying || !videoNeedsSeek(video.currentTime, playback.currentTime)) {
+    if (!video) {
       return;
     }
 
+    const needsSeek = playback.isPlaying
+      ? syncWhilePlaying && videoNeedsPlaybackSync(video.currentTime, playback.currentTime)
+      : videoNeedsSeek(video.currentTime, playback.currentTime);
+    if (!needsSeek) return;
+
     pendingSeekTimeRef.current = playback.currentTime;
     video.currentTime = playback.currentTime;
-  }, [playback.currentTime, playback.isPlaying]);
+  }, [playback.currentTime, playback.isPlaying, syncWhilePlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
